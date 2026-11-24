@@ -49,7 +49,7 @@ describe("scanFeature", () => {
       "src/features/uploads/components/upload.machine.ts": "",
       "src/features/uploads/components/upload.machine.test.ts": "",
     });
-    expect(scanFeature(root, "uploads")).toEqual({
+    expect(scanFeature(root, "src/features/uploads")).toEqual({
       routes: ["/api/uploads/$id", "/uploads"],
       services: ["Uploads"],
       errors: ["StorageError", "UploadRejected"],
@@ -59,8 +59,8 @@ describe("scanFeature", () => {
   });
 
   test("a bare feature has nothing", () => {
-    const root = project({ "src/features/ui/feature.json": "{}" });
-    expect(scanFeature(root, "ui")).toEqual({
+    const root = project({ "src/features/core/ui/feature.json": "{}" });
+    expect(scanFeature(root, "src/features/core/ui")).toEqual({
       routes: [],
       services: [],
       errors: [],

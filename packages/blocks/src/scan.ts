@@ -1,7 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROUTES_DIR } from "./generate.ts";
-import { FEATURES_DIR } from "./manifest.ts";
 
 /** What a feature's source declares, read from the text alone: nothing is imported or run. */
 export interface FeatureScan {
@@ -55,9 +54,9 @@ export const routePath = (file: string): string | undefined => {
   return `/${parts.join("/")}`;
 };
 
-/** Reads a feature folder's routes, services, errors, events and machines. */
-export const scanFeature = (root: string, name: string): FeatureScan => {
-  const dir = join(root, FEATURES_DIR, name);
+/** Reads a feature folder's routes, services, errors, events and machines. `dir` is from the root. */
+export const scanFeature = (root: string, featureDir: string): FeatureScan => {
+  const dir = join(root, featureDir);
   const all = files(dir);
   const sources = all.filter((f) => SOURCE.test(f) && !TEST.test(f) && !f.startsWith("e2e/"));
   const texts = sources.map((f) => readFileSync(join(dir, f), "utf8"));

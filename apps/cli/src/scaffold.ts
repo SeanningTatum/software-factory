@@ -9,14 +9,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import {
-  FEATURES_DIR,
-  loadManifests,
-  prune,
-  readProject,
-  sync,
-  writeProject,
-} from "@tanstack-cf-saas/blocks";
+import { loadManifests, prune, readProject, sync, writeProject } from "@tanstack-cf-saas/blocks";
 import { applyEdits, modify } from "jsonc-parser";
 import { installHarness } from "./harness.ts";
 import { resetHistory, today } from "./timeline.ts";
@@ -27,7 +20,7 @@ export interface ScaffoldOptions {
   readonly harnessDir: string | undefined;
   readonly targetDir: string;
   readonly name: string;
-  /** Optional features to keep; core features are always kept. */
+  /** Optional features and core modules to keep; required ones are always kept. */
   readonly features: ReadonlyArray<string>;
   /** The date on each TIMELINE.md's History line; today by default. */
   readonly date?: string;
@@ -76,14 +69,9 @@ export const titleCase = (name: string) =>
 
 export const isEmptyDir = (dir: string) => !existsSync(dir) || readdirSync(dir).length === 0;
 
-/** Whether any feature defines tables, so there is a migration to generate. */
-export const hasTables = (dir: string) => {
-  const features = join(dir, FEATURES_DIR);
-  return (
-    existsSync(features) &&
-    readdirSync(features).some((name) => existsSync(join(features, name, "schema.ts")))
-  );
-};
+/** Whether any feature or core module defines tables, so there is a migration to generate. */
+export const hasTables = (dir: string) =>
+  [...loadManifests(dir).values()].some((m) => existsSync(join(dir, m.dir, "schema.ts")));
 
 const edit = (path: string, fn: (text: string) => string) =>
   writeFileSync(path, fn(readFileSync(path, "utf8")));
@@ -117,12 +105,12 @@ const writeDevVars = (dir: string) => {
   );
 };
 
-/** The optional features a template offers, in manifest order. */
+/** The optional features and core modules a template offers, in manifest order. */
 export const optionalFeatures = (templateDir: string) =>
-  [...loadManifests(templateDir).values()].filter((m) => !m.core).map((m) => m.name);
+  [...loadManifests(templateDir).values()].filter((m) => !m.required).map((m) => m.name);
 
 /**
- * Copies the template, keeps the core features and the chosen ones (and what they require), names
+ * Copies the template, keeps the required features and the chosen ones (and what they require), names
  * the project, starts each feature's History, and adds the Claude harness. Installing packages and
  * generating migrations are left to the caller.
  */
@@ -151,7 +139,7 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
   sync(targetDir);
   resetHistory(
     targetDir,
-    [...loadManifests(targetDir).keys()],
+    [...loadManifests(targetDir).values()],
     `- ${options.date ?? today()} — Created from create-tanstack-cf-saas ${VERSION}.`,
   );
   writeDevVars(targetDir);

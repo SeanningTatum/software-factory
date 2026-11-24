@@ -12,14 +12,20 @@ export { dependentsOf, topoSort, withRequirements } from "./graph.ts";
 export {
   type Binding,
   BlockManifest,
+  CORE_DIR,
   type EnvName,
   envNames,
   FEATURES_DIR,
-  featureManifestPath,
+  type Feature,
+  type Features,
+  featureDir,
+  isCoreModule,
   loadManifests,
   MANIFEST_FILE,
   ownedPaths,
+  RESERVED_NAMES,
   readManifest,
+  SHARED_LIB_DIR,
 } from "./manifest.ts";
 export { addBlock, BlockError, prune, removeBlock } from "./ops.ts";
 export { type PackageJson, withBlockPackages, withoutBlockPackages } from "./package-json.ts";
@@ -33,6 +39,7 @@ export {
   ownerOf,
   type Problem,
   plan,
+  SHARED_LIB,
   sync,
 } from "./sync.ts";
 export {

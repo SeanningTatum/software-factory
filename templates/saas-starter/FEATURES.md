@@ -5,14 +5,25 @@
 Read this list, then the feature's TIMELINE.md, before you change a feature. With every change
 to a feature, add a line under Decisions or History in its TIMELINE.md.
 
-- **analytics** (core): A typed event catalog, an Analytics service with console, PostHog and Analytics Engine adapters, and a browser tracker that waits for consent. Requires: nothing. [TIMELINE.md](src/features/analytics/TIMELINE.md)
-- **consent** (core): The cookie consent banner and its state machine. Honours Do Not Track and Global Privacy Control. Requires: nothing. [TIMELINE.md](src/features/consent/TIMELINE.md)
-- **home** (core): The home page and the /api/health check. Requires: nothing. [TIMELINE.md](src/features/home/TIMELINE.md)
-- **observability** (core): JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, and /api/browser-report. Requires: nothing. [TIMELINE.md](src/features/observability/TIMELINE.md)
-- **ui** (core): shadcn/ui components, the cn helper, and the site header and footer. Requires: nothing. [TIMELINE.md](src/features/ui/TIMELINE.md)
-- **db** (optional): Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real-SQL tests. Requires: nothing. [TIMELINE.md](src/features/db/TIMELINE.md)
+## Core modules
+
+Shared modules in `src/features/core/`, each of one kind: components only, or services and helpers
+only. Shared pure helpers sit in `src/features/core/lib/`.
+
+- **analytics** (required): A typed event catalog, an Analytics service with console, PostHog and Analytics Engine adapters, the browser helpers that send page views and web vitals, and /api/events. Requires: nothing. [TIMELINE.md](src/features/core/analytics/TIMELINE.md)
+- **observability** (required): JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, and /api/browser-report. Requires: nothing. [TIMELINE.md](src/features/core/observability/TIMELINE.md)
+- **ui** (required): shadcn/ui components, the cn helper, useHydrated, and the site header and footer. Requires: nothing. [TIMELINE.md](src/features/core/ui/TIMELINE.md)
+- **db** (optional): Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real-SQL tests. Requires: nothing. [TIMELINE.md](src/features/core/db/TIMELINE.md)
+- **kv** (optional): A Workers KV namespace behind a typed, Schema-checked KeyValue service with a read-through cache helper. Requires: nothing. [TIMELINE.md](src/features/core/kv/TIMELINE.md)
+
+## Features
+
+Everything with pages, or with components and logic of its own, in `src/features/`. Your
+own features go here too.
+
+- **consent** (required): The cookie consent banner and its state machine, the cookie settings button, and the analytics tracker that waits for consent. Honours Do Not Track and Global Privacy Control. Requires: nothing. [TIMELINE.md](src/features/consent/TIMELINE.md)
+- **home** (required): The home page and the /api/health check. Requires: nothing. [TIMELINE.md](src/features/home/TIMELINE.md)
 - **auth** (optional): Better Auth with email and password (GitHub when keys are set), sessions in D1, rate-limited sign-in and sign-up. Requires: db. [TIMELINE.md](src/features/auth/TIMELINE.md)
 - **billing** (optional): Stripe subscriptions through Better Auth's Stripe plugin: checkout, customer portal and webhooks. Requires: auth. [TIMELINE.md](src/features/billing/TIMELINE.md)
-- **kv** (optional): A Workers KV namespace behind a typed, Schema-checked KeyValue service with a read-through cache helper. Requires: nothing. [TIMELINE.md](src/features/kv/TIMELINE.md)
 - **uploads** (optional): Per-user file uploads to R2 with size, type and magic-byte checks, a rate limit and an upload state machine. Requires: auth. [TIMELINE.md](src/features/uploads/TIMELINE.md)
 - **workflows** (optional): A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a state machine sets. Requires: nothing. [TIMELINE.md](src/features/workflows/TIMELINE.md)

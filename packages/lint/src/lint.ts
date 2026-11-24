@@ -12,6 +12,7 @@ import {
   noTryCatch,
 } from "./rules/ast-rules.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
+import { sharedLib } from "./rules/shared-lib.ts";
 import { testMap } from "./rules/test-map.ts";
 import type { Finding, ProjectRule, Rule } from "./rules/types.ts";
 
@@ -23,6 +24,7 @@ export const rules: ReadonlyArray<Rule> = [
   externalCallSpan,
   fileSize,
   testMap,
+  sharedLib,
 ];
 
 /** Rules over the whole file list, not one source file. */

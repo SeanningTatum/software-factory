@@ -38,6 +38,20 @@ describe("touchedFeatures", () => {
       ["kv", ["api/key-value.ts", "layer.ts"]],
     ]);
   });
+
+  test("keys a core module by its folder and leaves out core/lib", () => {
+    const changed = [
+      "src/features/core/kv/api/key-value.ts",
+      "src/features/core/kv/TIMELINE.md",
+      "src/features/core/lib/call.ts",
+      "src/features/core/README.md",
+      "src/features/auth/api/auth.ts",
+    ];
+    expect([...touchedFeatures("src/features", changed)]).toEqual([
+      ["auth", ["api/auth.ts"]],
+      ["core/kv", ["api/key-value.ts"]],
+    ]);
+  });
 });
 
 describe("timelineProblems", () => {

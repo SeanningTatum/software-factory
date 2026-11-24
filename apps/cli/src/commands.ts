@@ -48,7 +48,7 @@ export interface CreateArgs {
 
 const featureOptions = () =>
   [...loadManifests(templateDir()).values()]
-    .filter((m) => !m.core)
+    .filter((m) => !m.required)
     .map((m) => ({
       value: m.name,
       label: m.title,
@@ -96,7 +96,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         : parseFeatures(
             cancelled(
               await p.multiselect({
-                message: "Features (the core ones are always on)",
+                message: "Features (the required ones are always on)",
                 options: featureOptions(),
                 initialValues: ["db", "auth"],
                 required: false,
@@ -112,7 +112,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         .map((o) => o.value)
         .join(", ")}`,
     );
-  const features = withRequirements(manifests, chosen).filter((f) => !manifests.get(f)?.core);
+  const features = withRequirements(manifests, chosen).filter((f) => !manifests.get(f)?.required);
   const added = features.filter((f) => !chosen.includes(f));
   if (added.length) p.log.info(`Also adding ${added.join(", ")}, which ${chosen.join(", ")} need.`);
   const claude =
@@ -145,7 +145,7 @@ export const create = async (args: CreateArgs) => {
             features: input.features,
           });
           spinner.stop(
-            `Created ${input.name} with ${result.features.length ? result.features.join(", ") : "the core features only"}`,
+            `Created ${input.name} with ${result.features.length ? result.features.join(", ") : "the required features only"}`,
           );
           return result.features;
         }),

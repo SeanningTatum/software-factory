@@ -26,16 +26,24 @@ bun run deploy
 
 ```
 src/
-  app/              the kernel: runtime, request, env, errors, middleware
-  features/<name>/  one feature: api/, routes/, components/, machines/, lib/, e2e/, feature.json,
-                    TIMELINE.md
-  gen/              made by `bun run blocks:sync`; never edit
-  routes/__root.tsx the only route outside a feature
+  app/                   the kernel: runtime, request, env, errors, middleware
+  features/
+    core/<name>/         a core module: db, kv, observability, analytics, ui
+    core/lib/            shared pure helpers, such as outsideCall and binding
+    <name>/              a feature: consent, home, auth, billing, uploads, workflows, and yours
+  gen/                   made by `bun run blocks:sync`; never edit
+  routes/__root.tsx      the only route outside a feature
 ```
 
-Each feature lives in its own folder and nothing else. `observability`, `analytics`, `consent`,
-`ui` and `home` are core and always on. `db`, `auth`, `billing`, `kv`, `uploads` and `workflows`
-come and go. A feature's `routes/` folder is served from the URL root, so
+Core holds shared modules of one kind: components only (`ui`), or services and helpers only (`db`,
+`kv`, `observability`, `analytics`). A module with both, or with a page, is a feature and lives
+beside `auth` and `billing`; put your own product features there too. `core/lib/` holds pure
+helpers that two or more features use.
+
+Each feature or module lives in its own folder and nothing else. `observability`, `analytics`,
+`ui`, `consent` and `home` are required and always on. `db`, `kv`, `auth`, `billing`, `uploads`
+and `workflows` are optional and come and go, wherever they live. A feature's `routes/` folder is
+served from the URL root, so
 `src/features/auth/routes/login.tsx` is `/login`. What features share (the runtime's layers, the
 error map, the event catalog, the nav, the route tree, wrangler bindings, `.dev.vars.example`) is
 built from their `feature.json` by `bun run blocks:sync`.
@@ -45,10 +53,10 @@ bunx create-tanstack-cf-saas add kv
 bunx create-tanstack-cf-saas remove kv
 ```
 
-`FEATURES.md` lists every feature in one line each. Each feature's `TIMELINE.md` says what it is,
-what it is wired to and why it is built the way it is: a block that `blocks:sync` writes, the
-diagrams of its machines, and Decisions and History lines people write. Read both before changing
-a feature, and add a line to its timeline with the change.
+`FEATURES.md` lists every core module and feature in one line each. Each one's `TIMELINE.md` says
+what it is, what it is wired to and why it is built the way it is: a block that `blocks:sync`
+writes, the diagrams of its machines, and Decisions and History lines people write. Read both
+before changing a feature, and add a line to its timeline with the change.
 
 ## Checks
 

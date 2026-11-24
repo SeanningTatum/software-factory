@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { RateLimited } from "#/app/errors.ts";
+import { binding } from "#/features/core/lib/binding.ts";
 
 const WINDOW_SECONDS = 60;
 
@@ -34,9 +35,7 @@ export class AuthRateLimiter extends Context.Service<
     AuthRateLimiter,
     Effect.gen(function* () {
       const env = yield* CloudflareEnv;
-      return AuthRateLimiter.fromLimiter(
-        (env as unknown as { AUTH_LIMITER?: Limiter }).AUTH_LIMITER,
-      );
+      return AuthRateLimiter.fromLimiter(binding<Limiter>(env, "AUTH_LIMITER"));
     }),
   );
 }

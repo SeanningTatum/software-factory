@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "#/features/ui/components/card.tsx";
+} from "#/features/core/ui/components/card.tsx";
 
 const Search = Schema.toStandardSchemaV1(
   Schema.Struct({ redirect: Schema.optionalKey(Schema.String.check(Schema.isPattern(/^\//))) }),

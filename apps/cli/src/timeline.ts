@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { timelinePath } from "@tanstack-cf-saas/blocks";
+import { type Feature, loadManifests, timelinePath } from "@tanstack-cf-saas/blocks";
 
 const HISTORY = "## History";
 /** Where the History section stops: the next heading or marked block. */
@@ -25,10 +25,20 @@ export const freshHistory = (text: string, line: string): string => {
   return `${text.slice(0, start)}\n${comment ? `${comment}\n\n` : ""}${line}\n${tail}`;
 };
 
-/** Gives each feature's TIMELINE.md a History of one line. */
-export const resetHistory = (root: string, features: ReadonlyArray<string>, line: string) => {
-  for (const name of features) {
-    const path = join(root, timelinePath(name));
+/**
+ * Gives each feature's TIMELINE.md a History of one line. Features are given by name, found in
+ * src/features or src/features/core, or as loaded manifests.
+ */
+export const resetHistory = (
+  root: string,
+  features: ReadonlyArray<string | Feature>,
+  line: string,
+) => {
+  const loaded = loadManifests(root);
+  for (const feature of features) {
+    const found = typeof feature === "string" ? loaded.get(feature) : feature;
+    if (!found) continue;
+    const path = join(root, timelinePath(found));
     if (existsSync(path)) writeFileSync(path, freshHistory(readFileSync(path, "utf8"), line));
   }
 };

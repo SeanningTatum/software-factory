@@ -1,6 +1,8 @@
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured, NotFound, RateLimited } from "#/app/errors.ts";
+import { binding } from "#/features/core/lib/binding.ts";
+import { outsideCall } from "#/features/core/lib/call.ts";
 import { type AllowedType, check, type Rejection } from "../lib/validate.ts";
 
 export class UploadRejected extends Schema.TaggedError<UploadRejected>()("UploadRejected", {
@@ -80,10 +82,7 @@ export class Uploads extends Context.Service<
 >()("app/features/uploads/Uploads") {
   static readonly make = (bucket: Bucket, limiter: Limiter | undefined) => {
     const call = <A>(operation: string, run: () => Promise<A>) =>
-      Effect.tryPromise({
-        try: run,
-        catch: (cause) => new StorageError({ operation, cause }),
-      }).pipe(Effect.withSpan(`r2.${operation}`, { kind: "client" }));
+      outsideCall(`r2.${operation}`, run, (cause) => new StorageError({ operation, cause }));
     const reject = (reason: Rejection) => new UploadRejected({ reason });
 
     const upload = Effect.fn("Uploads.upload")(function* (userId: string, file: File) {
@@ -146,11 +145,9 @@ export class Uploads extends Context.Service<
   static readonly layer = Layer.effect(
     Uploads,
     Effect.gen(function* () {
-      const env = (yield* CloudflareEnv) as unknown as {
-        BUCKET?: Bucket;
-        UPLOAD_LIMITER?: Limiter;
-      };
-      if (env.BUCKET) return Uploads.make(env.BUCKET, env.UPLOAD_LIMITER);
+      const env = yield* CloudflareEnv;
+      const bucket = binding<Bucket>(env, "BUCKET");
+      if (bucket) return Uploads.make(bucket, binding<Limiter>(env, "UPLOAD_LIMITER"));
       const missing = Effect.fail(new NotConfigured({ setting: "BUCKET (R2 binding)" }));
       return Uploads.of({
         upload: () => missing,

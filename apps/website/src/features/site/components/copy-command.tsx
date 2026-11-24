@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useHydrated } from "#/features/ui/components/use-hydrated.ts";
+import { useHydrated } from "#/features/core/ui/components/use-hydrated.ts";
 
 const RESET_MS = 1500;
 

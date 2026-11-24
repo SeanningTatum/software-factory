@@ -10,8 +10,8 @@ const usage = `cf-saas-blocks <command>
                     generated block of each feature's TIMELINE.md from feature.json files
   check             fail when generated files are stale, a file has no owner, or an import
                     crosses a feature boundary
-  list              list optional features
-  remove <feature>  delete a feature and everything it owns
+  list              list what can be removed: optional features and core modules
+  remove <feature>  delete a feature or core module and everything it owns
 
 Add features with: bunx create-tanstack-cf-saas add <feature>`;
 
@@ -29,7 +29,7 @@ const commands: Record<string, () => number | undefined> = {
   },
   list: () => {
     for (const [name, m] of loadManifests(root)) {
-      if (!m.core) console.log(`${name.padEnd(10)} ${m.description}`);
+      if (!m.required) console.log(`${name.padEnd(10)} ${m.description}`);
     }
     return 0;
   },

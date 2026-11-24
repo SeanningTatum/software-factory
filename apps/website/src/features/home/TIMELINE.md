@@ -5,7 +5,7 @@
 
 The home page and the /api/health check.
 
-- Kind: core; it can't be removed
+- Kind: feature, required; it can't be removed
 - Depends on: none
 - Used by: none
 - Bindings: none
@@ -31,5 +31,6 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Imports ui from `src/features/core/ui/`.
 - 2026-11-24 — Removed `routes/index.tsx`; the `site` feature serves `/` on this website.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

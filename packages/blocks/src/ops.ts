@@ -16,15 +16,15 @@ const writePackage = (root: string, pkg: PackageJson) =>
   writeFileSync(join(root, "package.json"), packageText(pkg));
 
 /**
- * Keeps only `selected` features (plus what they require, and every core feature) in a project that
- * has every feature, as `create` does right after copying the template. Returns the optional
- * features kept, in order.
+ * Keeps only `selected` features (plus what they require, and every required feature) in a project
+ * that has every feature, as `create` does right after copying the template. Core modules and
+ * features are pruned alike. Returns the optional features kept, in order.
  */
 export const prune = (root: string, selected: ReadonlyArray<string>): ReadonlyArray<string> => {
   const manifests = loadManifests(root);
-  const optional = selected.filter((n) => !manifests.get(n)?.core);
-  const keep = withRequirements(manifests, optional).filter((n) => !manifests.get(n)?.core);
-  const all = [...manifests.values()].filter((m) => !m.core);
+  const optional = selected.filter((n) => !manifests.get(n)?.required);
+  const keep = withRequirements(manifests, optional).filter((n) => !manifests.get(n)?.required);
+  const all = [...manifests.values()].filter((m) => !m.required);
   const removed = all.filter((m) => !keep.includes(m.name));
   for (const m of removed)
     for (const path of ownedPaths(m)) rmSync(join(root, path), { recursive: true, force: true });
@@ -36,12 +36,15 @@ export const prune = (root: string, selected: ReadonlyArray<string>): ReadonlyAr
 
 export class BlockError extends Error {}
 
-/** Removes one feature: its folder plus its `files`. Refuses core features and features others require. */
+/**
+ * Removes one feature or core module: its folder plus its `files`. Refuses required ones and ones
+ * others require.
+ */
 export const removeBlock = (root: string, name: string) => {
   const manifests = loadManifests(root);
   const manifest = manifests.get(name);
   if (!manifest) throw new BlockError(`"${name}" is not an enabled feature`);
-  if (manifest.core) throw new BlockError(`"${name}" is a core feature; it can't be removed`);
+  if (manifest.required) throw new BlockError(`"${name}" is required; it can't be removed`);
   const dependents = dependentsOf(manifests, [...manifests.keys()], name);
   if (dependents.length) {
     throw new BlockError(`"${name}" is required by ${dependents.join(", ")}; remove those first`);
@@ -53,7 +56,10 @@ export const removeBlock = (root: string, name: string) => {
   sync(root);
 };
 
-/** Copies a feature, and any features it requires that are missing, from a full template. */
+/**
+ * Copies a feature, and any features it requires that are missing, from a full template, each to
+ * the folder it has there (`src/features/<name>` or `src/features/core/<name>`).
+ */
 export const addBlock = (
   root: string,
   templateRoot: string,

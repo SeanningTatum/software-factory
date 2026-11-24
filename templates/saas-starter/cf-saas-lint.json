@@ -8,7 +8,8 @@
     "no-run-effect": [
       "src/app/run-effect.ts",
       "src/app/middleware.ts",
-      "src/features/*/workflows.ts"
+      "src/features/*/workflows.ts",
+      "src/features/core/*/workflows.ts"
     ],
     "no-try-catch": [],
     "no-process-env": ["src/features/*/e2e/**", "src/app/machines.test.ts"]
@@ -22,13 +23,13 @@
     "src/**/nav.ts",
     "src/**/schema.ts",
     "src/**/viewer.ts",
-    "src/features/*/routes/**",
-    "src/features/*/lib/*-client.ts",
-    "src/features/*/api/guard.ts",
-    "src/features/*/api/memory-*.ts",
-    "src/features/*/api/test-*.ts",
-    "src/features/*/workflows.ts",
-    "src/features/observability/lib/log-sink.ts",
+    "src/features/{*,core/*}/routes/**",
+    "src/features/{*,core/*}/lib/*-client.ts",
+    "src/features/{*,core/*}/api/guard.ts",
+    "src/features/{*,core/*}/api/memory-*.ts",
+    "src/features/{*,core/*}/api/test-*.ts",
+    "src/features/{*,core/*}/workflows.ts",
+    "src/features/core/observability/lib/log-sink.ts",
     "src/app/shell.ts",
     "src/app/testing/**"
   ]

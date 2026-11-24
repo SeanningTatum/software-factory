@@ -1,6 +1,6 @@
 import { useMachine } from "@xstate/react";
 import { createContext, type ReactNode, useContext } from "react";
-import { Button } from "#/features/ui/components/button.tsx";
+import { Button } from "#/features/core/ui/components/button.tsx";
 import { consentCookie } from "../lib/consent.ts";
 import { type ConsentInput, consentMachine } from "./consent.machine.ts";
 

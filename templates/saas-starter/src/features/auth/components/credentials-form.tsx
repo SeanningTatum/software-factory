@@ -1,9 +1,9 @@
 import { useMachine } from "@xstate/react";
 import { useId } from "react";
 import { fromPromise } from "xstate";
-import { Button } from "#/features/ui/components/button.tsx";
-import { Input } from "#/features/ui/components/input.tsx";
-import { Label } from "#/features/ui/components/label.tsx";
+import { Button } from "#/features/core/ui/components/button.tsx";
+import { Input } from "#/features/core/ui/components/input.tsx";
+import { Label } from "#/features/core/ui/components/label.tsx";
 import { type Credentials, credentialsMachine } from "./credentials.machine.ts";
 
 interface Props {

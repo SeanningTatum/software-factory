@@ -2,8 +2,8 @@ import { type BetterAuthPlugin, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { type AppEnv, setting } from "#/app/env.ts";
-import type { AnalyticsEvent } from "#/features/analytics/lib/catalog.ts";
-import type { Db } from "#/features/db/api/database.ts";
+import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
+import type { Db } from "#/features/core/db/api/database.ts";
 import { authSchema } from "../schema.ts";
 
 const MIN_SECRET_LENGTH = 32;

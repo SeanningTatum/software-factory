@@ -5,7 +5,7 @@
 
 A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a state machine sets.
 
-- Kind: optional; `cf-saas-blocks remove workflows` takes it out
+- Kind: feature, optional; `cf-saas-blocks remove workflows` takes it out
 - Depends on: none
 - Used by: none
 - Bindings: `ONBOARDING_WORKFLOW` (workflow)
@@ -54,4 +54,5 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Workflow calls run through `outsideCall` and the binding is read with `binding`, both from `core/lib`; imports analytics from `src/features/core/`.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

@@ -69,7 +69,8 @@ export const BlockManifest = Schema.Struct({
   name: Schema.String,
   title: Schema.String,
   description: Schema.String,
-  core: Schema.optionalKey(Schema.Boolean),
+  /** A required feature or module ships in every project and can't be removed. */
+  required: Schema.optionalKey(Schema.Boolean),
   requires: Schema.Array(Schema.String),
   files: Schema.optionalKey(Schema.Array(Schema.String)),
   bindings: Schema.optionalKey(Schema.Array(Binding)),
@@ -91,33 +92,80 @@ export const envNames: ReadonlyArray<EnvName> = ["production", "staging"];
 const decodeManifest = Schema.decodeUnknownSync(BlockManifest);
 
 export const FEATURES_DIR = "src/features";
+/** The group folder for core modules: shared services other features build on, with no pages. */
+export const CORE_DIR = `${FEATURES_DIR}/core`;
+/** Shared pure helpers inside core. Not a module: it has no feature.json and is always there. */
+export const SHARED_LIB_DIR = `${CORE_DIR}/lib`;
 export const MANIFEST_FILE = "feature.json";
+/** Names no feature may take: the core group folder and the shared helpers folder. */
+export const RESERVED_NAMES: ReadonlyArray<string> = ["core", "lib"];
 
-export const readManifest = (path: string): BlockManifest =>
-  decodeManifest(JSON.parse(readFileSync(path, "utf8")));
+/** A manifest plus where it was found: `src/features/<name>` or `src/features/core/<name>`. */
+export type Feature = BlockManifest & {
+  /** The feature's folder, from the project root. */
+  readonly dir: string;
+};
 
-export const featureManifestPath = (name: string) => `${FEATURES_DIR}/${name}/${MANIFEST_FILE}`;
+export const readManifest = (path: string): BlockManifest => {
+  const raw: unknown = JSON.parse(readFileSync(path, "utf8"));
+  if (typeof raw === "object" && raw !== null && "core" in raw) {
+    throw new Error(
+      `${path}: "core" is now "required"; rename the key (a core module is one that lives in ${CORE_DIR})`,
+    );
+  }
+  return decodeManifest(raw);
+};
 
-/** Reads every feature folder that has a feature.json, core features included. */
-export const loadManifests = (root: string): Map<string, BlockManifest> => {
-  const manifests = new Map<string, BlockManifest>();
-  const featuresDir = join(root, FEATURES_DIR);
-  if (!existsSync(featuresDir)) return manifests;
-  for (const entry of readdirSync(featuresDir, { withFileTypes: true })) {
-    const path = join(featuresDir, entry.name, MANIFEST_FILE);
-    if (entry.isDirectory() && existsSync(path)) {
-      const manifest = readManifest(path);
-      if (manifest.name !== entry.name) {
-        throw new Error(`${path}: name "${manifest.name}" must match its folder "${entry.name}"`);
-      }
-      manifests.set(manifest.name, manifest);
+/** Whether a feature lives in the core group. */
+export const isCoreModule = (feature: Pick<Feature, "dir">) =>
+  feature.dir.startsWith(`${CORE_DIR}/`);
+
+/** Folders under `parent` that hold a feature.json. */
+const manifestDirs = (root: string, parent: string): ReadonlyArray<string> => {
+  const full = join(root, parent);
+  if (!existsSync(full)) return [];
+  return readdirSync(full, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(full, e.name, MANIFEST_FILE)))
+    .map((e) => `${parent}/${e.name}`);
+};
+
+/**
+ * Where a feature lives, found by its name: `src/features/core/<name>` or `src/features/<name>`.
+ * Undefined when neither has a feature.json.
+ */
+export const featureDir = (root: string, name: string): string | undefined =>
+  [`${CORE_DIR}/${name}`, `${FEATURES_DIR}/${name}`].find((dir) =>
+    existsSync(join(root, dir, MANIFEST_FILE)),
+  );
+
+/** Reads every feature.json under src/features and src/features/core, required ones included. */
+export const loadManifests = (root: string): Map<string, Feature> => {
+  const manifests = new Map<string, Feature>();
+  const dirs = [...manifestDirs(root, CORE_DIR), ...manifestDirs(root, FEATURES_DIR)];
+  for (const dir of dirs) {
+    const path = `${dir}/${MANIFEST_FILE}`;
+    const folder = dir.slice(dir.lastIndexOf("/") + 1);
+    const manifest = readManifest(join(root, path));
+    if (manifest.name !== folder) {
+      throw new Error(`${path}: name "${manifest.name}" must match its folder "${folder}"`);
     }
+    if (RESERVED_NAMES.includes(manifest.name)) {
+      throw new Error(`${path}: "${manifest.name}" is a reserved name; choose another`);
+    }
+    const other = manifests.get(manifest.name);
+    if (other) {
+      throw new Error(`${path}: "${manifest.name}" is also ${other.dir}; feature names are unique`);
+    }
+    manifests.set(manifest.name, { ...manifest, dir });
   }
   return manifests;
 };
 
 /** What a feature owns: its folder, plus any extra paths its manifest lists. */
-export const ownedPaths = (manifest: BlockManifest): ReadonlyArray<string> => [
-  `${FEATURES_DIR}/${manifest.name}`,
-  ...(manifest.files ?? []),
+export const ownedPaths = (feature: Feature): ReadonlyArray<string> => [
+  feature.dir,
+  ...(feature.files ?? []),
 ];
+
+/** Loaded features by name. */
+export type Features = ReadonlyMap<string, Feature>;

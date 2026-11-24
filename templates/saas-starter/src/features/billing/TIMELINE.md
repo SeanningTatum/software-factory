@@ -5,7 +5,7 @@
 
 Stripe subscriptions through Better Auth's Stripe plugin: checkout, customer portal and webhooks.
 
-- Kind: optional; `cf-saas-blocks remove billing` takes it out
+- Kind: feature, optional; `cf-saas-blocks remove billing` takes it out
 - Depends on: [auth](../auth/TIMELINE.md)
 - Used by: none
 - Bindings: none
@@ -82,5 +82,6 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Imports db and ui from `src/features/core/`.
 - 2026-11-24 — The checkout spec waits for an enabled button and the dashboard before it goes on, and the Stripe Checkout test skips, with the reason, when the page shows the setup hint.
 - 2026-11-24 — Moved into `src/features/billing/` from `src/blocks/billing/`, with pages from `src/routes/(billing)/` when the template switched from blocks to features.

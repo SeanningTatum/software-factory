@@ -2,9 +2,10 @@ import { Context, Effect, Layer, Schema } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured, Unauthorized } from "#/app/errors.ts";
 import { CurrentRequest } from "#/app/request.ts";
-import { Analytics } from "#/features/analytics/api/analytics.ts";
-import type { AnalyticsEvent } from "#/features/analytics/lib/catalog.ts";
-import { Database } from "#/features/db/api/database.ts";
+import { Analytics } from "#/features/core/analytics/api/analytics.ts";
+import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
+import { Database } from "#/features/core/db/api/database.ts";
+import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
 import { authEvents } from "../lib/auth-events.ts";
 import { type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
@@ -86,10 +87,11 @@ export class Auth extends Context.Service<
       );
 
       const call = <A>(operation: string, run: () => Promise<A>) =>
-        Effect.tryPromise({
-          try: run,
-          catch: (cause) => new AuthServiceError({ operation, cause }),
-        }).pipe(Effect.withSpan(`auth.${operation}`, { kind: "client" }));
+        outsideCall(
+          `auth.${operation}`,
+          run,
+          (cause) => new AuthServiceError({ operation, cause }),
+        );
 
       const currentUser = call("getSession", () =>
         instance.api.getSession({ headers: request.info.headers }),

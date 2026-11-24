@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
 import { type AppEnv, CloudflareEnv } from "#/app/env.ts";
-import { makeTestDb, testDatabaseLayer } from "#/features/db/api/test-database.ts";
+import { makeTestDb, testDatabaseLayer } from "#/features/core/db/api/test-database.ts";
 import { subscription } from "../schema.ts";
 import { Billing } from "./billing-service.ts";
 

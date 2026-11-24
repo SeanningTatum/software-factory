@@ -1,8 +1,7 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { contributions, GEN_DIR, ROUTES_DIR } from "./generate.ts";
-import type { Manifests } from "./graph.ts";
-import { type BlockManifest, FEATURES_DIR } from "./manifest.ts";
+import { type BlockManifest, type Feature, type Features, isCoreModule } from "./manifest.ts";
 import type { FeatureScan } from "./scan.ts";
 
 /** Each feature's notes: a generated block `sync` owns, and Decisions and History people write. */
@@ -11,7 +10,8 @@ export const TIMELINE_FILE = "TIMELINE.md";
 export const GENERATED_START = "<!-- generated:start -->";
 export const GENERATED_END = "<!-- generated:end -->";
 
-export const timelinePath = (name: string) => `${FEATURES_DIR}/${name}/${TIMELINE_FILE}`;
+/** Where a feature's TIMELINE.md is, from the project root. */
+export const timelinePath = (feature: Pick<Feature, "dir">) => `${feature.dir}/${TIMELINE_FILE}`;
 
 /** The hand-written part of a new TIMELINE.md. */
 export const TIMELINE_SKELETON = `## Decisions
@@ -26,8 +26,17 @@ export const TIMELINE_SKELETON = `## Decisions
 const code = (items: ReadonlyArray<string>) =>
   items.length ? items.map((i) => `\`${i}\``).join(", ") : "none";
 
-const links = (names: ReadonlyArray<string>) =>
-  names.length ? names.map((n) => `[${n}](../${n}/${TIMELINE_FILE})`).join(", ") : "none";
+/** Links from `from`'s TIMELINE.md to each named feature's. */
+const links = (features: Features, from: Feature, names: ReadonlyArray<string>) =>
+  names.length
+    ? names
+        .map((n) => {
+          const dir = features.get(n)?.dir;
+          const to = dir ? posix.relative(from.dir, dir) : `../${n}`;
+          return `[${n}](${to}/${TIMELINE_FILE})`;
+        })
+        .join(", ")
+    : "none";
 
 /** `NAME (note)` pairs, the name in code. */
 const noted = (items: ReadonlyArray<readonly [string, string | undefined]>) =>
@@ -45,8 +54,8 @@ const settings = (specs: BlockManifest["vars"]) =>
 const GEN_FILE: Readonly<Record<string, string>> = { layer: "layers", viewer: "viewer" };
 
 /** The src/gen files a feature feeds, from the contribution files and routes folder it has. */
-const feeds = (root: string, name: string) => {
-  const dir = join(root, FEATURES_DIR, name);
+const feeds = (root: string, feature: Feature) => {
+  const dir = join(root, feature.dir);
   const fed = contributions
     .filter((c) => existsSync(join(dir, `${c}.ts`)))
     .map((c) => `${GEN_DIR}/${GEN_FILE[c] ?? c}.ts`);
@@ -54,7 +63,7 @@ const feeds = (root: string, name: string) => {
 };
 
 /** Features that list `name` in their `requires`. */
-const usedBy = (manifests: Manifests, name: string) =>
+const usedBy = (manifests: Features, name: string) =>
   [...manifests.values()]
     .filter((m) => m.requires.includes(name))
     .map((m) => m.name)
@@ -63,25 +72,26 @@ const usedBy = (manifests: Manifests, name: string) =>
 /** The generated block of a feature's TIMELINE.md, markers included. */
 export const timelineSection = (
   root: string,
-  manifests: Manifests,
-  manifest: BlockManifest,
+  manifests: Features,
+  manifest: Feature,
   scan: FeatureScan,
 ): string => {
-  const kind = manifest.core
-    ? "core; it can't be removed"
-    : `optional; \`cf-saas-blocks remove ${manifest.name}\` takes it out`;
+  const where = isCoreModule(manifest) ? "core module" : "feature";
+  const kind = manifest.required
+    ? `${where}, required; it can't be removed`
+    : `${where}, optional; \`cf-saas-blocks remove ${manifest.name}\` takes it out`;
   const machines = scan.machines.length
     ? `${code(scan.machines)}. Diagrams under Machines, from \`bun run machines:print\`.`
     : "none";
   const lines = [
     `- Kind: ${kind}`,
-    `- Depends on: ${links([...manifest.requires].sort())}`,
-    `- Used by: ${links(usedBy(manifests, manifest.name))}`,
+    `- Depends on: ${links(manifests, manifest, [...manifest.requires].sort())}`,
+    `- Used by: ${links(manifests, manifest, usedBy(manifests, manifest.name))}`,
     `- Bindings: ${noted((manifest.bindings ?? []).map((b) => [b.binding, b.type] as const))}`,
     `- Vars: ${settings(manifest.vars)}`,
     `- Secrets: ${settings(manifest.secrets)}`,
     `- Also owns: ${code([...(manifest.files ?? [])].sort())}`,
-    `- Feeds: ${code(feeds(root, manifest.name))}`,
+    `- Feeds: ${code(feeds(root, manifest))}`,
     `- Routes: ${code(scan.routes)}`,
     `- Services: ${code(scan.services)}`,
     `- Errors: ${code(scan.errors)}`,

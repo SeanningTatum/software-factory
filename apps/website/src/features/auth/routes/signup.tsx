@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "#/features/ui/components/card.tsx";
+} from "#/features/core/ui/components/card.tsx";
 
 export const Route = createFileRoute("/signup")({
   component: SignUp,

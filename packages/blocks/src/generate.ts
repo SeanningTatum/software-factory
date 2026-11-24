@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { type Manifests, topoSort } from "./graph.ts";
-import { type BlockManifest, FEATURES_DIR } from "./manifest.ts";
+import type { Feature, Features } from "./manifest.ts";
 
 export const GEN_DIR = "src/gen";
 
@@ -25,17 +25,22 @@ export const ROUTES_DIR = "routes";
 
 const camel = (name: string) => name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 
-const has = (root: string, feature: string, file: Contribution) =>
-  existsSync(join(root, FEATURES_DIR, feature, `${file}.ts`));
+const has = (root: string, feature: Feature, file: Contribution) =>
+  existsSync(join(root, feature.dir, `${file}.ts`));
 
-const importPath = (feature: string, file: Contribution) => `../features/${feature}/${file}.ts`;
+/** A feature's folder as seen from src/gen or src/routes: `../features/...`. */
+const fromSrc = (feature: Feature) => `../${feature.dir.replace(/^src\//, "")}`;
 
-const layersFile = (root: string, order: ReadonlyArray<string>) => {
+const importPath = (feature: Feature, file: Contribution) => `${fromSrc(feature)}/${file}.ts`;
+
+type Order = ReadonlyArray<Feature>;
+
+const layersFile = (root: string, order: Order) => {
   const withLayer = order.filter((f) => has(root, f, "layer"));
   const imports = withLayer.map(
-    (f) => `import { layer as ${camel(f)} } from "${importPath(f, "layer")}";`,
+    (f) => `import { layer as ${camel(f.name)} } from "${importPath(f, "layer")}";`,
   );
-  const [first, ...rest] = withLayer.map(camel);
+  const [first, ...rest] = withLayer.map((f) => camel(f.name));
   const body = first
     ? rest.reduce((acc, next) => `${next}.pipe(Layer.provideMerge(${acc}))`, first)
     : "Layer.empty";
@@ -43,24 +48,25 @@ const layersFile = (root: string, order: ReadonlyArray<string>) => {
   return `${HEADER}${effectImport}${imports.join("\n")}\n\n/** Every enabled feature's services, each provided with the features before it. */\nexport const FeaturesLayer = ${body};\n`;
 };
 
-const errorsFile = (root: string, order: ReadonlyArray<string>) => {
+const errorsFile = (root: string, order: Order) => {
   const features = order.filter((f) => has(root, f, "errors"));
   const imports = features.map(
-    (f) => `import type * as ${camel(f)}Errors from "${importPath(f, "errors")}";`,
+    (f) => `import type * as ${camel(f.name)}Errors from "${importPath(f, "errors")}";`,
   );
   const values = features.map(
-    (f) => `import { errorStatus as ${camel(f)}ErrorStatus } from "${importPath(f, "errors")}";`,
+    (f) =>
+      `import { errorStatus as ${camel(f.name)}ErrorStatus } from "${importPath(f, "errors")}";`,
   );
   const type = features.length
-    ? features.map((f) => `${camel(f)}Errors.Errors`).join(" | ")
+    ? features.map((f) => `${camel(f.name)}Errors.Errors`).join(" | ")
     : "never";
-  const status = features.map((f) => `  ...${camel(f)}ErrorStatus,`).join("\n");
+  const status = features.map((f) => `  ...${camel(f.name)}ErrorStatus,`).join("\n");
   return `${HEADER}${[...imports, ...values].join("\n")}\n\nexport type FeatureError = ${type};\n\nexport const featureErrorStatus = {\n${status}\n} as const;\n`;
 };
 
 const listFile = (
   root: string,
-  order: ReadonlyArray<string>,
+  order: Order,
   file: Contribution,
   exported: string,
   name: string,
@@ -68,23 +74,23 @@ const listFile = (
 ) => {
   const features = order.filter((f) => has(root, f, file));
   const imports = features.map(
-    (f) => `import { ${exported} as ${camel(f)} } from "${importPath(f, file)}";`,
+    (f) => `import { ${exported} as ${camel(f.name)} } from "${importPath(f, file)}";`,
   );
-  const items = features.map((f) => `...${camel(f)}`).join(", ");
+  const items = features.map((f) => `...${camel(f.name)}`).join(", ");
   return `${HEADER}${imports.join("\n")}\n\n/** ${doc} */\nexport const ${name} = [${items}] as const;\n`;
 };
 
-const authPluginsFile = (root: string, order: ReadonlyArray<string>) => {
+const authPluginsFile = (root: string, order: Order) => {
   const features = order.filter((f) => has(root, f, "auth-plugins"));
   const imports = features.map(
-    (f) => `import { authPlugins as ${camel(f)} } from "${importPath(f, "auth-plugins")}";`,
+    (f) => `import { authPlugins as ${camel(f.name)} } from "${importPath(f, "auth-plugins")}";`,
   );
-  return `${HEADER}${imports.join("\n")}\n\n/** Better Auth plugin factories from every feature that extends auth. */\nexport const featureAuthPlugins = [${features.map(camel).join(", ")}] as const;\n`;
+  return `${HEADER}${imports.join("\n")}\n\n/** Better Auth plugin factories from every feature that extends auth. */\nexport const featureAuthPlugins = [${features.map((f) => camel(f.name)).join(", ")}] as const;\n`;
 };
 
-const workflowsFile = (manifests: Manifests, order: ReadonlyArray<string>) => {
+const workflowsFile = (order: Order) => {
   const lines = order.flatMap((f) =>
-    (manifests.get(f)?.bindings ?? [])
+    (f.bindings ?? [])
       .filter((x) => x.type === "workflow")
       .map((x) => `export { ${x.class_name} } from "${importPath(f, "workflows")}";`),
   );
@@ -92,17 +98,17 @@ const workflowsFile = (manifests: Manifests, order: ReadonlyArray<string>) => {
 };
 
 /** Mounts each feature's `routes/` folder at the URL root. Paths are relative to src/routes. */
-const routesFile = (root: string, order: ReadonlyArray<string>) => {
+const routesFile = (root: string, order: Order) => {
   const mounts = order
-    .filter((f) => existsSync(join(root, FEATURES_DIR, f, ROUTES_DIR)))
-    .map((f) => `  physical("../features/${f}/${ROUTES_DIR}"),`);
+    .filter((f) => existsSync(join(root, f.dir, ROUTES_DIR)))
+    .map((f) => `  physical("${fromSrc(f)}/${ROUTES_DIR}"),`);
   const imports = mounts.length ? "physical, rootRoute" : "rootRoute";
   const list = mounts.length ? `[\n${mounts.join("\n")}\n]` : "[]";
   return `${HEADER}import { ${imports} } from "@tanstack/virtual-file-routes";\n\n/** The route tree: the root route plus every enabled feature's routes folder. */\nexport const routes = rootRoute("__root.tsx", ${list});\n`;
 };
 
-const envFile = (manifests: Manifests, order: ReadonlyArray<string>) => {
-  const all = order.map((f) => manifests.get(f)).filter((m): m is BlockManifest => !!m);
+const envFile = (order: Order) => {
+  const all = order;
   const secrets = all.flatMap((m) => Object.keys(m.secrets ?? {}));
   const required = all.flatMap((m) =>
     Object.entries({ ...m.vars, ...m.secrets })
@@ -114,20 +120,23 @@ const envFile = (manifests: Manifests, order: ReadonlyArray<string>) => {
 };
 
 /**
- * Every feature in the order the generators use: core features first, then the rest, each after
- * everything it requires and otherwise by name.
+ * Every feature in the order the generators use: required features first, then the rest, each
+ * after everything it requires and otherwise by name.
  */
 export const enabledOrder = (manifests: Manifests): ReadonlyArray<string> => {
   const names = [...manifests.keys()];
-  const isCore = (name: string) => manifests.get(name)?.core === true;
-  const core = topoSort(manifests, names.filter(isCore));
-  const rest = topoSort(manifests, names).filter((name) => !isCore(name));
-  return [...core, ...rest];
+  const isRequired = (name: string) => manifests.get(name)?.required === true;
+  const required = topoSort(manifests, names.filter(isRequired));
+  const rest = topoSort(manifests, names).filter((name) => !isRequired(name));
+  return [...required, ...rest];
 };
 
+const ordered = (features: Features): Order =>
+  enabledOrder(features).flatMap((name) => features.get(name) ?? []);
+
 /** Every generated file, keyed by its path from the project root. */
-export const generateFiles = (root: string, manifests: Manifests): ReadonlyMap<string, string> => {
-  const order = enabledOrder(manifests);
+export const generateFiles = (root: string, features: Features): ReadonlyMap<string, string> => {
+  const order = ordered(features);
   return new Map([
     [`${GEN_DIR}/layers.ts`, layersFile(root, order)],
     [`${GEN_DIR}/errors.ts`, errorsFile(root, order)],
@@ -154,7 +163,7 @@ export const generateFiles = (root: string, manifests: Manifests): ReadonlyMap<s
       ),
     ],
     [`${GEN_DIR}/auth-plugins.ts`, authPluginsFile(root, order)],
-    [`${GEN_DIR}/workflows.ts`, workflowsFile(manifests, order)],
+    [`${GEN_DIR}/workflows.ts`, workflowsFile(order)],
     [
       `${GEN_DIR}/viewer.ts`,
       listFile(
@@ -166,7 +175,7 @@ export const generateFiles = (root: string, manifests: Manifests): ReadonlyMap<s
         "Who is looking at the page; the first feature that knows wins.",
       ),
     ],
-    [`${GEN_DIR}/env.ts`, envFile(manifests, order)],
+    [`${GEN_DIR}/env.ts`, envFile(order)],
     [`${GEN_DIR}/routes.ts`, routesFile(root, order)],
   ]);
 };

@@ -15,7 +15,7 @@ const manifest = (name: string, extra: Record<string, unknown> = {}) =>
     ...extra,
   });
 
-/** Core `ui`, optional `db`, and `auth` which requires `db`. */
+/** Required core module `ui`, optional core module `db`, and feature `auth` which requires `db`. */
 const project = () => {
   const root = mkdtempSync(join(tmpdir(), "cf-saas-timeline-"));
   const files: Record<string, string> = {
@@ -26,8 +26,8 @@ const project = () => {
       managed: { bindings: [], vars: [] },
     }),
     "wrangler.jsonc": '{ "name": "app" }\n',
-    "src/features/ui/feature.json": manifest("ui", { core: true }),
-    "src/features/db/feature.json": manifest("db", {
+    "src/features/core/ui/feature.json": manifest("ui", { required: true }),
+    "src/features/core/db/feature.json": manifest("db", {
       files: ["drizzle"],
       bindings: [{ type: "d1", binding: "DB", database: "{project}-db{suffix}" }],
       secrets: {
@@ -35,8 +35,8 @@ const project = () => {
         A_KEY: { description: "a", required: false },
       },
     }),
-    "src/features/db/layer.ts": "export const layer = 1;\n",
-    "src/features/db/api/database.ts": "export class Database extends Context.Service<\n",
+    "src/features/core/db/layer.ts": "export const layer = 1;\n",
+    "src/features/core/db/api/database.ts": "export class Database extends Context.Service<\n",
     "src/features/auth/feature.json": manifest("auth", { requires: ["db"] }),
     "src/features/auth/routes/login.tsx": "",
     "src/features/auth/components/credentials.machine.ts": "",
@@ -54,22 +54,23 @@ describe("TIMELINE.md", () => {
   test("sync writes one per feature with the skeleton, and a second sync changes nothing", () => {
     const root = project();
     sync(root);
-    const db = read(root, "src/features/db/TIMELINE.md");
+    const db = read(root, "src/features/core/db/TIMELINE.md");
     expect(db).toContain(
-      "# DB (`db`)\n\ndb.\n\n- Kind: optional; `cf-saas-blocks remove db` takes it out",
+      "# DB (`db`)\n\ndb.\n\n- Kind: core module, optional; `cf-saas-blocks remove db` takes it out",
     );
-    expect(db).toContain("- Used by: [auth](../auth/TIMELINE.md)\n");
+    expect(db).toContain("- Used by: [auth](../../auth/TIMELINE.md)\n");
     expect(db).toContain("- Bindings: `DB` (d1)\n");
     expect(db).toContain("- Secrets: `A_KEY`, `DB_TOKEN` (required)\n");
     expect(db).toContain("- Also owns: `drizzle`\n- Feeds: `src/gen/layers.ts`\n");
     expect(db).toContain("- Services: `Database`\n");
     expect(db).toEndWith(`<!-- generated:end -->\n\n${TIMELINE_SKELETON}`);
     const auth = read(root, "src/features/auth/TIMELINE.md");
-    expect(auth).toContain("- Depends on: [db](../db/TIMELINE.md)\n");
+    expect(auth).toContain("- Kind: feature, optional; `cf-saas-blocks remove auth` takes it out");
+    expect(auth).toContain("- Depends on: [db](../core/db/TIMELINE.md)\n");
     expect(auth).toContain("- Routes: `/login`\n");
     expect(auth).toContain("- Machines: `components/credentials.machine.ts`. Diagrams under");
-    expect(read(root, "src/features/ui/TIMELINE.md")).toContain(
-      "- Kind: core; it can't be removed",
+    expect(read(root, "src/features/core/ui/TIMELINE.md")).toContain(
+      "- Kind: core module, required; it can't be removed",
     );
     expect(sync(root)).toEqual([]);
     expect(check(root)).toEqual([]);
@@ -78,7 +79,7 @@ describe("TIMELINE.md", () => {
   test("keeps the hand-written part and check catches a hand edit to the generated block", () => {
     const root = project();
     sync(root);
-    const path = "src/features/db/TIMELINE.md";
+    const path = "src/features/core/db/TIMELINE.md";
     const handWritten = read(root, path).replace(
       "## History\n",
       "## History\n\n- 2026-11-24 — Born.\n",
@@ -102,7 +103,7 @@ describe("TIMELINE.md", () => {
       "- **auth** (optional): auth. Requires: db. [TIMELINE.md](src/features/auth/TIMELINE.md)",
     );
     removeBlock(root, "auth");
-    expect(read(root, "src/features/db/TIMELINE.md")).toContain("- Used by: none\n");
+    expect(read(root, "src/features/core/db/TIMELINE.md")).toContain("- Used by: none\n");
     expect(read(root, "FEATURES.md")).not.toContain("auth");
     expect(existsSync(join(root, "src/features/auth"))).toBe(false);
     expect(check(root)).toEqual([]);
@@ -118,17 +119,20 @@ describe("timelineText", () => {
 });
 
 describe("FEATURES.md", () => {
-  test("lists core features first, and check fails when it is missing", () => {
+  test("groups core modules and features, required first, and check fails when it is missing", () => {
     const root = project();
     sync(root);
     const lines = read(root, "FEATURES.md")
       .split("\n")
-      .filter((l) => l.startsWith("- "));
-    expect(lines.map((l) => l.slice(0, l.indexOf(":")))).toEqual([
-      "- **ui** (core)",
+      .filter((l) => l.startsWith("- ") || l.startsWith("## "));
+    expect(lines.map((l) => (l.startsWith("- ") ? l.slice(0, l.indexOf(":")) : l))).toEqual([
+      "## Core modules",
+      "- **ui** (required)",
       "- **db** (optional)",
+      "## Features",
       "- **auth** (optional)",
     ]);
+    expect(read(root, "FEATURES.md")).toContain("[TIMELINE.md](src/features/core/db/TIMELINE.md)");
     writeFileSync(join(root, "FEATURES.md"), "");
     expect(check(root).map((p) => p.file)).toEqual(["FEATURES.md"]);
   });

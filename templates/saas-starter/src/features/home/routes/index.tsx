@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { buttonVariants } from "#/features/ui/components/button.tsx";
+import { buttonVariants } from "#/features/core/ui/components/button.tsx";
 
 export const Route = createFileRoute("/")({
   component: Home,

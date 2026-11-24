@@ -1,6 +1,8 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";
+import { binding } from "#/features/core/lib/binding.ts";
+import { outsideCall } from "#/features/core/lib/call.ts";
 import type { OnboardingParams } from "./onboarding.ts";
 
 /** The part of a Workflow binding the service uses. */
@@ -27,10 +29,11 @@ export class Onboarding extends Context.Service<
 >()("app/features/workflows/Onboarding") {
   static readonly fromBinding = (binding: WorkflowBinding) => {
     const call = <A>(operation: string, run: () => Promise<A>) =>
-      Effect.tryPromise({
-        try: run,
-        catch: (cause) => new WorkflowError({ operation, cause }),
-      }).pipe(Effect.withSpan(`workflow.onboarding.${operation}`, { kind: "client" }));
+      outsideCall(
+        `workflow.onboarding.${operation}`,
+        run,
+        (cause) => new WorkflowError({ operation, cause }),
+      );
     return Onboarding.of({
       start: (params) => call("create", () => binding.create({ params })),
       status: (id) => call("status", async () => (await binding.get(id)).status()),
@@ -41,9 +44,8 @@ export class Onboarding extends Context.Service<
     Onboarding,
     Effect.gen(function* () {
       const env = yield* CloudflareEnv;
-      const binding = (env as unknown as { ONBOARDING_WORKFLOW?: WorkflowBinding })
-        .ONBOARDING_WORKFLOW;
-      if (binding) return Onboarding.fromBinding(binding);
+      const workflow = binding<WorkflowBinding>(env, "ONBOARDING_WORKFLOW");
+      if (workflow) return Onboarding.fromBinding(workflow);
       const missing = Effect.fail(
         new NotConfigured({ setting: "ONBOARDING_WORKFLOW (Workflow binding)" }),
       );

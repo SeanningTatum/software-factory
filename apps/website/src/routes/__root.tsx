@@ -2,10 +2,11 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { getShell } from "#/app/shell.ts";
-import { AnalyticsTracker } from "#/features/analytics/components/tracker.tsx";
 import { ConsentProvider } from "#/features/consent/components/consent-banner.tsx";
-import { SiteFooter } from "#/features/ui/components/site-footer.tsx";
-import { SiteHeader } from "#/features/ui/components/site-header.tsx";
+import { CookieSettingsButton } from "#/features/consent/components/cookie-settings.tsx";
+import { AnalyticsTracker } from "#/features/consent/components/tracker.tsx";
+import { SiteFooter } from "#/features/core/ui/components/site-footer.tsx";
+import { SiteHeader } from "#/features/core/ui/components/site-header.tsx";
 import appCss from "../styles.css?url";
 
 export const APP_NAME = "tanstack-cf-saas";
@@ -38,7 +39,9 @@ function RootComponent() {
         <div className="flex-1">
           <Outlet />
         </div>
-        <SiteFooter />
+        <SiteFooter>
+          <CookieSettingsButton />
+        </SiteFooter>
       </div>
       <AnalyticsTracker />
     </ConsentProvider>

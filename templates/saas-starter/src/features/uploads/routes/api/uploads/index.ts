@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Effect } from "effect";
 import { InvalidInput } from "#/app/errors.ts";
 import { runResponse } from "#/app/run-effect.ts";
-import { Analytics } from "#/features/analytics/api/analytics.ts";
 import { Auth } from "#/features/auth/api/auth-service.ts";
+import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import { Uploads } from "#/features/uploads/api/uploads.ts";
 import { MAX_BYTES } from "#/features/uploads/lib/validate.ts";
 

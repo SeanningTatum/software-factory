@@ -1,24 +1,30 @@
-/** What the landing page and docs say about each optional feature. A test keeps it in step with each feature.json. */
+/**
+ * What the landing page and docs say about each optional feature and core module. A test keeps it
+ * in step with each feature.json and where it lives.
+ */
 export interface FeatureInfo {
   readonly name: string;
   readonly title: string;
+  /** A core module, in `src/features/core/`: a shared service or set of components, no pages. */
+  readonly core: boolean;
   readonly requires: ReadonlyArray<string>;
   readonly summary: string;
   readonly brings: ReadonlyArray<string>;
 }
 
+/** The core modules every project has. They can't be removed. */
+export const requiredModules: ReadonlyArray<string> = ["observability", "analytics", "ui"];
+
 /** The features every project has. They can't be removed. */
-export const coreFeatures: ReadonlyArray<string> = [
-  "observability",
-  "analytics",
-  "consent",
-  "ui",
-  "home",
-];
+export const requiredFeatures: ReadonlyArray<string> = ["consent", "home"];
+
+/** Everything every project has, core modules first. */
+export const requiredAll: ReadonlyArray<string> = [...requiredModules, ...requiredFeatures];
 
 export const features: ReadonlyArray<FeatureInfo> = [
   {
     name: "db",
+    core: true,
     title: "Database",
     requires: [],
     summary: "Cloudflare D1 (SQLite) through Drizzle, behind an Effect Database service.",
@@ -30,6 +36,7 @@ export const features: ReadonlyArray<FeatureInfo> = [
   },
   {
     name: "auth",
+    core: false,
     title: "Auth",
     requires: ["db"],
     summary: "Better Auth with email and password, and GitHub once you add keys.",
@@ -41,6 +48,7 @@ export const features: ReadonlyArray<FeatureInfo> = [
   },
   {
     name: "billing",
+    core: false,
     title: "Billing",
     requires: ["auth"],
     summary: "Stripe subscriptions through Better Auth's Stripe plugin.",
@@ -52,6 +60,7 @@ export const features: ReadonlyArray<FeatureInfo> = [
   },
   {
     name: "kv",
+    core: true,
     title: "KV",
     requires: [],
     summary: "Workers KV behind a typed KeyValue service.",
@@ -59,6 +68,7 @@ export const features: ReadonlyArray<FeatureInfo> = [
   },
   {
     name: "workflows",
+    core: false,
     title: "Workflows",
     requires: [],
     summary: "A durable Cloudflare Workflow whose steps are Effects.",
@@ -69,6 +79,7 @@ export const features: ReadonlyArray<FeatureInfo> = [
   },
   {
     name: "uploads",
+    core: false,
     title: "Uploads",
     requires: ["auth"],
     summary: "Per-user file uploads to R2.",

@@ -20,7 +20,7 @@ function GettingStarted() {
       <P>
         <code>--features</code> takes <code>db</code>, <code>auth</code>, <code>billing</code>,{" "}
         <code>kv</code>, <code>workflows</code> and <code>uploads</code>. Leave it empty for the
-        core features alone.
+        required ones alone.
       </P>
       <H2>Run it</H2>
       <Code>{"cd my-app\nbun run db:migrate:local\nbun run dev"}</Code>

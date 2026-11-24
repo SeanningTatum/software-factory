@@ -3,7 +3,15 @@ import { dirname, join, normalize, relative } from "node:path";
 import { FEATURES_INDEX, featuresIndex } from "./features-index.ts";
 import { devVarsExample, generateFiles } from "./generate.ts";
 import { withRequirements } from "./graph.ts";
-import { FEATURES_DIR, featureManifestPath, loadManifests } from "./manifest.ts";
+import {
+  CORE_DIR,
+  FEATURES_DIR,
+  type Features,
+  isCoreModule,
+  loadManifests,
+  MANIFEST_FILE,
+  SHARED_LIB_DIR,
+} from "./manifest.ts";
 import { packageText, withBlockPackages } from "./package-json.ts";
 import { readProject, writeProject } from "./project.ts";
 import { scanFeature } from "./scan.ts";
@@ -15,11 +23,12 @@ const DEV_VARS_EXAMPLE = ".dev.vars.example";
 const read = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : undefined);
 
 /** Each feature's TIMELINE.md with a fresh generated block, plus the FEATURES.md index. */
-const docs = (root: string, manifests: ReturnType<typeof loadManifests>) => {
+const docs = (root: string, manifests: Features) => {
   const out = new Map<string, string>();
-  for (const [name, manifest] of manifests) {
-    const section = timelineSection(root, manifests, manifest, scanFeature(root, name));
-    out.set(timelinePath(name), timelineText(read(join(root, timelinePath(name))), section));
+  for (const manifest of manifests.values()) {
+    const section = timelineSection(root, manifests, manifest, scanFeature(root, manifest.dir));
+    const path = timelinePath(manifest);
+    out.set(path, timelineText(read(join(root, path)), section));
   }
   out.set(FEATURES_INDEX, featuresIndex(manifests));
   return out;
@@ -83,17 +92,29 @@ export const APP_FILES: ReadonlyArray<string> = [
   "src/styles.css",
 ];
 
+/** The owner of the shared helpers in src/features/core/lib. Never a feature name: those have no "/". */
+export const SHARED_LIB = "core/lib";
+
 /**
  * Who owns a path under src: a feature's name, "app" for the kernel and the files at the top of
- * src, "gen" for generated files, or undefined for a file that has no place.
+ * src, "gen" for generated files, "core/lib" for the shared helpers, or undefined for a file that
+ * has no place.
  */
 export const ownerOf = (path: string): string | undefined => {
-  const feature = /^src\/features\/([^/]+)\//.exec(path);
+  if (path.startsWith(`${SHARED_LIB_DIR}/`)) return SHARED_LIB;
+  const core = new RegExp(`^${CORE_DIR}/([^/]+)/`).exec(path);
+  if (core?.[1]) return core[1];
+  if (path.startsWith(`${CORE_DIR}/`)) return undefined;
+  const feature = new RegExp(`^${FEATURES_DIR}/([^/]+)/`).exec(path);
   if (feature?.[1]) return feature[1];
   if (path.startsWith("src/gen/") || path === "src/routeTree.gen.ts") return "gen";
   if (path.startsWith(`${APP_DIR}/`) || APP_FILES.includes(path)) return "app";
   return undefined;
 };
+
+/** The feature folder a path sits in, e.g. `src/features/core/kv`. */
+const folderOf = (path: string, owner: string) =>
+  path.startsWith(`${CORE_DIR}/${owner}/`) ? `${CORE_DIR}/${owner}` : `${FEATURES_DIR}/${owner}`;
 
 const resolveImport = (root: string, file: string, spec: string): string | undefined => {
   if (spec.startsWith("#/")) return `src/${spec.slice(2)}`;
@@ -106,23 +127,42 @@ export interface Problem {
   readonly message: string;
 }
 
-type Manifests = ReturnType<typeof loadManifests>;
+const KERNEL_RULE =
+  "src/app and the files at the top of src may import only the app, src/gen and required features";
+const LIB_RULE = `${SHARED_LIB_DIR} may import only src/app`;
+const CORE_RULE =
+  'a core module may import only the app, src/gen, core/lib and other core modules (an optional one only if it is in "requires")';
+
+/** Why a core module may not import `target`, or undefined when it may. */
+const coreCrossing = (manifests: Features, owner: string, target: string) => {
+  const to = manifests.get(target);
+  if (to && !isCoreModule(to)) {
+    return `core module "${owner}" imports feature "${target}", which is outside core; nothing in ${CORE_DIR} imports a feature outside it`;
+  }
+  if (to?.required || withRequirements(manifests, [owner]).includes(target)) return undefined;
+  return `core module "${owner}" imports optional module "${target}" without listing it in "requires"; ${CORE_RULE}`;
+};
 
 /** Why `owner` may not import `target`, or undefined when it may. */
-const crossing = (manifests: Manifests, owner: string, target: string): string | undefined => {
-  if (target === "app" || target === "gen" || target === owner) return undefined;
-  if (manifests.get(target)?.core) return undefined;
+const crossing = (manifests: Features, owner: string, target: string): string | undefined => {
+  if (target === "app" || target === owner) return undefined;
+  if (owner === SHARED_LIB) return `${SHARED_LIB_DIR} imports ${target}; ${LIB_RULE}`;
+  if (target === "gen") return undefined;
   if (owner === "app") {
-    return `the app imports feature "${target}"; src/app and the files at the top of src may import only the app, src/gen and core features`;
+    if (target === SHARED_LIB) return `the app imports ${SHARED_LIB_DIR}; ${KERNEL_RULE}`;
+    return manifests.get(target)?.required
+      ? undefined
+      : `the app imports feature "${target}"; ${KERNEL_RULE}`;
   }
-  if (manifests.get(owner)?.core) {
-    return `core feature "${owner}" imports feature "${target}"; core features may import only the app, src/gen and core features`;
-  }
+  if (target === SHARED_LIB) return undefined;
+  const from = manifests.get(owner);
+  if (from && isCoreModule(from)) return coreCrossing(manifests, owner, target);
+  if (manifests.get(target)?.required) return undefined;
   if (withRequirements(manifests, [owner]).includes(target)) return undefined;
   return `feature "${owner}" imports feature "${target}" without listing it in "requires"`;
 };
 
-const importProblems = (root: string, manifests: Manifests, file: string, owner: string) => {
+const importProblems = (root: string, manifests: Features, file: string, owner: string) => {
   const problems: Array<Problem> = [];
   const text = readFileSync(join(root, file), "utf8");
   for (const match of text.matchAll(IMPORT)) {
@@ -135,6 +175,21 @@ const importProblems = (root: string, manifests: Manifests, file: string, owner:
   return problems;
 };
 
+/** Why a file has no proper owner, or undefined when it has one. */
+const placeProblem = (manifests: Features, file: string, owner: string | undefined) => {
+  if (owner === undefined) {
+    return file.startsWith(`${CORE_DIR}/`)
+      ? `has no owner; put it in a module under ${CORE_DIR} or in ${SHARED_LIB_DIR}`
+      : `has no owner; move it into ${APP_DIR} or a feature under ${FEATURES_DIR}`;
+  }
+  if (owner === "app" || owner === SHARED_LIB) return undefined;
+  const folder = folderOf(file, owner);
+  const manifest = manifests.get(owner);
+  if (manifest?.dir === folder) return undefined;
+  const elsewhere = manifest ? `; "${owner}" lives in ${manifest.dir}` : "";
+  return `belongs to feature "${owner}", which has no ${folder}/${MANIFEST_FILE}${elsewhere}`;
+};
+
 /** Files with no owner, and imports that cross a feature boundary the manifests don't allow. */
 export const boundaryProblems = (root: string): ReadonlyArray<Problem> => {
   const manifests = loadManifests(root);
@@ -142,21 +197,12 @@ export const boundaryProblems = (root: string): ReadonlyArray<Problem> => {
   for (const file of walk(join(root, "src")).map((f) => relative(root, f))) {
     const owner = ownerOf(file);
     if (owner === "gen") continue;
-    if (owner === undefined) {
-      problems.push({
-        file,
-        message: `has no owner; move it into ${APP_DIR} or a feature under ${FEATURES_DIR}`,
-      });
+    const message = placeProblem(manifests, file, owner);
+    if (message) {
+      problems.push({ file, message });
       continue;
     }
-    if (owner !== "app" && !manifests.has(owner)) {
-      problems.push({
-        file,
-        message: `belongs to feature "${owner}", which has no ${featureManifestPath(owner)}`,
-      });
-      continue;
-    }
-    if (SOURCE.test(file)) problems.push(...importProblems(root, manifests, file, owner));
+    if (owner && SOURCE.test(file)) problems.push(...importProblems(root, manifests, file, owner));
   }
   return problems;
 };

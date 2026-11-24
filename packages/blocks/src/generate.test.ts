@@ -3,23 +3,25 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { devVarsExample, enabledOrder, generateFiles } from "./generate.ts";
-import type { BlockManifest } from "./manifest.ts";
+import type { BlockManifest, Feature } from "./manifest.ts";
 
-const feature = (name: string, extra: Partial<BlockManifest> = {}): BlockManifest => ({
+const feature = (name: string, extra: Partial<BlockManifest> = {}, core = false): Feature => ({
   name,
   title: name,
   description: name,
   requires: [],
+  dir: core ? `src/features/core/${name}` : `src/features/${name}`,
   ...extra,
 });
 
+/** `ui`, `analytics` and `db` are core modules; `home` and `auth` are features. */
 const manifests = new Map(
   [
-    feature("ui", { core: true }),
-    feature("home", { core: true, vars: { APP_URL: { description: "url", required: true } } }),
+    feature("ui", { required: true }, true),
+    feature("home", { required: true, vars: { APP_URL: { description: "url", required: true } } }),
     feature("auth", { requires: ["db"] }),
-    feature("db", { secrets: { DB_TOKEN: { description: "token", required: false } } }),
-    feature("analytics", { core: true }),
+    feature("db", { secrets: { DB_TOKEN: { description: "token", required: false } } }, true),
+    feature("analytics", { required: true }, true),
   ].map((m) => [m.name, m]),
 );
 
@@ -33,7 +35,7 @@ const project = (files: ReadonlyArray<string>) => {
 };
 
 describe("enabledOrder", () => {
-  test("puts core features first, then the rest after what they require", () => {
+  test("puts required features first, then the rest after what they require", () => {
     expect(enabledOrder(manifests)).toEqual(["analytics", "home", "ui", "db", "auth"]);
   });
 });
@@ -44,8 +46,9 @@ describe("generateFiles", () => {
     "src/features/home/nav.ts",
     "src/features/auth/routes/login.tsx",
     "src/features/auth/layer.ts",
-    "src/features/db/layer.ts",
-    "src/features/ui/components/button.tsx",
+    "src/features/core/db/layer.ts",
+    "src/features/core/analytics/routes/api/events.ts",
+    "src/features/core/ui/components/button.tsx",
   ]);
   const files = generateFiles(root, manifests);
 
@@ -56,6 +59,7 @@ describe("generateFiles", () => {
         "",
         "/** The route tree: the root route plus every enabled feature's routes folder. */",
         'export const routes = rootRoute("__root.tsx", [',
+        '  physical("../features/core/analytics/routes"),',
         '  physical("../features/home/routes"),',
         '  physical("../features/auth/routes"),',
         "]);",
@@ -69,7 +73,10 @@ describe("generateFiles", () => {
     expect(text).toContain('export const routes = rootRoute("__root.tsx", []);');
   });
 
-  test("gathers contributions from feature folders", () => {
+  test("gathers contributions from feature folders and core modules", () => {
+    expect(files.get("src/gen/layers.ts")).toContain(
+      'import { layer as db } from "../features/core/db/layer.ts";',
+    );
     expect(files.get("src/gen/layers.ts")).toContain(
       "export const FeaturesLayer = auth.pipe(Layer.provideMerge(db));",
     );
@@ -78,7 +85,7 @@ describe("generateFiles", () => {
     );
   });
 
-  test("lists secrets and required settings from every feature, core ones included", () => {
+  test("lists secrets and required settings from every feature, required ones included", () => {
     const env = files.get("src/gen/env.ts");
     expect(env).toContain('export type SecretName = "DB_TOKEN";');
     expect(env).toContain('export const requiredSettings = ["APP_URL"] as const;');

@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect";
-import { Analytics } from "#/features/analytics/api/analytics.ts";
+import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import { stepOrder } from "../machines/onboarding.machine.ts";
 
 export const OnboardingParams = Schema.Struct({

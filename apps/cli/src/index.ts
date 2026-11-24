@@ -15,7 +15,7 @@ const createCommand = defineCommand({
     features: {
       type: "string",
       description:
-        "Comma-separated features: db,auth,billing,kv,workflows,uploads (empty for the core ones only)",
+        "Comma-separated features: db,auth,billing,kv,workflows,uploads (empty for the required ones only)",
     },
     pm: { type: "string", description: "Package manager: bun, pnpm, npm or yarn" },
     yes: { type: "boolean", default: false, description: "Accept defaults and ask nothing" },

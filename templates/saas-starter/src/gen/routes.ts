@@ -3,9 +3,9 @@ import { physical, rootRoute } from "@tanstack/virtual-file-routes";
 
 /** The route tree: the root route plus every enabled feature's routes folder. */
 export const routes = rootRoute("__root.tsx", [
-  physical("../features/analytics/routes"),
+  physical("../features/core/analytics/routes"),
   physical("../features/home/routes"),
-  physical("../features/observability/routes"),
+  physical("../features/core/observability/routes"),
   physical("../features/auth/routes"),
   physical("../features/billing/routes"),
   physical("../features/uploads/routes"),

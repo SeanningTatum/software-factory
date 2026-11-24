@@ -1,6 +1,6 @@
 import { Layer, ManagedRuntime } from "effect";
-import { ErrorReporterLayer } from "#/features/observability/api/error-reporter.ts";
-import { LoggerLayer, parseLevel } from "#/features/observability/api/log.ts";
+import { ErrorReporterLayer } from "#/features/core/observability/api/error-reporter.ts";
+import { LoggerLayer, parseLevel } from "#/features/core/observability/api/log.ts";
 import { FeaturesLayer } from "#/gen/layers.ts";
 import { type AppEnv, CloudflareEnv, setting, WaitUntil } from "./env.ts";
 import { CurrentRequest, type RequestInfo } from "./request.ts";

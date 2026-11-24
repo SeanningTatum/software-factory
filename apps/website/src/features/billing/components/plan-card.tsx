@@ -1,6 +1,6 @@
 import { useMachine } from "@xstate/react";
 import { fromPromise } from "xstate";
-import { Button } from "#/features/ui/components/button.tsx";
+import { Button } from "#/features/core/ui/components/button.tsx";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "#/features/ui/components/card.tsx";
+} from "#/features/core/ui/components/card.tsx";
 import type { BillingState } from "../api/billing-service.ts";
 import { billingClient } from "../lib/billing-client.ts";
 import { type CheckoutAction, checkoutMachine } from "./checkout.machine.ts";

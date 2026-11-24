@@ -4,7 +4,7 @@ import { Effect } from "effect";
 import { runEffect } from "#/app/run-effect.ts";
 import { Auth } from "#/features/auth/api/auth-service.ts";
 import { ensureSignedIn } from "#/features/auth/api/guard.ts";
-import { Card, CardContent, CardHeader, CardTitle } from "#/features/ui/components/card.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "#/features/core/ui/components/card.tsx";
 import { prefixFor, type StoredFile, Uploads } from "#/features/uploads/api/uploads.ts";
 import { UploadPanel } from "#/features/uploads/components/upload-panel.tsx";
 

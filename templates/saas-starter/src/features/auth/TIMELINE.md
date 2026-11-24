@@ -5,8 +5,8 @@
 
 Better Auth with email and password (GitHub when keys are set), sessions in D1, rate-limited sign-in and sign-up.
 
-- Kind: optional; `cf-saas-blocks remove auth` takes it out
-- Depends on: [db](../db/TIMELINE.md)
+- Kind: feature, optional; `cf-saas-blocks remove auth` takes it out
+- Depends on: [db](../core/db/TIMELINE.md)
 - Used by: [billing](../billing/TIMELINE.md), [uploads](../uploads/TIMELINE.md)
 - Bindings: `AUTH_LIMITER` (ratelimit)
 - Vars: `APP_URL` (required), `GITHUB_CLIENT_ID`, `TRUSTED_ORIGINS`
@@ -58,5 +58,6 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Auth calls run through `outsideCall` and the rate limiter binding is read with `binding`, both from `core/lib`; imports db, analytics and ui from `src/features/core/`.
 - 2026-11-24 — The path specs wait for an enabled button, give each test its own visitor IP so the sign-up limiter does not trip on a second run, and wait for sign-out before signing up again; `reaches submitting` now signs up for real. Added an SSR test for the form.
 - 2026-11-24 — Moved into `src/features/auth/` from `src/blocks/auth/`, with pages from `src/routes/(auth)/` when the template switched from blocks to features.

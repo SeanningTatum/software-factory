@@ -1,0 +1,26 @@
+{
+  "name": "observability",
+  "title": "Observability",
+  "description": "JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, and /api/browser-report.",
+  "required": true,
+  "requires": [],
+  "vars": {
+    "LOG_LEVEL": {
+      "description": "Lowest level written to the logs: Debug, Info, Warn or Error",
+      "required": false,
+      "default": "Info"
+    },
+    "ERROR_REPORTER": {
+      "description": "Where errors go: none, console or sentry",
+      "required": false,
+      "default": "console"
+    }
+  },
+  "secrets": {
+    "SENTRY_DSN": {
+      "description": "Sentry DSN, used when ERROR_REPORTER is sentry",
+      "required": false,
+      "help": "https://docs.sentry.io/concepts/key-terms/dsn-explainer/"
+    }
+  }
+}

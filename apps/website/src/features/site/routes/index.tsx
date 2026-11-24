@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { buttonVariants } from "#/features/core/ui/components/button.tsx";
 import { CopyCommand } from "#/features/site/components/copy-command.tsx";
-import { CREATE_COMMAND, coreFeatures, features } from "#/features/site/lib/features.ts";
-import { buttonVariants } from "#/features/ui/components/button.tsx";
+import { CREATE_COMMAND, features, requiredAll } from "#/features/site/lib/features.ts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -77,7 +77,7 @@ function Landing() {
       <section className="mx-auto max-w-5xl px-4 py-16">
         <h2 className="text-2xl font-semibold tracking-tight">Features</h2>
         <p className="mt-2 text-muted-foreground">
-          {coreFeatures.join(", ")} are always on. Pick any of the rest.
+          {requiredAll.join(", ")} are always on. Pick any of the rest.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (

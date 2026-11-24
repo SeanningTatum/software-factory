@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { loadManifests } from "@tanstack-cf-saas/blocks";
+import { add, remove } from "./commands.ts";
 import { hasTables, parseFeatures, scaffold, titleCase, validateName } from "./scaffold.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../template");
@@ -24,9 +27,11 @@ describe("scaffold", () => {
       features: ["billing"],
     });
     expect(result.features).toEqual(["db", "auth", "billing"]);
-    expect(existsSync(join(dir, "src/features/kv"))).toBe(false);
+    expect(existsSync(join(dir, "src/features/core/kv"))).toBe(false);
+    expect(existsSync(join(dir, "src/features/core/db"))).toBe(true);
     expect(existsSync(join(dir, "src/features/uploads"))).toBe(false);
-    expect(existsSync(join(dir, "src/features/ui"))).toBe(true);
+    expect(existsSync(join(dir, "src/features/core/ui"))).toBe(true);
+    expect(existsSync(join(dir, "src/features/core/lib/call.ts"))).toBe(true);
     expect(hasTables(dir)).toBe(true);
     expect(existsSync(join(dir, ".gitignore"))).toBe(true);
     expect(JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).name).toBe("acme-app");
@@ -62,8 +67,10 @@ describe("scaffold", () => {
     ]
       .map((f) => readFileSync(join(dir, `src/gen/${f}.ts`), "utf8"))
       .join("\n");
-    for (const name of ["db", "auth", "billing", "kv", "workflows", "uploads"])
+    for (const name of ["db", "auth", "billing", "kv", "workflows", "uploads"]) {
       expect(gen).not.toContain(`features/${name}/`);
+      expect(gen).not.toContain(`features/core/${name}/`);
+    }
     expect(hasTables(dir)).toBe(false);
     const index = readFileSync(join(dir, "FEATURES.md"), "utf8");
     expect(index.match(/^- \*\*/gm)?.length).toBe(5);
@@ -100,7 +107,7 @@ describe("scaffold", () => {
       features: ["kv"],
       date: "2030-01-02",
     });
-    const kv = readFileSync(join(dir, "src/features/kv/TIMELINE.md"), "utf8");
+    const kv = readFileSync(join(dir, "src/features/core/kv/TIMELINE.md"), "utf8");
     const history = kv.slice(kv.indexOf("## History"));
     expect(history.match(/^- \d{4}/gm)).toEqual(["- 2030"]);
     expect(history).toMatch(
@@ -109,6 +116,52 @@ describe("scaffold", () => {
     expect(history).not.toContain("src/blocks");
     expect(kv.slice(kv.indexOf("## Decisions"), kv.indexOf("## History"))).toContain("Why:");
     expect(kv).toContain("<!-- generated:end -->");
+  });
+
+  test("finds core modules and features by name", () => {
+    const dir = target();
+    scaffold({
+      templateDir: TEMPLATE,
+      harnessDir: undefined,
+      targetDir: dir,
+      name: "by-name",
+      features: ["db", "kv", "auth"],
+    });
+    const dirs = Object.fromEntries([...loadManifests(dir)].map(([name, m]) => [name, m.dir]));
+    expect(dirs.kv).toBe("src/features/core/kv");
+    expect(dirs.ui).toBe("src/features/core/ui");
+    expect(dirs.auth).toBe("src/features/auth");
+    expect(dirs.consent).toBe("src/features/consent");
+  });
+
+  test("add kv then remove kv in a committed project leaves git status clean", () => {
+    const dir = target();
+    scaffold({
+      templateDir: TEMPLATE,
+      harnessDir: undefined,
+      targetDir: dir,
+      name: "round-trip",
+      features: ["auth"],
+    });
+    const git = (...args: Array<string>) =>
+      spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+        cwd: dir,
+        encoding: "utf8",
+      });
+    git("init", "--quiet");
+    git("add", "-A");
+    expect(git("commit", "--quiet", "-m", "start").status).toBe(0);
+    const cwd = process.cwd();
+    process.chdir(dir);
+    try {
+      add("kv");
+      expect(existsSync(join(dir, "src/features/core/kv/api/key-value.ts"))).toBe(true);
+      expect(git("status", "--porcelain").stdout).not.toBe("");
+      remove("kv");
+    } finally {
+      process.chdir(cwd);
+    }
+    expect(git("status", "--porcelain").stdout).toBe("");
   });
 
   test("accepts the old block names d1 and r2", () => {

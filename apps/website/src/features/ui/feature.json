@@ -1,7 +1,0 @@
-{
-  "name": "ui",
-  "title": "UI",
-  "description": "shadcn/ui components, the cn helper, and the site header and footer.",
-  "core": true,
-  "requires": []
-}

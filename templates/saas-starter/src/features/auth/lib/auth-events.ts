@@ -1,4 +1,4 @@
-import type { AnalyticsEvent } from "#/features/analytics/lib/catalog.ts";
+import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 
 export interface Captured {
   readonly event: AnalyticsEvent;

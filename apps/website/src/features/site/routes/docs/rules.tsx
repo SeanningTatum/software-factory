@@ -21,7 +21,8 @@ function Rules() {
           "external-call-span: every outside call has a span.",
           "file-size: 400 lines at most.",
           "test-map: every source file has the tests the map asks for.",
-          "feature-layout: a feature holds only the allowed folders and files.",
+          "feature-layout: a feature holds only the allowed folders and files, and each core module is of one kind: components only, or services and helpers only.",
+          "shared-lib: core/lib holds pure helpers, with no services, layers or React.",
         ]}
       />
       <H2>State machines</H2>
@@ -36,8 +37,9 @@ function Rules() {
       <P>
         <code>blocks:check</code> fails when generated files, <code>FEATURES.md</code> or a
         timeline's generated block are stale, when a file sits outside a feature or the kernel, when
-        the kernel or a core feature imports an optional feature, or when a feature imports one it
-        doesn't list in <code>requires</code>.
+        the kernel imports an optional feature, when something in core imports a feature outside
+        core, when <code>core/lib</code> imports a feature, or when a feature imports one it doesn't
+        list in <code>requires</code>.
       </P>
       <H2>Timelines</H2>
       <P>

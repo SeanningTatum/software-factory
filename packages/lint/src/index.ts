@@ -1,6 +1,7 @@
 // biome-ignore-all lint/performance/noBarrelFile: this is the package entry other tools import.
 export {
   CONFIG_FILE,
+  type CoreLayout,
   defaultFeatureLayout,
   defaults,
   type FeatureLayout,
@@ -10,6 +11,8 @@ export {
 } from "./config.ts";
 export { globToRegExp, matchesAny } from "./glob.ts";
 export { lint, projectRules, rules } from "./lint.ts";
+export { type Place, placeOf } from "./place.ts";
+export { coreRule } from "./rules/feature-layout.ts";
 export type { Finding, ProjectRule, Rule } from "./rules/types.ts";
 export {
   newEntries,

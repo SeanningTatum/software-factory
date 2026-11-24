@@ -5,7 +5,7 @@
 
 The home page and the /api/health check.
 
-- Kind: core; it can't be removed
+- Kind: feature, required; it can't be removed
 - Depends on: none
 - Used by: none
 - Bindings: none
@@ -31,4 +31,5 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Imports ui from `src/features/core/ui/`.
 - 2026-11-24 — Moved into `src/features/home/` from `src/routes/index.tsx` and `src/routes/api/health.ts` when the template switched from blocks to features.

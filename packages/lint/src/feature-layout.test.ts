@@ -91,4 +91,73 @@ describe("feature-layout", () => {
       expect.stringContaining('machines/sync.machine.ts: "machines/" is not'),
     ]);
   });
+
+  test("passes core modules of each kind and the shared helpers", () => {
+    const root = project({
+      "src/features/core/ui/feature.json": "{}",
+      "src/features/core/ui/TIMELINE.md": "",
+      "src/features/core/ui/components/button.tsx": "",
+      "src/features/core/ui/lib/cn.ts": "",
+      "src/features/core/ui/lib/cn.test.ts": "",
+      "src/features/core/kv/feature.json": "{}",
+      "src/features/core/kv/TIMELINE.md": "",
+      "src/features/core/kv/layer.ts": "",
+      "src/features/core/kv/api/key-value.ts": "",
+      "src/features/core/kv/machines/sync.machine.ts": "",
+      "src/features/core/kv/routes/api/kv.ts": "",
+      "src/features/core/lib/call.ts": "",
+      "src/features/core/lib/call.test.ts": "",
+    });
+    expect(layout(root)).toEqual([]);
+  });
+
+  test("a services module with components/ mixes kinds and is told to leave core", () => {
+    const [finding, ...rest] = layout(
+      kv({
+        "src/features/core/kv/feature.json": "{}",
+        "src/features/core/kv/TIMELINE.md": "",
+        "src/features/core/kv/api/key-value.ts": "",
+        "src/features/core/kv/components/x.tsx": "",
+      }),
+    );
+    expect(rest).toEqual([]);
+    expect(finding).toBe(
+      'src/features/core/kv/api/key-value.ts: "api/" next to components/ mixes kinds. Core holds shared modules of one kind: components only (components/, lib/), or services and helpers only (no components/, server routes only under routes/api/). A module with both, or with a page, is a feature; move it out of core to src/features/<name>.',
+    );
+  });
+
+  test("a core module may not have pages, e2e specs, React outside components or UI machines", () => {
+    const root = project({
+      "src/features/core/kv/feature.json": "{}",
+      "src/features/core/kv/TIMELINE.md": "",
+      "src/features/core/kv/routes/settings.tsx": "",
+      "src/features/core/kv/e2e/kv.spec.ts": "",
+      "src/features/core/kv/api/widget.tsx": "",
+      "src/features/core/ui/feature.json": "{}",
+      "src/features/core/ui/TIMELINE.md": "",
+      "src/features/core/ui/layer.ts": "",
+      "src/features/core/ui/components/menu.machine.ts": "",
+    });
+    expect(layout(root).map((f) => f.slice(0, f.indexOf(" Core holds")))).toEqual([
+      'src/features/core/kv/api/widget.tsx: "api/widget.tsx" is React in a services module.',
+      'src/features/core/kv/e2e/kv.spec.ts: "e2e/" has no place in a core module.',
+      'src/features/core/kv/routes/settings.tsx: "routes/settings.tsx" is a page; a core module serves only server routes under routes/api/.',
+      "src/features/core/ui/components/menu.machine.ts: a machine beside shared components gives them logic of their own.",
+      'src/features/core/ui/layer.ts: "layer.ts" next to components/ mixes kinds; a components module has only feature.json, TIMELINE.md, constants.ts at its top.',
+    ]);
+  });
+
+  test("core/lib holds flat .ts files and needs no feature.json; loose files in core are named", () => {
+    const root = project({
+      "src/features/core/lib/call.ts": "",
+      "src/features/core/lib/nested/x.ts": "",
+      "src/features/core/lib/view.tsx": "",
+      "src/features/core/stray.ts": "",
+    });
+    expect(layout(root)).toEqual([
+      "src/features/core/lib/nested/x.ts: src/features/core/lib/ holds flat .ts helpers, each with a sibling test: no folders, no React, no feature.json.",
+      "src/features/core/lib/view.tsx: src/features/core/lib/ holds flat .ts helpers, each with a sibling test: no folders, no React, no feature.json.",
+      "src/features/core/stray.ts: core modules are folders; move this into one.",
+    ]);
+  });
 });

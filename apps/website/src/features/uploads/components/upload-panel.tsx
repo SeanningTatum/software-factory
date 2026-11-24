@@ -2,9 +2,9 @@ import { useRouter } from "@tanstack/react-router";
 import { useMachine } from "@xstate/react";
 import { useId } from "react";
 import { fromPromise } from "xstate";
-import { Button } from "#/features/ui/components/button.tsx";
-import { Label } from "#/features/ui/components/label.tsx";
-import { useHydrated } from "#/features/ui/components/use-hydrated.ts";
+import { Button } from "#/features/core/ui/components/button.tsx";
+import { Label } from "#/features/core/ui/components/label.tsx";
+import { useHydrated } from "#/features/core/ui/components/use-hydrated.ts";
 import { uploadMachine } from "./upload.machine.ts";
 
 const send = async (file: File) => {

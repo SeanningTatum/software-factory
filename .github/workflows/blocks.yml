@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        combo: [core, db, auth, billing, kv, workflows, uploads, all]
+        combo: [required, db, auth, billing, kv, workflows, uploads, all]
     steps:
       - uses: actions/checkout@v4
         with:

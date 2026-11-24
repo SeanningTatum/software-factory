@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { Analytics } from "#/features/analytics/api/analytics.ts";
-import type { AnalyticsEvent } from "#/features/analytics/lib/catalog.ts";
+import { Analytics } from "#/features/core/analytics/api/analytics.ts";
+import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { runOnboarding, type Steps } from "./onboarding.ts";
 
 describe("runOnboarding", () => {

@@ -10,25 +10,29 @@ const token = (glob: string, i: number): { readonly out: string; readonly used: 
   if (c === "?") return { out: "[^/]", used: 1 };
   if (c === "{") {
     const end = glob.indexOf("}", i);
+    // Each option is a glob itself, so `{*,core/*}` matches one folder or one under core/.
     const options = glob
       .slice(i + 1, end)
       .split(",")
-      .map(escapeRegExp);
+      .map(source);
     return { out: `(?:${options.join("|")})`, used: end - i + 1 };
   }
   return { out: escapeRegExp(c), used: 1 };
 };
 
-/** Turns a glob (`**`, `*`, `?`, `{a,b}`) into a RegExp for a path relative to the project root. */
-export const globToRegExp = (glob: string): RegExp => {
+/** The RegExp source of a glob, without anchors. */
+function source(glob: string): string {
   let out = "";
   for (let i = 0; i < glob.length; ) {
     const t = token(glob, i);
     out += t.out;
     i += t.used;
   }
-  return new RegExp(`^${out}$`);
-};
+  return out;
+}
+
+/** Turns a glob (`**`, `*`, `?`, `{a,b}`) into a RegExp for a path relative to the project root. */
+export const globToRegExp = (glob: string): RegExp => new RegExp(`^${source(glob)}$`);
 
 export const matchesAny = (path: string, globs: ReadonlyArray<string>) =>
   globs.some((g) => globToRegExp(g).test(path));

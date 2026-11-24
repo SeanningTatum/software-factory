@@ -49,9 +49,9 @@ export const runTimeline = (root: string, options: TimelineOptions = {}): Timeli
     ...lines(git(root, ["diff", "--name-only", "--relative", from])),
     ...lines(git(root, ["ls-files", "--others", "--exclude-standard"])),
   ];
-  const dir = loadConfig(root).featureLayout.dir;
+  const { dir, core } = loadConfig(root).featureLayout;
   const timelines = new Map<string, TimelineText>();
-  for (const feature of touchedFeatures(dir, changed).keys()) {
+  for (const feature of touchedFeatures(dir, changed, core.dir).keys()) {
     const path = `${dir}/${feature}/${TIMELINE_FILE}`;
     const full = join(root, path);
     timelines.set(feature, {
@@ -59,7 +59,7 @@ export const runTimeline = (root: string, options: TimelineOptions = {}): Timeli
       after: existsSync(full) ? readFileSync(full, "utf8") : undefined,
     });
   }
-  const problems = timelineProblems(dir, changed, timelines);
+  const problems = timelineProblems(dir, changed, timelines, core.dir);
   if (!problems.length) {
     return { code: 0, lines: [`timeline: every changed feature has a new line (base ${base}).`] };
   }

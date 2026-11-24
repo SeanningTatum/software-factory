@@ -1,14 +1,14 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { ensureSignedIn } from "#/features/auth/api/guard.ts";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
-import { Button } from "#/features/ui/components/button.tsx";
+import { Button } from "#/features/core/ui/components/button.tsx";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "#/features/ui/components/card.tsx";
+} from "#/features/core/ui/components/card.tsx";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: ensureSignedIn,

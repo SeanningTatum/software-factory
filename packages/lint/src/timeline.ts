@@ -1,3 +1,5 @@
+import { defaultFeatureLayout } from "./config.ts";
+import { placeOf } from "./place.ts";
 import { handWritten, TIMELINE_FILE } from "./timeline-doc.ts";
 
 /** A Decisions or History line: `- YYYY-MM-DD — ...`. */
@@ -18,18 +20,26 @@ export const newEntries = (
   return entries(after).filter((line) => !old.has(line));
 };
 
-/** Changed files grouped by feature, leaving out each feature's own TIMELINE.md. */
+/**
+ * Changed files grouped by feature folder (`auth`, or `core/kv` for a core module), leaving out
+ * each feature's own TIMELINE.md. The shared helpers in core/lib have no timeline.
+ */
 export const touchedFeatures = (
   featuresDir: string,
   changed: ReadonlyArray<string>,
+  coreDir = defaultFeatureLayout.core.dir,
 ): ReadonlyMap<string, ReadonlyArray<string>> => {
   const out = new Map<string, Array<string>>();
-  const prefix = `${featuresDir}/`;
+  const layout = {
+    ...defaultFeatureLayout,
+    dir: featuresDir,
+    core: { ...defaultFeatureLayout.core, dir: coreDir },
+  };
   for (const path of [...new Set(changed)].sort()) {
-    if (!path.startsWith(prefix)) continue;
-    const [feature, ...rest] = path.slice(prefix.length).split("/");
-    if (!(feature && rest.length) || rest.join("/") === TIMELINE_FILE) continue;
-    out.set(feature, [...(out.get(feature) ?? []), rest.join("/")]);
+    const place = placeOf(layout, path);
+    if (!place || place.kind === "loose" || place.kind === "lib") continue;
+    if (place.inner === TIMELINE_FILE) continue;
+    out.set(place.folder, [...(out.get(place.folder) ?? []), place.inner]);
   }
   return out;
 };
@@ -51,8 +61,9 @@ export const timelineProblems = (
   featuresDir: string,
   changed: ReadonlyArray<string>,
   timelines: ReadonlyMap<string, TimelineText>,
+  coreDir = defaultFeatureLayout.core.dir,
 ): ReadonlyArray<TimelineProblem> =>
-  [...touchedFeatures(featuresDir, changed)].flatMap(([feature, files]) => {
+  [...touchedFeatures(featuresDir, changed, coreDir)].flatMap(([feature, files]) => {
     const timeline = timelines.get(feature);
     if (timeline?.after === undefined) return [];
     if (newEntries(timeline.before, timeline.after).length) return [];

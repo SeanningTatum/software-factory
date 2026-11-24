@@ -3,7 +3,7 @@
  * optional feature adds and removes cleanly. Workspace packages are linked from this repo, since
  * generated projects would otherwise fetch them from npm.
  *
- *   bun scripts/block-matrix.ts [outDir] [--only core,auth]
+ *   bun scripts/block-matrix.ts [outDir] [--only required,auth]
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -20,9 +20,9 @@ const outDir =
 const onlyIndex = process.argv.indexOf("--only");
 const only = onlyIndex > 0 ? (process.argv[onlyIndex + 1] ?? "").split(",") : undefined;
 
-/** `core` has no optional features; `all` has every one. */
+/** `required` has no optional features or modules; `all` has every one. */
 const combos: Record<string, ReadonlyArray<string>> = {
-  core: [],
+  required: [],
   db: ["db"],
   auth: ["auth"],
   billing: ["billing"],
@@ -93,7 +93,7 @@ for (const [name, features] of Object.entries(combos)) {
     name: `matrix-${name}`,
     features,
   }).features;
-  console.log(`\n${name}: ${kept.length ? kept.join(", ") : "core features only"}`);
+  console.log(`\n${name}: ${kept.length ? kept.join(", ") : "required features only"}`);
   linkLocal(dir, tarballs);
   const steps: Array<[string, string, Array<string>]> = [
     ["install", "bun", ["install"]],

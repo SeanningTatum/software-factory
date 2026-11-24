@@ -8,6 +8,7 @@
       "!src/gen",
       "!FEATURES.md",
       "!src/features/*/TIMELINE.md",
+      "!src/features/core/*/TIMELINE.md",
       "!src/routeTree.gen.ts",
       "!worker-configuration.d.ts",
       "!drizzle",
@@ -22,8 +23,8 @@
   "overrides": [
     {
       "includes": [
-        "src/features/observability/lib/log-sink.ts",
-        "src/features/observability/api/error-reporter.ts"
+        "src/features/core/observability/lib/log-sink.ts",
+        "src/features/core/observability/api/error-reporter.ts"
       ],
       "linter": {
         "rules": {
@@ -34,7 +35,7 @@
       }
     },
     {
-      "includes": ["src/server.ts", "src/features/analytics/api/adapters/**"],
+      "includes": ["src/server.ts", "src/features/core/analytics/api/adapters/**"],
       "linter": {
         "rules": {
           "performance": {
@@ -48,7 +49,7 @@
       }
     },
     {
-      "includes": ["src/features/ui/components/**"],
+      "includes": ["src/features/core/ui/components/**"],
       "linter": {
         "rules": {
           "style": {

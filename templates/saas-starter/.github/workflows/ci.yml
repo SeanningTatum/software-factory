@@ -17,7 +17,7 @@ jobs:
       - run: bun run check
       - run: bun run build
 
-  # The Playwright specs in src/features/*/e2e, against `vite dev` with local D1, R2 and KV.
+  # The Playwright specs in each feature's e2e folder, against `vite dev` with local D1, R2 and KV.
   e2e:
     runs-on: ubuntu-latest
     steps:

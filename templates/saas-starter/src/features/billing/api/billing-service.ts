@@ -2,7 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv, setting } from "#/app/env.ts";
 import type { NotConfigured } from "#/app/errors.ts";
-import { Database, type DatabaseError } from "#/features/db/api/database.ts";
+import { Database, type DatabaseError } from "#/features/core/db/api/database.ts";
 import { FREE_PLAN, type Plan, plansFrom } from "../lib/plans.ts";
 import { subscription } from "../schema.ts";
 

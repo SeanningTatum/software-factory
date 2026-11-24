@@ -20,6 +20,10 @@ describe("glob", () => {
     expect(globToRegExp("src/{core,blocks}/**/*.ts").test("src/blocks/auth/layer.ts")).toBe(true);
     expect(globToRegExp("src/**/*.ts").test("src/a.ts")).toBe(true);
     expect(globToRegExp("src/*.ts").test("src/a/b.ts")).toBe(false);
+    const both = globToRegExp("src/features/{*,core/*}/routes/**");
+    expect(both.test("src/features/auth/routes/login.tsx")).toBe(true);
+    expect(both.test("src/features/core/kv/routes/api/kv.ts")).toBe(true);
+    expect(both.test("src/features/core/kv/lib/x.ts")).toBe(false);
   });
 });
 
@@ -74,5 +78,45 @@ describe("lint", () => {
       "src/core/edge.test.ts": "",
     });
     expect(lint(root, { ...defaults, allow: { "no-throw": ["src/core/edge.ts"] } })).toEqual([]);
+  });
+
+  test("fills {feature} with a core module's folder", () => {
+    const root = project({
+      "src/features/core/kv/feature.json": "{}",
+      "src/features/core/kv/TIMELINE.md": "",
+      "src/features/core/kv/machines/sync.machine.ts": "export const m = 1;",
+    });
+    const config = {
+      ...defaults,
+      testMap: [
+        {
+          files: "src/features/**/*.machine.ts",
+          requires: ["src/features/{feature}/machines/{name}.machine.test.ts"],
+        },
+      ],
+    };
+    expect(lint(root, config).map((f) => f.message)).toEqual([
+      "missing its test: src/features/core/kv/machines/sync.machine.test.ts",
+    ]);
+  });
+
+  test("keeps services, layers and React out of core/lib, but allows Effect functions", () => {
+    const root = project({
+      "src/features/core/lib/call.ts": [
+        'import { Context, Effect, Layer } from "effect";',
+        'import { useState } from "react";',
+        'export const call = Effect.fn("call")(function* () {});',
+        'export class S extends Context.Service<S, {}>()("S") {}',
+        "export const l = Layer.empty;",
+      ].join("\n"),
+      "src/features/core/lib/call.test.ts": "",
+    });
+    expect(
+      lint(root).map((f) => `${f.rule}:${f.line} ${f.message.slice(0, f.message.indexOf(";"))}`),
+    ).toEqual([
+      "shared-lib:2 imports React (react)",
+      "shared-lib:4 uses Context.Service",
+      "shared-lib:5 uses Layer.empty",
+    ]);
   });
 });

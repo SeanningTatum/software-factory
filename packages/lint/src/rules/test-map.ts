@@ -1,13 +1,11 @@
 import { basename, dirname } from "node:path";
 import { globToRegExp, matchesAny } from "../glob.ts";
+import { placeOf } from "../place.ts";
 import type { Rule } from "./types.ts";
 
 /** `{file}`: the name without its extension. `{name}`: also without `.machine`. */
 const fileStem = (file: string) => basename(file).replace(/\.tsx?$/, "");
 const nameStem = (file: string) => fileStem(file).replace(/\.machine$/, "");
-/** `{feature}`: the folder under the features dir, or empty outside it. */
-const featureOf = (file: string, dir: string) =>
-  file.startsWith(`${dir}/`) ? (file.slice(dir.length + 1).split("/")[0] ?? "") : "";
 
 export const testMap: Rule = {
   id: "test-map",
@@ -23,7 +21,7 @@ export const testMap: Rule = {
           .replaceAll("{dir}", dirname(file))
           .replaceAll("{file}", fileStem(file))
           .replaceAll("{name}", nameStem(file))
-          .replaceAll("{feature}", featureOf(file, config.featureLayout.dir)),
+          .replaceAll("{feature}", placeOf(config.featureLayout, file)?.folder ?? ""),
       )
       .filter((pattern) => {
         const re = globToRegExp(pattern);

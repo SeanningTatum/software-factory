@@ -21,15 +21,21 @@ const machines = Object.entries(modules).flatMap(([path, mod]) =>
 );
 
 const FEATURES = "src/features";
+const CORE = "src/features/core";
 const print = process.env.PRINT_MACHINES === "1";
 
-const features = readdirSync(FEATURES).filter((name) =>
-  existsSync(join(FEATURES, name, "TIMELINE.md")),
-);
+/** Each feature's and core module's folder, from the project root, e.g. `src/features/core/kv`. */
+const withTimeline = (dir: string) =>
+  existsSync(dir)
+    ? readdirSync(dir)
+        .map((name) => `${dir}/${name}`)
+        .filter((folder) => existsSync(join(folder, "TIMELINE.md")))
+    : [];
+const features = [...withTimeline(CORE), ...withTimeline(FEATURES)];
 
-const docsOf = (feature: string): ReadonlyArray<MachineDoc> =>
+const docsOf = (folder: string): ReadonlyArray<MachineDoc> =>
   machines
-    .filter((m) => m.path.startsWith(`/${FEATURES}/${feature}/`))
+    .filter((m) => m.path.startsWith(`/${folder}/`))
     .map((m) => ({ source: m.path.slice(1), machine: m.machine }));
 
 describe("state machines", () => {
@@ -44,10 +50,10 @@ describe("state machines", () => {
     },
   );
 
-  it.each(features)("%s/TIMELINE.md has current machine diagrams", (feature) => {
-    const path = join(FEATURES, feature, "TIMELINE.md");
+  it.each(features)("%s/TIMELINE.md has current machine diagrams", (folder) => {
+    const path = join(folder, "TIMELINE.md");
     const current = readFileSync(path, "utf8");
-    const wanted = withMachines(current, docsOf(feature));
+    const wanted = withMachines(current, docsOf(folder));
     if (print && wanted !== current) writeFileSync(path, wanted);
     expect(
       print || wanted === current,
