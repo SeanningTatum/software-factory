@@ -39,6 +39,11 @@ that builds projects from it, and the website that sells it.
 - Server code in the template is Effect; every flow and lifecycle is an XState machine. The rules and
   the gates that enforce them are in `templates/saas-starter/CLAUDE.md`.
 
+## Open work
+
+`BACKLOG.md` lists it in order, one item per change, in a fixed format. Add new work there in that
+format; when an item is done, delete it and update its row in `SCORECARD.md` in the same change.
+
 ## Commands
 
 ```bash

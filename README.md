@@ -109,6 +109,7 @@ project made this way is for trying things, not for shipping.
 | `apps/website/`           | The landing page and docs, built from the template                               |
 | `packages/`               | Shared lint rules, TypeScript presets, and the tool that wires features together |
 
-How the template scores against its goals is in [SCORECARD.md](SCORECARD.md).
+How the template scores against its goals is in [SCORECARD.md](SCORECARD.md). Open work is in
+[BACKLOG.md](BACKLOG.md).
 
 The code rules are in `CLAUDE.md` here and in `templates/saas-starter/CLAUDE.md`.

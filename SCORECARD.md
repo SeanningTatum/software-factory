@@ -30,9 +30,6 @@ Last scored: 2026-11-24, after the audit fixes. Update a row in the same change 
 - Deployment stays a guess until a pipeline runs green. That needs GitHub Actions billing fixed and
   a Cloudflare token.
 
-## Next, cheapest first
+## Next
 
-1. CSRF middleware in `src/start.ts`, with a test.
-2. Bundle budgets in CI.
-3. A golden and an error spec for every route.
-4. Trim the template's `CLAUDE.md` to 80 lines and check the length in lint.
+The open work is in [BACKLOG.md](BACKLOG.md), in order.
