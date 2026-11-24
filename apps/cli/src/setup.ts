@@ -37,6 +37,19 @@ const SETUP = "bunx create-tanstack-cf-saas setup";
 const SECRET_BYTES = 36;
 const GENERATED_SECRETS = new Set(["BETTER_AUTH_SECRET"]);
 
+/** Wrangler's flag for an environment: production is the top level, so it has none. */
+const envFlag = (env: EnvName) => (env === "production" ? [] : ["--env", env]);
+
+const badEnv = (env: string) => `--env must be ${envNames.join(" or ")}, not "${env}".`;
+
+/** Names of the secrets set in `env`; undefined when wrangler can't list them (no Worker yet). */
+const secretNames = (wrangler: Wrangler, env: EnvName): ReadonlySet<string> | undefined => {
+  const listed = wrangler(["secret", "list", "--format", "json", ...envFlag(env)]);
+  return listed.ok
+    ? new Set((JSON.parse(listed.stdout) as Array<{ name: string }>).map((s) => s.name))
+    : undefined;
+};
+
 const wranglerText = (root: string) => readFileSync(join(root, WRANGLER_FILE), "utf8");
 const enabled = (root: string) => [...loadManifests(root).values()];
 
@@ -103,16 +116,7 @@ const secretItems = (
   wrangler: Wrangler | undefined,
 ): Array<Item> =>
   envNames.flatMap((env) => {
-    const listed = wrangler?.([
-      "secret",
-      "list",
-      "--format",
-      "json",
-      ...(env === "staging" ? ["--env", "staging"] : []),
-    ]);
-    const names = listed?.ok
-      ? new Set((JSON.parse(listed.stdout) as Array<{ name: string }>).map((s) => s.name))
-      : undefined;
+    const names = wrangler && secretNames(wrangler, env);
     return manifests.flatMap((m) =>
       Object.entries(m.secrets ?? {}).map(([key, spec]) => ({
         name: key,
@@ -123,7 +127,7 @@ const secretItems = (
             ? ("set" as const)
             : ("missing" as const)
           : ("unknown" as const),
-        fix: `${key}=... ${SETUP} --env ${env}`,
+        fix: `${SETUP} --env ${env}`,
       })),
     );
   });
@@ -201,15 +205,14 @@ export interface ProvisionOptions {
   readonly envs: ReadonlyArray<EnvName>;
   /** Var values to write into wrangler.jsonc, from `--var KEY=value`. */
   readonly vars: Readonly<Record<string, string>>;
-  /** Where secret values come from: the process environment, or a prompt. Undefined skips the secret. */
-  readonly secretValue: (key: string, env: EnvName) => Promise<string | undefined>;
+  /**
+   * Where secret values come from: the process environment, or a prompt. Undefined skips the
+   * secret; `isSet` says wrangler already has it.
+   */
+  readonly secretValue: (key: string, env: EnvName, isSet: boolean) => Promise<string | undefined>;
   readonly log: (line: string) => void;
 }
 
-/**
- * Creates what is missing and records ids in wrangler.jsonc. Safe to run again: existing resources
- * are found, not duplicated, and vars or ids already set are left alone unless passed explicitly.
- */
 /** Creates one binding's resource when it is missing, and returns wrangler.jsonc with its id. */
 const provisionBinding = (
   text: string,
@@ -260,15 +263,20 @@ const putSecrets = async (
   wrangler: Wrangler,
   options: ProvisionOptions,
 ) => {
+  const existing = secretNames(wrangler, env) ?? new Set<string>();
   for (const [key] of manifests.flatMap((m) => Object.entries(m.secrets ?? {}))) {
+    const isSet = existing.has(key);
+    // A secret already set is only replaced by a value given on purpose; never regenerated.
     const value =
-      (await options.secretValue(key, env)) ??
-      (GENERATED_SECRETS.has(key) ? randomBytes(SECRET_BYTES).toString("base64url") : undefined);
-    if (!value) continue;
-    const put = wrangler(
-      ["secret", "put", key, ...(env === "staging" ? ["--env", "staging"] : [])],
-      value,
-    );
+      (await options.secretValue(key, env, isSet)) ??
+      (GENERATED_SECRETS.has(key) && !isSet
+        ? randomBytes(SECRET_BYTES).toString("base64url")
+        : undefined);
+    if (!value) {
+      if (isSet) options.log(`secret ${key} (${env}): already set`);
+      continue;
+    }
+    const put = wrangler(["secret", "put", key, ...envFlag(env)], value);
     if (!put.ok) throw new SetupError(`Setting ${key} (${env}) failed:\n${put.stderr}`);
     options.log(`secret ${key} (${env}): set`);
   }
@@ -279,6 +287,9 @@ const putSecrets = async (
  * are found, not duplicated, and vars or ids already set are left alone unless passed explicitly.
  */
 export const provision = async (root: string, wrangler: Wrangler, options: ProvisionOptions) => {
+  for (const env of options.envs) {
+    if (!envNames.includes(env)) throw new SetupError(badEnv(env));
+  }
   const project = readProject(root).name;
   const manifests = enabled(root);
   let text = wranglerText(root);
@@ -292,3 +303,27 @@ export const provision = async (root: string, wrangler: Wrangler, options: Provi
     await putSecrets(manifests, env, wrangler, options);
   }
 };
+
+/**
+ * The environments setup acts on: the one `--env` names, else both. Values meant for one
+ * environment (a `--var`, or a secret read from the process environment) need `--env`, so a
+ * production key never lands in staging by accident.
+ */
+export const setupEnvs = (
+  env: string | undefined,
+  shared: ReadonlyArray<string>,
+): ReadonlyArray<EnvName> => {
+  if (env !== undefined) {
+    if (!envNames.includes(env as EnvName)) throw new SetupError(badEnv(env));
+    return [env as EnvName];
+  }
+  if (shared.length) {
+    throw new SetupError(
+      `${shared.join(", ")} would be set in both production and staging. Run setup once per environment with --env production or --env staging.`,
+    );
+  }
+  return envNames;
+};
+
+/** Whether wrangler is logged in. Plain `whoami` exits 0 even when it is not; `--json` does not. */
+export const isLoggedIn = (wrangler: Wrangler) => wrangler(["whoami", "--json"]).ok;

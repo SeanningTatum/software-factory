@@ -19,7 +19,21 @@ const walk = (dir: string): ReadonlyArray<string> =>
       )
     : [];
 
-const hash = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
+/**
+ * A file's hash with CRLF read as LF, so a Windows checkout (core.autocrlf) doesn't count as an
+ * edit. LF files hash as before, so older locks still match.
+ */
+const hash = (path: string) =>
+  createHash("sha256").update(readFileSync(path, "utf8").replaceAll("\r\n", "\n")).digest("hex");
+
+const readLock = (project: string): HarnessLock => {
+  const path = join(project, LOCK_FILE);
+  if (!existsSync(path))
+    throw new Error(
+      `No ${LOCK_FILE} in ${project}. Run this in a project created with the Claude workflows (without --no-claude).`,
+    );
+  return JSON.parse(readFileSync(path, "utf8")) as HarnessLock;
+};
 
 const sourceMeta = (harness: string) =>
   existsSync(join(harness, META))
@@ -53,7 +67,7 @@ export interface HarnessStatus {
 
 /** Files in `.claude/` that no longer match the lock: edited locally, or deleted. */
 export const harnessStatus = (project: string): HarnessStatus => {
-  const lock = JSON.parse(readFileSync(join(project, LOCK_FILE), "utf8")) as HarnessLock;
+  const lock = readLock(project);
   const changed: Array<string> = [];
   const missing: Array<string> = [];
   for (const [file, expected] of Object.entries(lock.files)) {
@@ -65,23 +79,29 @@ export const harnessStatus = (project: string): HarnessStatus => {
 };
 
 /**
- * Brings `.claude/` up to the harness this CLI ships. Files edited locally are kept unless `force`;
- * the lock then records the new source commit.
+ * Brings `.claude/` up to the harness this CLI ships. Files edited locally are kept unless `force`,
+ * and so are files of your own at a path the lock doesn't list; the lock then records the new
+ * source commit.
  */
 export const syncHarness = (harness: string, project: string, force = false) => {
-  const kept = force ? [] : harnessStatus(project).changed;
+  const previous = readLock(project);
+  const edited = force ? [] : harnessStatus(project).changed;
   const updated: Array<string> = [];
+  const kept: Array<string> = [];
   const files: Record<string, string> = {};
-  const previous = JSON.parse(readFileSync(join(project, LOCK_FILE), "utf8")) as HarnessLock;
   for (const file of harnessFiles(harness)) {
+    const from = join(harness, file);
     const to = join(project, TARGET, file);
-    if (kept.includes(file)) {
-      files[file] = previous.files[file] ?? hash(to);
+    const before = existsSync(to) ? hash(to) : undefined;
+    const theirs = before !== undefined && !(file in previous.files) && before !== hash(from);
+    if (edited.includes(file) || (theirs && !force)) {
+      // Lock the shipped hash, so `check` keeps showing the file as changed.
+      files[file] = previous.files[file] ?? hash(from);
+      kept.push(file);
       continue;
     }
     mkdirSync(dirname(to), { recursive: true });
-    const before = existsSync(to) ? hash(to) : undefined;
-    cpSync(join(harness, file), to);
+    cpSync(from, to);
     files[file] = hash(to);
     if (before !== files[file]) updated.push(file);
   }

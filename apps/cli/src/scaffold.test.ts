@@ -157,7 +157,9 @@ describe("scaffold", () => {
       add("kv");
       expect(existsSync(join(dir, "src/features/core/kv/api/key-value.ts"))).toBe(true);
       expect(git("status", "--porcelain").stdout).not.toBe("");
-      remove("kv");
+      // kv's files are new and uncommitted, so only --force removes them.
+      expect(() => remove("kv")).toThrow(/uncommitted changes/);
+      remove("kv", true);
     } finally {
       process.chdir(cwd);
     }

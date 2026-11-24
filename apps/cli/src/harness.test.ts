@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { harness as harnessCommand } from "./commands.ts";
 import { harnessStatus, installHarness, syncHarness } from "./harness.ts";
 
 const setup = () => {
@@ -43,5 +44,38 @@ describe("harness", () => {
     writeFileSync(join(harness, "commands/check.md"), "v3");
     expect(syncHarness(harness, project).kept).toEqual(["commands/check.md"]);
     expect(readFileSync(join(project, ".claude/commands/check.md"), "utf8")).toBe("mine");
+  });
+
+  test("sync keeps a file of your own at a path the lock doesn't list", () => {
+    const { harness, project } = setup();
+    installHarness(harness, project);
+    writeFileSync(join(harness, "commands/deploy.md"), "shipped");
+    mkdirSync(join(project, ".claude/commands"), { recursive: true });
+    writeFileSync(join(project, ".claude/commands/deploy.md"), "mine");
+    expect(syncHarness(harness, project).kept).toEqual(["commands/deploy.md"]);
+    expect(readFileSync(join(project, ".claude/commands/deploy.md"), "utf8")).toBe("mine");
+    expect(harnessStatus(project).changed).toEqual(["commands/deploy.md"]);
+    expect(syncHarness(harness, project, true).updated).toEqual(["commands/deploy.md"]);
+  });
+
+  test("a CRLF checkout of an untouched file is not an edit", () => {
+    const { harness, project } = setup();
+    writeFileSync(join(harness, "commands/check.md"), "line one\nline two\n");
+    installHarness(harness, project);
+    writeFileSync(join(project, ".claude/commands/check.md"), "line one\r\nline two\r\n");
+    expect(harnessStatus(project)).toEqual({ changed: [], missing: [] });
+  });
+
+  test("a project without a lock gets a plain message", () => {
+    const { project } = setup();
+    expect(() => harnessStatus(project)).toThrow(
+      /No harness.lock.json in .*\(without --no-claude\)/,
+    );
+  });
+
+  test("an unknown action is refused, not run as sync", () => {
+    expect(() => harnessCommand("chek", false)).toThrow(
+      'Unknown action "chek". Use check or sync.',
+    );
   });
 });

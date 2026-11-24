@@ -1,10 +1,10 @@
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import * as p from "@clack/prompts";
 import {
   addBlock,
-  type EnvName,
-  envNames,
   loadManifests,
+  readProject,
   removeBlock,
   withRequirements,
 } from "@tanstack-cf-saas/blocks";
@@ -21,9 +21,16 @@ import {
   packageManagers,
   runCommand,
 } from "./pm.ts";
-import { projectWrangler, run } from "./run.ts";
-import { hasTables, isEmptyDir, parseFeatures, scaffold, validateName } from "./scaffold.ts";
-import { type Item, isReady, provision, readiness } from "./setup.ts";
+import { gitIdentity, projectWrangler, run } from "./run.ts";
+import {
+  hasTables,
+  isEmptyDir,
+  nameFromDir,
+  parseFeatures,
+  scaffold,
+  validateName,
+} from "./scaffold.ts";
+import { type Item, isLoggedIn, isReady, provision, readiness, setupEnvs } from "./setup.ts";
 import { resetHistory, today } from "./timeline.ts";
 import { VERSION } from "./version.ts";
 
@@ -69,12 +76,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         ));
   const targetDir = resolve(dirArg);
   if (!isEmptyDir(targetDir)) throw new Error(`${targetDir} is not empty.`);
-  const fallbackName =
-    dirArg
-      .split("/")
-      .pop()
-      ?.toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-") || "my-saas";
+  const fallbackName = nameFromDir(targetDir);
   const name =
     args.name ??
     (args.yes
@@ -87,6 +89,8 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
             validate: (v) => validateName(v || fallbackName),
           }),
         ));
+  const badName = validateName(name);
+  if (badName) throw new Error(`"${name}": ${badName}`);
   const manifests = loadManifests(templateDir());
   const parsed =
     args.features !== undefined
@@ -124,47 +128,77 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
   return { name, targetDir, features, claude, install: args.install, git: args.git };
 };
 
+type Step = "scaffold" | "install" | "migrate" | "git";
+
+const COMMIT_MESSAGE = `chore: create project with create-tanstack-cf-saas ${VERSION}`;
+const shellPath = (dir: string) => (/\s/.test(dir) ? JSON.stringify(dir) : dir);
+
+/** What is left to run by hand when `failed` broke, in order. */
+const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: boolean) => {
+  const order: ReadonlyArray<Step> = ["install", "migrate", "git"];
+  const pending = order.slice(order.indexOf(failed));
+  return [
+    `cd ${shellPath(plan.targetDir)}`,
+    ...(pending.includes("install") && plan.install ? [installCommand(pm).flat().join(" ")] : []),
+    ...(pending.includes("migrate") && hasDb
+      ? [runCommand(pm, "db:generate").flat().join(" ")]
+      : []),
+    ...(pending.includes("git") && plan.git
+      ? [`git init && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
+      : []),
+  ];
+};
+
 export const create = async (args: CreateArgs) => {
   p.intro(pc.inverse(" create-tanstack-cf-saas "));
   const plan = await askPlan(args);
-  const pm = (
-    packageManagers.includes(args.pm as PackageManager) ? args.pm : detectPackageManager()
-  ) as PackageManager;
+  const known = packageManagers.includes(args.pm as PackageManager);
+  if (args.pm !== undefined && !known) {
+    p.log.warn(`Unknown package manager "${args.pm}"; use ${packageManagers.join(", ")}.`);
+  }
+  const pm = known ? (args.pm as PackageManager) : detectPackageManager();
   const spinner = p.spinner();
+  let step: Step = "scaffold";
 
   const actor = createActor(
     createMachine.provide({
       actors: {
         scaffold: fromPromise(async ({ input }) => {
           spinner.start("Copying the template");
-          const result = scaffold({
-            templateDir: templateDir(),
-            harnessDir: input.claude ? harnessDir() : undefined,
-            targetDir: input.targetDir,
-            name: input.name,
-            features: input.features,
-          });
-          spinner.stop(
-            `Created ${input.name} with ${result.features.length ? result.features.join(", ") : "the required features only"}`,
-          );
-          return result.features;
+          try {
+            const result = scaffold({
+              templateDir: templateDir(),
+              harnessDir: input.claude ? harnessDir() : undefined,
+              targetDir: input.targetDir,
+              name: input.name,
+              features: input.features,
+            });
+            spinner.stop(
+              `Created ${input.name} with ${result.features.length ? result.features.join(", ") : "the required features only"}`,
+            );
+            return result.features;
+          } catch (error) {
+            // A running spinner keeps Node alive, so the process would never exit.
+            spinner.error("Could not copy the template");
+            throw error;
+          }
         }),
-        install: fromPromise(({ input }) => run(...installCommand(pm), input.targetDir)),
+        install: fromPromise(({ input }) => {
+          step = "install";
+          return run(...installCommand(pm), input.targetDir);
+        }),
         migrate: fromPromise(async ({ input }) => {
+          step = "migrate";
           if (hasTables(input.targetDir))
             await run(...runCommand(pm, "db:generate"), input.targetDir);
         }),
         git: fromPromise(async ({ input }) => {
+          step = "git";
           await run("git", ["init", "--quiet"], input.targetDir);
           await run("git", ["add", "-A"], input.targetDir);
           await run(
             "git",
-            [
-              "commit",
-              "--quiet",
-              "-m",
-              `chore: create project with create-tanstack-cf-saas ${VERSION}`,
-            ],
+            [...gitIdentity(input.targetDir), "commit", "--quiet", "-m", COMMIT_MESSAGE],
             input.targetDir,
           );
         }),
@@ -177,17 +211,25 @@ export const create = async (args: CreateArgs) => {
   const { value, context } = actor.getSnapshot();
   if (value === "failed") {
     p.log.error(context.error ?? "Something failed.");
+    if (step === "scaffold") {
+      p.log.info(`${plan.targetDir} may hold a partial copy; delete it before you try again.`);
+    } else {
+      p.note(
+        stepsLeft(step, plan, pm, context.features.includes("db")).join("\n"),
+        `The project is in ${plan.targetDir}. Still to do`,
+      );
+    }
     process.exitCode = 1;
     return;
   }
 
   const steps = [
-    `cd ${plan.targetDir}`,
-    ...(plan.install ? [] : [installCommand(pm).join(" ").replace(",", " ")]),
+    `cd ${shellPath(plan.targetDir)}`,
+    ...(plan.install ? [] : [installCommand(pm).flat().join(" ")]),
     ...(context.features.includes("db")
-      ? [`${runCommand(pm, "db:migrate:local").flat().join(" ")}`]
+      ? [runCommand(pm, "db:migrate:local").flat().join(" ")]
       : []),
-    `${runCommand(pm, "dev").flat().join(" ")}`,
+    runCommand(pm, "dev").flat().join(" "),
   ];
   p.note(steps.join("\n"), "Next");
   p.outro(
@@ -207,6 +249,7 @@ const featureArg = (arg: string) => {
 export const add = (arg: string) => {
   const feature = featureArg(arg);
   const root = process.cwd();
+  readProject(root);
   const added = addBlock(root, templateDir(), feature);
   resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
   console.log(
@@ -216,9 +259,33 @@ export const add = (arg: string) => {
   );
 };
 
-export const remove = (arg: string) => {
+/** Uncommitted changes under `paths`, or undefined when git can't tell (not a repository). */
+const uncommitted = (root: string, paths: ReadonlyArray<string>) => {
+  const status = spawnSync("git", ["status", "--porcelain", "--", ...paths], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  return status.status === 0 ? status.stdout.trim() : undefined;
+};
+
+export const remove = (arg: string, force = false) => {
   const feature = featureArg(arg);
-  removeBlock(process.cwd(), feature);
+  const root = process.cwd();
+  readProject(root);
+  const manifest = loadManifests(root).get(feature);
+  if (manifest && !force) {
+    // What removeBlock deletes: the feature's folder and the files its manifest lists.
+    const changes = uncommitted(root, [manifest.dir, ...(manifest.files ?? [])]);
+    if (changes === undefined)
+      throw new Error(
+        `Can't tell whether ${feature} has uncommitted work: this is not a git repository. Pass --force to remove it anyway.`,
+      );
+    if (changes)
+      throw new Error(
+        `${feature} has uncommitted changes, which removing it would delete:\n${changes}\nCommit or stash them, or pass --force.`,
+      );
+  }
+  removeBlock(root, feature);
   console.log(`Removed ${feature}. Install packages to drop the ones it used.`);
 };
 
@@ -246,8 +313,9 @@ export interface SetupArgs {
 
 export const setup = async (args: SetupArgs) => {
   const root = process.cwd();
+  readProject(root);
   const wrangler = projectWrangler(root);
-  const loggedIn = wrangler(["whoami"]).ok;
+  const loggedIn = isLoggedIn(wrangler);
   if (args.check) {
     const items = readiness(root, loggedIn ? wrangler : undefined);
     printTable(items);
@@ -255,23 +323,26 @@ export const setup = async (args: SetupArgs) => {
     process.exitCode = isReady(items) ? 0 : 1;
     return;
   }
-  if (!loggedIn) throw new Error("Log in first: npx wrangler login");
-  p.intro(pc.inverse(" setup "));
-  const envs = args.env ? [args.env as EnvName] : envNames;
   const vars = Object.fromEntries(
     args.vars.map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)]),
   );
+  const fromEnv = [...loadManifests(root).values()]
+    .flatMap((m) => Object.keys(m.secrets ?? {}))
+    .filter((key) => process.env[key]);
+  const envs = setupEnvs(args.env, [...Object.keys(vars).map((k) => `--var ${k}`), ...fromEnv]);
+  if (!loggedIn) throw new Error("Log in first: npx wrangler login");
+  p.intro(pc.inverse(" setup "));
   await provision(root, wrangler, {
     envs,
     vars,
-    secretValue: async (key, env) => {
-      const fromEnv = process.env[key];
-      if (fromEnv) return fromEnv;
-      if (args.yes || key === "BETTER_AUTH_SECRET") return undefined;
-      const value = cancelled(
+    secretValue: async (key, env, isSet) => {
+      const value = process.env[key];
+      if (value) return value;
+      if (args.yes || isSet || key === "BETTER_AUTH_SECRET") return undefined;
+      const typed = cancelled(
         await p.password({ message: `${key} for ${env} (leave empty to skip)` }),
       );
-      return value || undefined;
+      return typed || undefined;
     },
     log: (line) => p.log.step(line),
   });
@@ -282,6 +353,8 @@ export const setup = async (args: SetupArgs) => {
 
 export const harness = (action: string, force: boolean) => {
   const root = process.cwd();
+  if (action !== "check" && action !== "sync")
+    throw new Error(`Unknown action "${action}". Use check or sync.`);
   if (action === "check") {
     const { changed, missing } = harnessStatus(root);
     for (const f of changed) console.log(`${pc.yellow("changed")} .claude/${f}`);

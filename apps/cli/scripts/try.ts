@@ -1,26 +1,22 @@
 /**
  * Runs the real CLI from this repo, the way `bunx create-tanstack-cf-saas` will run once it is
  * published. New projects depend on the @tanstack-cf-saas packages, which are not on npm yet, so
- * this packs them here and points the bundled template at the tarballs before the CLI starts.
+ * this packs them here, copies the bundled template, points the copy at the tarballs, and hands the
+ * copy to the CLI through CF_SAAS_TEMPLATE_DIR (an internal variable, not listed in --help). The
+ * bundled template itself is never changed, so it stays fit to publish.
  *
  *   bun run try                                   the wizard, into ../cf-saas-try
  *   bun run try ../my-app --features db,auth --yes
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { linkLocal, packAll, repo } from "./pack.ts";
 
-const repo = join(import.meta.dirname, "../../..");
 const cli = join(repo, "apps/cli");
 const packs = join(cli, ".packs");
+const template = join(packs, "template");
 const defaultDir = resolve(repo, "../cf-saas-try");
-
-const localPackages: Record<string, string> = {
-  "@tanstack-cf-saas/biome-config": "packages/biome-config",
-  "@tanstack-cf-saas/blocks": "packages/blocks",
-  "@tanstack-cf-saas/lint": "packages/lint",
-  "@tanstack-cf-saas/tsconfig": "packages/tsconfig",
-};
 
 const run = (label: string, cmd: string, args: Array<string>, cwd: string) => {
   console.log(`• ${label}`);
@@ -32,10 +28,12 @@ const run = (label: string, cmd: string, args: Array<string>, cwd: string) => {
   return result.stdout;
 };
 
-const [first, ...restArgs] = process.argv.slice(2);
+// `bun run try -- <dir>` may pass the `--` through.
+const argv = process.argv.slice(2).filter((arg, i) => i > 0 || arg !== "--");
+const [first, ...restArgs] = argv;
 const dirGiven = first !== undefined && !first.startsWith("-");
 const target = dirGiven ? resolve(process.env.INIT_CWD ?? process.cwd(), first) : defaultDir;
-const flags = dirGiven ? restArgs : process.argv.slice(2);
+const flags = dirGiven ? restArgs : argv;
 
 // Only the default folder is cleared, and only when an earlier try made it.
 if (!dirGiven && existsSync(join(target, "cf-saas.json"))) {
@@ -51,26 +49,15 @@ run(
 );
 
 rmSync(packs, { recursive: true, force: true });
-mkdirSync(packs, { recursive: true });
-const templatePackage = join(cli, "template/package.json");
-const pkg = JSON.parse(readFileSync(templatePackage, "utf8"));
-for (const [name, rel] of Object.entries(localPackages)) {
-  const out = run(
-    `Packing ${name}`,
-    "bun",
-    ["pm", "pack", "--destination", packs, "--quiet"],
-    join(repo, rel),
-  );
-  const tarball = out.trim().split("\n").pop() ?? "";
-  if (pkg.devDependencies?.[name]) {
-    pkg.devDependencies[name] = `file:${tarball.startsWith("/") ? tarball : join(packs, tarball)}`;
-  }
-}
-writeFileSync(templatePackage, `${JSON.stringify(pkg, null, 2)}\n`);
+console.log("• Packing the packages");
+const tarballs = packAll(packs);
+cpSync(join(cli, "template"), template, { recursive: true });
+linkLocal(template, tarballs);
 
 console.log(`\nRunning the CLI into ${target}\n`);
 const result = spawnSync("node", [join(cli, "dist/index.js"), target, ...flags], {
   stdio: "inherit",
+  env: { ...process.env, CF_SAAS_TEMPLATE_DIR: template },
 });
 
 if (result.status === 0) {

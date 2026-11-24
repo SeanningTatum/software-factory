@@ -4,7 +4,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prune } from "@tanstack-cf-saas/blocks";
 import { parse } from "jsonc-parser";
-import { isReady, provision, readiness, type Wrangler } from "./setup.ts";
+import {
+  isLoggedIn,
+  isReady,
+  provision,
+  readiness,
+  SetupError,
+  setupEnvs,
+  type Wrangler,
+} from "./setup.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../../../templates/saas-starter");
 
@@ -20,7 +28,7 @@ const project = (features: Array<string>) => {
 };
 
 /** A wrangler stand-in that records every call, including what went to stdin. */
-const fakeWrangler = (existing: { d1?: boolean } = {}) => {
+const fakeWrangler = (existing: { d1?: boolean; secrets?: Array<string> } = {}) => {
   const calls: Array<{ args: ReadonlyArray<string>; input?: string }> = [];
   const wrangler: Wrangler = (args, input) => {
     calls.push({ args, input });
@@ -42,7 +50,11 @@ const fakeWrangler = (existing: { d1?: boolean } = {}) => {
       };
     if (a === "kv") return { ok: true, stdout: `"id": "${"a".repeat(32)}"`, stderr: "" };
     if (a === "secret" && b === "list")
-      return { ok: true, stdout: JSON.stringify([{ name: "BETTER_AUTH_SECRET" }]), stderr: "" };
+      return {
+        ok: true,
+        stdout: JSON.stringify((existing.secrets ?? []).map((name) => ({ name }))),
+        stderr: "",
+      };
     return { ok: true, stdout: "", stderr: "" };
   };
   return { wrangler, calls };
@@ -61,7 +73,7 @@ describe("readiness", () => {
 
   test("reads which secrets are set when wrangler is logged in", () => {
     const dir = project(["auth"]);
-    const items = readiness(dir, fakeWrangler().wrangler);
+    const items = readiness(dir, fakeWrangler({ secrets: ["BETTER_AUTH_SECRET"] }).wrangler);
     expect(
       items.find((i) => i.name === "BETTER_AUTH_SECRET" && i.env === "production")?.state,
     ).toBe("set");
@@ -110,4 +122,71 @@ describe("provision", () => {
     await provision(dir, second.wrangler, options);
     expect(second.calls.filter((c) => c.args[1] === "create")).toEqual([]);
   });
+});
+
+describe("provision on a second run", () => {
+  const options = {
+    envs: ["production", "staging"] as const,
+    vars: {},
+    secretValue: async () => undefined,
+    log: () => undefined,
+  };
+
+  test("puts no secrets that are already set: BETTER_AUTH_SECRET is never regenerated", async () => {
+    const dir = project(["auth"]);
+    const { wrangler, calls } = fakeWrangler({ secrets: ["BETTER_AUTH_SECRET"] });
+    await provision(dir, wrangler, options);
+    expect(calls.filter((c) => c.args[0] === "secret" && c.args[1] === "put")).toEqual([]);
+  });
+
+  test("still replaces a set secret when a value is given on purpose", async () => {
+    const dir = project(["auth"]);
+    const { wrangler, calls } = fakeWrangler({ secrets: ["BETTER_AUTH_SECRET"] });
+    await provision(dir, wrangler, {
+      ...options,
+      envs: ["staging"],
+      secretValue: async (key) => (key === "BETTER_AUTH_SECRET" ? "chosen" : undefined),
+    });
+    const put = calls.filter((c) => c.args[1] === "put");
+    expect(put.map((c) => `${c.args.join(" ")} <${c.input}>`)).toEqual([
+      "secret put BETTER_AUTH_SECRET --env staging <chosen>",
+    ]);
+  });
+});
+
+describe("environments", () => {
+  test("refuses an environment that is not production or staging", async () => {
+    expect(() => setupEnvs("Staging", [])).toThrow(
+      '--env must be production or staging, not "Staging".',
+    );
+    const { wrangler, calls } = fakeWrangler();
+    await expect(
+      provision(project(["auth"]), wrangler, {
+        envs: ["Staging" as "staging"],
+        vars: {},
+        secretValue: async () => undefined,
+        log: () => undefined,
+      }),
+    ).rejects.toThrow(SetupError);
+    expect(calls).toEqual([]);
+  });
+
+  test("needs --env for a --var or a secret from the environment", () => {
+    expect(() => setupEnvs(undefined, ["--var APP_URL"])).toThrow(
+      /--var APP_URL would be set in both production and staging/,
+    );
+    expect(() => setupEnvs(undefined, ["STRIPE_SECRET_KEY"])).toThrow(/--env production/);
+    expect(setupEnvs("staging", ["--var APP_URL"])).toEqual(["staging"]);
+    expect(setupEnvs(undefined, [])).toEqual(["production", "staging"]);
+  });
+});
+
+test("checks login with whoami --json, since plain whoami exits 0 when logged out", () => {
+  const seen: Array<string> = [];
+  const loggedOut: Wrangler = (args) => {
+    seen.push(args.join(" "));
+    return { ok: !args.includes("--json"), stdout: "", stderr: "" };
+  };
+  expect(isLoggedIn(loggedOut)).toBe(false);
+  expect(seen).toEqual(["whoami --json"]);
 });

@@ -1,8 +1,21 @@
 #!/usr/bin/env node
 import { defineCommand, runMain } from "citty";
+import pc from "picocolors";
 import { legacyArgs } from "./args.ts";
 import { add, create, harness, remove, setup } from "./commands.ts";
 import { VERSION } from "./version.ts";
+
+/** Runs a command and prints what went wrong as one line, without a stack: these are user errors. */
+function guarded<T>(fn: (context: T) => unknown) {
+  return async (context: T) => {
+    try {
+      await fn(context);
+    } catch (error) {
+      console.error(pc.red(error instanceof Error ? error.message : String(error)));
+      process.exitCode = 1;
+    }
+  };
+}
 
 const createCommand = defineCommand({
   meta: { name: "create", description: "Create a new project (the default command)" },
@@ -31,7 +44,7 @@ const createCommand = defineCommand({
     },
     git: { type: "boolean", default: true, description: "Run git init (--no-git to skip)" },
   },
-  run: ({ args }) =>
+  run: guarded(({ args }) =>
     create({
       dir: args.dir,
       name: args.name,
@@ -42,6 +55,7 @@ const createCommand = defineCommand({
       install: args.install,
       git: args.git,
     }),
+  ),
 });
 
 const main = defineCommand({
@@ -56,12 +70,19 @@ const main = defineCommand({
     add: defineCommand({
       meta: { description: "Add a feature (and the features it needs) to this project" },
       args: { feature: { type: "positional", required: true } },
-      run: ({ args }) => add(args.feature),
+      run: guarded(({ args }) => add(args.feature)),
     }),
     remove: defineCommand({
       meta: { description: "Remove a feature and everything it owns" },
-      args: { feature: { type: "positional", required: true } },
-      run: ({ args }) => remove(args.feature),
+      args: {
+        feature: { type: "positional", required: true },
+        force: {
+          type: "boolean",
+          default: false,
+          description: "Remove even with uncommitted changes in the feature's files",
+        },
+      },
+      run: guarded(({ args }) => remove(args.feature, args.force)),
     }),
     setup: defineCommand({
       meta: {
@@ -77,7 +98,7 @@ const main = defineCommand({
           description: "Ask nothing; secrets come from environment variables",
         },
       },
-      run: ({ args, rawArgs }) => {
+      run: guarded(({ args, rawArgs }) => {
         const vars = rawArgs.flatMap((arg, i) =>
           arg === "--var" ? [rawArgs[i + 1] ?? ""] : arg.startsWith("--var=") ? [arg.slice(6)] : [],
         );
@@ -87,7 +108,7 @@ const main = defineCommand({
           vars: vars.filter((v) => v.includes("=")),
           yes: args.yes,
         });
-      },
+      }),
     }),
     harness: defineCommand({
       meta: {
@@ -101,21 +122,17 @@ const main = defineCommand({
           description: "sync: replace locally edited files too",
         },
       },
-      run: ({ args }) => harness(args.action, args.force),
+      run: guarded(({ args }) => harness(args.action, args.force)),
     }),
   },
 });
 
 const SUBCOMMANDS = new Set(["create", "add", "remove", "setup", "harness"]);
+const MAIN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 const rawArgs = legacyArgs(process.argv.slice(2));
 const first = rawArgs[0];
 /** `create-tanstack-cf-saas my-app --features auth` means create; `--help` alone shows every command. */
-const showAll =
-  first === "--help" || first === "-h" || (first !== undefined && SUBCOMMANDS.has(first));
+const toMain = first !== undefined && (MAIN_FLAGS.has(first) || SUBCOMMANDS.has(first));
 
-(showAll ? runMain(main, { rawArgs }) : runMain(createCommand, { rawArgs })).catch(
-  (error: unknown) => {
-    console.error(error instanceof Error ? error.message : error);
-    process.exit(1);
-  },
-);
+if (toMain) runMain(main, { rawArgs });
+else runMain(createCommand, { rawArgs });

@@ -1,19 +1,21 @@
 /**
  * Copies the template and the Claude harness into this package so they ship with the CLI.
- * Rewrites `workspace:*` to the versions published from this repo and stores .gitignore as
+ * Only files git would commit are copied, and never local secrets (.dev.vars.*, .env) or
+ * settings. Rewrites `workspace:*` to the versions published from this repo and stores .gitignore as
  * _gitignore, because npm drops .gitignore files from packages.
  */
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 const repo = join(import.meta.dirname, "../../..");
 const source = join(repo, "templates/saas-starter");
@@ -37,14 +39,43 @@ const SKIP = new Set([
 /** Generated migrations are rebuilt for the chosen features; only the folder itself ships. */
 const skipPath = (path: string) => /^drizzle\/(?!\.gitkeep$)/.test(path);
 
+/** Local files that must never ship, even when nothing ignores them: secrets and own settings. */
+const LOCAL =
+  /(?:^|\/)(?:\.env(?:\.(?!example$)[^/]*)?|\.dev\.vars(?:\.(?!example$)[^/]*)?|settings\.local\.json|\.DS_Store)$/;
+
+/**
+ * The files git would commit under `dir` (tracked, plus new ones it doesn't ignore), relative to
+ * it; undefined outside a git checkout. New files count so work not yet committed still bundles.
+ */
+const gitFiles = (dir: string): ReadonlyArray<string> | undefined => {
+  const listed = spawnSync(
+    "git",
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "."],
+    { cwd: dir, encoding: "utf8" },
+  );
+  if (listed.status !== 0) return undefined;
+  return listed.stdout.split("\0").filter((f) => f && existsSync(join(dir, f)));
+};
+
+/** Copies `from` to `to`: git's files when it can list them, else everything but `skip`. */
+const copyTree = (from: string, to: string, skip: (rel: string) => boolean) => {
+  mkdirSync(to, { recursive: true });
+  const files = gitFiles(from);
+  if (!files) {
+    cpSync(from, to, {
+      recursive: true,
+      filter: (path) => !skip(relative(from, path)) && !LOCAL.test(relative(from, path)),
+    });
+    return;
+  }
+  for (const file of files.filter((f) => !skip(f) && !LOCAL.test(f))) {
+    mkdirSync(dirname(join(to, file)), { recursive: true });
+    cpSync(join(from, file), join(to, file));
+  }
+};
+
 rmSync(target, { recursive: true, force: true });
-cpSync(source, target, {
-  recursive: true,
-  filter: (from) => {
-    const rel = relative(source, from);
-    return !rel.split("/").some((part) => SKIP.has(part)) && !skipPath(rel);
-  },
-});
+copyTree(source, target, (rel) => rel.split("/").some((part) => SKIP.has(part)) || skipPath(rel));
 renameSync(join(target, ".gitignore"), join(target, "_gitignore"));
 
 const versionOf = (name: string) => {
@@ -63,16 +94,19 @@ for (const field of ["dependencies", "devDependencies"]) {
     if (version.startsWith("workspace:")) pkg[field][name] = versionOf(name);
   }
 }
-writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+const pkgText = `${JSON.stringify(pkg, null, 2)}\n`;
+// A local link here would ship to every user: refuse to bundle it.
+const local = /"(?:file|workspace|link):[^"]*"/.exec(pkgText);
+if (local) throw new Error(`The template's package.json has a local dependency: ${local[0]}`);
+writeFileSync(pkgPath, pkgText);
 
 rmSync(harnessTarget, { recursive: true, force: true });
 if (existsSync(harnessSource)) {
-  cpSync(harnessSource, harnessTarget, {
-    recursive: true,
-    filter: (from) =>
-      !relative(harnessSource, from).split("/").includes(".git") &&
-      relative(harnessSource, from) !== "README.md",
-  });
+  copyTree(
+    harnessSource,
+    harnessTarget,
+    (rel) => rel.split("/").includes(".git") || rel === "README.md",
+  );
   const commit = (() => {
     const run = (cmd: string) =>
       execSync(cmd, {

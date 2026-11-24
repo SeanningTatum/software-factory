@@ -31,3 +31,12 @@ export const projectWrangler =
     });
     return { ok: result.status === 0, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   };
+
+/** `-c` flags with a stand-in author when git has no user.name or user.email (as in CI). */
+export const gitIdentity = (cwd: string): Array<string> => {
+  const has = (key: string) =>
+    spawnSync("git", ["config", key], { cwd, encoding: "utf8" }).stdout.trim() !== "";
+  return has("user.name") && has("user.email")
+    ? []
+    : ["-c", "user.name=create-tanstack-cf-saas", "-c", "user.email=noreply@example.com"];
+};

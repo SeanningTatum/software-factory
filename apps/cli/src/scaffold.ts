@@ -8,7 +8,7 @@ import {
   renameSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { loadManifests, prune, readProject, sync, writeProject } from "@tanstack-cf-saas/blocks";
 import { applyEdits, modify } from "jsonc-parser";
 import { installHarness } from "./harness.ts";
@@ -29,7 +29,6 @@ export interface ScaffoldOptions {
 export interface ScaffoldResult {
   /** The optional features kept, with what they require. */
   readonly features: ReadonlyArray<string>;
-  readonly harness: boolean;
 }
 
 /** Old block names, still accepted. */
@@ -51,14 +50,27 @@ export const parseFeatures = (list: string | ReadonlyArray<string>) => {
   return { features: [...new Set(features)], notes };
 };
 
-const NAME = /^[a-z0-9][a-z0-9-]{0,62}$/;
+/**
+ * R2 bucket names stop at 63 characters, and the longest name made from the project is
+ * `{project}-uploads-staging`, 16 more.
+ */
+export const MAX_NAME = 63 - "-uploads-staging".length;
+const NAME = new RegExp(`^[a-z0-9](?:[a-z0-9-]{0,${MAX_NAME - 2}}[a-z0-9])?$`);
 const SECRET_BYTES = 36;
 
 /** Cloudflare and npm both accept this: lowercase letters, digits and dashes. */
 export const validateName = (name: string): string | undefined =>
   NAME.test(name)
     ? undefined
-    : "Use lowercase letters, digits and dashes (e.g. my-app), 63 characters at most.";
+    : `Use lowercase letters, digits and dashes, starting and ending with a letter or digit (e.g. my-app), ${MAX_NAME} characters at most.`;
+
+/** A project name from its folder: `My App` and `./my-app/` give `my-app`. */
+export const nameFromDir = (dir: string) =>
+  basename(resolve(dir))
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .slice(0, MAX_NAME)
+    .replace(/^-+|-+$/g, "") || "my-saas";
 
 export const titleCase = (name: string) =>
   name
@@ -105,10 +117,6 @@ const writeDevVars = (dir: string) => {
   );
 };
 
-/** The optional features and core modules a template offers, in manifest order. */
-export const optionalFeatures = (templateDir: string) =>
-  [...loadManifests(templateDir).values()].filter((m) => !m.required).map((m) => m.name);
-
 /**
  * Copies the template, keeps the required features and the chosen ones (and what they require), names
  * the project, starts each feature's History, and adds the Claude harness. Installing packages and
@@ -125,7 +133,10 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
   const unknown = features.filter((f) => !available.has(f));
   if (unknown.length) {
     throw new Error(
-      `Unknown feature(s): ${unknown.join(", ")}. Choose from: ${optionalFeatures(templateDir).join(", ")}`,
+      `Unknown feature(s): ${unknown.join(", ")}. Choose from: ${[...available.values()]
+        .filter((m) => !m.required)
+        .map((m) => m.name)
+        .join(", ")}`,
     );
   }
 
@@ -144,7 +155,6 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
   );
   writeDevVars(targetDir);
 
-  const harness = Boolean(harnessDir && existsSync(harnessDir));
-  if (harness && harnessDir) installHarness(harnessDir, targetDir);
-  return { features: kept, harness };
+  if (harnessDir && existsSync(harnessDir)) installHarness(harnessDir, targetDir);
+  return { features: kept };
 };
