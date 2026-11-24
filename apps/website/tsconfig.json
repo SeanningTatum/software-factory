@@ -4,5 +4,5 @@
     "types": ["./worker-configuration.d.ts", "vite/client", "node"],
     "paths": { "#/*": ["./src/*"] }
   },
-  "include": ["src", "e2e", "*.ts"]
+  "include": ["src", "*.ts"]
 }

@@ -1,6 +1,8 @@
 name: ci
 on:
   pull_request:
+    # labeled/unlabeled re-run the timeline gate when someone adds or drops `no-timeline`.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 permissions:
@@ -14,3 +16,18 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run build
+
+  # Every feature a pull request changes needs a new line in its TIMELINE.md.
+  # Label the pull request `no-timeline` to skip this for a trivial change.
+  timeline:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx cf-saas-lint timeline --base "origin/${{ github.base_ref }}"
+        env:
+          TIMELINE_SKIP: ${{ contains(github.event.pull_request.labels.*.name, 'no-timeline') && '1' || '' }}

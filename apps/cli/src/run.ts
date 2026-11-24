@@ -6,9 +6,14 @@ import type { Wrangler } from "./setup.ts";
 /** Runs a command, streaming its output, and rejects when it fails. */
 export const run = (cmd: string, args: ReadonlyArray<string>, cwd: string) =>
   new Promise<void>((resolve, reject) => {
-    const result = spawnSync(cmd, args, { cwd, stdio: "inherit", shell: process.platform === "win32" });
+    const result = spawnSync(cmd, args, {
+      cwd,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
     if (result.status === 0) resolve();
-    else reject(new Error(`${cmd} ${args.join(" ")} exited with ${result.status ?? result.signal}`));
+    else
+      reject(new Error(`${cmd} ${args.join(" ")} exited with ${result.status ?? result.signal}`));
   });
 
 /** The project's own wrangler when installed, else npx. Secrets reach it on stdin only. */

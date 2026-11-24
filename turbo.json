@@ -9,6 +9,7 @@
     "typecheck": { "dependsOn": ["^build"] },
     "lint": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"], "outputs": [] },
+    "create-tanstack-cf-saas#test": { "dependsOn": ["^build", "build"], "outputs": [] },
     "dev": { "cache": false, "persistent": true }
   }
 }

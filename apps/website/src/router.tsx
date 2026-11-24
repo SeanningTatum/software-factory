@@ -1,7 +1,7 @@
 import { createRouter } from "@tanstack/react-router";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { nonceFor } from "./core/middleware.ts";
+import { nonceFor } from "./app/middleware.ts";
 import { routeTree } from "./routeTree.gen.ts";
 
 const nonce = createIsomorphicFn()

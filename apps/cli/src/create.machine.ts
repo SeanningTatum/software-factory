@@ -3,7 +3,7 @@ import { assign, fromPromise, setup } from "xstate";
 export interface CreatePlan {
   readonly name: string;
   readonly targetDir: string;
-  readonly blocks: ReadonlyArray<string>;
+  readonly features: ReadonlyArray<string>;
   readonly claude: boolean;
   readonly install: boolean;
   readonly git: boolean;
@@ -13,23 +13,25 @@ export interface CreatePlan {
 export const createMachine = setup({
   types: {
     input: {} as CreatePlan,
-    context: {} as { plan: CreatePlan; blocks: ReadonlyArray<string>; error: string | undefined },
+    context: {} as { plan: CreatePlan; features: ReadonlyArray<string>; error: string | undefined },
     events: {} as { type: "START" },
   },
   actors: {
-    scaffold: fromPromise<ReadonlyArray<string>, CreatePlan>(() => Promise.reject(new Error("not provided"))),
+    scaffold: fromPromise<ReadonlyArray<string>, CreatePlan>(() =>
+      Promise.reject(new Error("not provided")),
+    ),
     install: fromPromise<void, CreatePlan>(() => Promise.reject(new Error("not provided"))),
     migrate: fromPromise<void, CreatePlan>(() => Promise.reject(new Error("not provided"))),
     git: fromPromise<void, CreatePlan>(() => Promise.reject(new Error("not provided"))),
   },
   guards: {
     installs: ({ context }) => context.plan.install,
-    hasDatabase: ({ context }) => context.blocks.includes("d1"),
+    hasDatabase: ({ context }) => context.features.includes("db"),
     usesGit: ({ context }) => context.plan.git,
   },
 }).createMachine({
   id: "create",
-  context: ({ input }) => ({ plan: input, blocks: [], error: undefined }),
+  context: ({ input }) => ({ plan: input, features: [], error: undefined }),
   initial: "ready",
   states: {
     ready: { on: { START: "scaffolding" } },
@@ -37,26 +39,42 @@ export const createMachine = setup({
       invoke: {
         src: "scaffold",
         input: ({ context }) => context.plan,
-        onDone: { target: "afterScaffold", actions: assign({ blocks: ({ event }) => event.output }) },
-        onError: { target: "failed", actions: assign({ error: ({ event }) => String(event.error) }) },
+        onDone: {
+          target: "afterScaffold",
+          actions: assign({ features: ({ event }) => event.output }),
+        },
+        onError: {
+          target: "failed",
+          actions: assign({ error: ({ event }) => String(event.error) }),
+        },
       },
     },
-    afterScaffold: { always: [{ guard: "installs", target: "installing" }, { target: "afterMigrate" }] },
+    afterScaffold: {
+      always: [{ guard: "installs", target: "installing" }, { target: "afterMigrate" }],
+    },
     installing: {
       invoke: {
         src: "install",
         input: ({ context }) => context.plan,
         onDone: "afterInstall",
-        onError: { target: "failed", actions: assign({ error: ({ event }) => String(event.error) }) },
+        onError: {
+          target: "failed",
+          actions: assign({ error: ({ event }) => String(event.error) }),
+        },
       },
     },
-    afterInstall: { always: [{ guard: "hasDatabase", target: "migrating" }, { target: "afterMigrate" }] },
+    afterInstall: {
+      always: [{ guard: "hasDatabase", target: "migrating" }, { target: "afterMigrate" }],
+    },
     migrating: {
       invoke: {
         src: "migrate",
         input: ({ context }) => context.plan,
         onDone: "afterMigrate",
-        onError: { target: "failed", actions: assign({ error: ({ event }) => String(event.error) }) },
+        onError: {
+          target: "failed",
+          actions: assign({ error: ({ event }) => String(event.error) }),
+        },
       },
     },
     afterMigrate: { always: [{ guard: "usesGit", target: "committing" }, { target: "done" }] },
@@ -65,7 +83,10 @@ export const createMachine = setup({
         src: "git",
         input: ({ context }) => context.plan,
         onDone: "done",
-        onError: { target: "failed", actions: assign({ error: ({ event }) => String(event.error) }) },
+        onError: {
+          target: "failed",
+          actions: assign({ error: ({ event }) => String(event.error) }),
+        },
       },
     },
     done: { type: "final" },

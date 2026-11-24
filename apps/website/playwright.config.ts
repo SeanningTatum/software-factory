@@ -3,8 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 4173;
 
 export default defineConfig({
-  testDir: "e2e",
-  testMatch: "**/*.spec.ts",
+  testDir: "src/features",
+  testMatch: "**/e2e/*.spec.ts",
   fullyParallel: true,
   retries: 0,
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },

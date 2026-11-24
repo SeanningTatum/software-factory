@@ -7,7 +7,9 @@ export default defineConfig({
       { find: /^#\/(.*)$/, replacement: fileURLToPath(new URL("./src/$1", import.meta.url)) },
       {
         find: "cloudflare:workers",
-        replacement: fileURLToPath(new URL("./src/test/cloudflare-workers.ts", import.meta.url)),
+        replacement: fileURLToPath(
+          new URL("./src/app/testing/cloudflare-workers.ts", import.meta.url),
+        ),
       },
     ],
   },

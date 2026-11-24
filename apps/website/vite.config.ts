@@ -9,7 +9,12 @@ export default defineConfig({
   plugins: [
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
-    tanstackStart({ router: { routeFileIgnorePattern: "\\.test\\.tsx?$" } }),
+    tanstackStart({
+      router: {
+        routeFileIgnorePattern: "\\.test\\.tsx?$",
+        virtualRouteConfig: "./src/gen/routes.ts",
+      },
+    }),
     viteReact(),
   ],
 });

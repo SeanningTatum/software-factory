@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { SiteFooter } from "#/components/site-footer.tsx";
-import { SiteHeader } from "#/components/site-header.tsx";
-import { AnalyticsTracker } from "#/core/analytics/tracker.tsx";
-import { ConsentProvider } from "#/core/consent/consent-banner.tsx";
-import { getShell } from "#/core/shell.ts";
+import { getShell } from "#/app/shell.ts";
+import { AnalyticsTracker } from "#/features/analytics/components/tracker.tsx";
+import { ConsentProvider } from "#/features/consent/components/consent-banner.tsx";
+import { SiteFooter } from "#/features/ui/components/site-footer.tsx";
+import { SiteHeader } from "#/features/ui/components/site-header.tsx";
 import appCss from "../styles.css?url";
 
 export const APP_NAME = "tanstack-cf-saas";

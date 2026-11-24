@@ -1,0 +1,7 @@
+{
+  "name": "site",
+  "title": "Site",
+  "description": "The website's own pages: the landing page at / and the docs under /docs.",
+  "core": true,
+  "requires": []
+}

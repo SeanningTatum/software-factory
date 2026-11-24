@@ -6,7 +6,8 @@ const shipped = (name: string) => fileURLToPath(new URL(`../${name}`, import.met
 
 export const templateDir = () => {
   const dir = shipped("template");
-  if (!existsSync(dir)) throw new Error(`Template not found at ${dir}. Run \`bun run bundle\` first.`);
+  if (!existsSync(dir))
+    throw new Error(`Template not found at ${dir}. Run \`bun run bundle\` first.`);
   return dir;
 };
 

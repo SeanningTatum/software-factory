@@ -1,13 +1,12 @@
 {
   "root": true,
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": [
-    "@tanstack-cf-saas/biome-config"
-  ],
+  "extends": ["@tanstack-cf-saas/biome-config"],
   "files": {
     "includes": [
       "**",
       "!claude",
+      "!.changeset",
       "!**/dist",
       "!**/template",
       "!**/.wrangler",

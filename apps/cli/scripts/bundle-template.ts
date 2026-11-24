@@ -4,7 +4,15 @@
  * _gitignore, because npm drops .gitignore files from packages.
  */
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join, relative } from "node:path";
 
 const repo = join(import.meta.dirname, "../../..");
@@ -24,10 +32,9 @@ const SKIP = new Set([
   "playwright-report",
   "test-results",
   ".turbo",
-  "docs",
   ".tanstack",
 ]);
-/** Generated migrations are rebuilt for the chosen blocks; only the folder itself ships. */
+/** Generated migrations are rebuilt for the chosen features; only the folder itself ships. */
 const skipPath = (path: string) => /^drizzle\/(?!\.gitkeep$)/.test(path);
 
 rmSync(target, { recursive: true, force: true });
@@ -62,14 +69,26 @@ rmSync(harnessTarget, { recursive: true, force: true });
 if (existsSync(harnessSource)) {
   cpSync(harnessSource, harnessTarget, {
     recursive: true,
-    filter: (from) => !relative(harnessSource, from).split("/").includes(".git") && relative(harnessSource, from) !== "README.md",
+    filter: (from) =>
+      !relative(harnessSource, from).split("/").includes(".git") &&
+      relative(harnessSource, from) !== "README.md",
   });
   const commit = (() => {
-    const run = (cmd: string) => execSync(cmd, { cwd: harnessSource, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const run = (cmd: string) =>
+      execSync(cmd, {
+        cwd: harnessSource,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
     const inRepo = existsSync(join(harnessSource, ".git"));
     return inRepo ? run("git rev-parse HEAD") : "placeholder";
   })();
-  writeFileSync(join(harnessTarget, ".source.json"), `${JSON.stringify({ repo: "claude", commit }, null, 2)}\n`);
+  writeFileSync(
+    join(harnessTarget, ".source.json"),
+    `${JSON.stringify({ repo: "claude", commit }, null, 2)}\n`,
+  );
 }
 
-console.log(`Bundled the template into ${relative(repo, target)} and the harness into ${relative(repo, harnessTarget)}.`);
+console.log(
+  `Bundled the template into ${relative(repo, target)} and the harness into ${relative(repo, harnessTarget)}.`,
+);

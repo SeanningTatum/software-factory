@@ -26,7 +26,10 @@ const sourceMeta = (harness: string) =>
     ? (JSON.parse(readFileSync(join(harness, META), "utf8")) as { repo: string; commit: string })
     : { repo: "claude", commit: "unknown" };
 
-const harnessFiles = (harness: string) => walk(harness).map((f) => relative(harness, f)).filter((f) => f !== META);
+const harnessFiles = (harness: string) =>
+  walk(harness)
+    .map((f) => relative(harness, f))
+    .filter((f) => f !== META);
 
 /** Copies the harness into `.claude/` and records what was copied, so later edits can be told apart. */
 export const installHarness = (harness: string, project: string): HarnessLock => {
@@ -83,6 +86,9 @@ export const syncHarness = (harness: string, project: string, force = false) => 
     if (before !== files[file]) updated.push(file);
   }
   const meta = sourceMeta(harness);
-  writeFileSync(join(project, LOCK_FILE), `${JSON.stringify({ source: meta.repo, commit: meta.commit, files }, null, 2)}\n`);
+  writeFileSync(
+    join(project, LOCK_FILE),
+    `${JSON.stringify({ source: meta.repo, commit: meta.commit, files }, null, 2)}\n`,
+  );
   return { updated, kept };
 };

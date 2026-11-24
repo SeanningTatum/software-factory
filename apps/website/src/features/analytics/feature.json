@@ -1,0 +1,26 @@
+{
+  "name": "analytics",
+  "title": "Analytics",
+  "description": "A typed event catalog, an Analytics service with console, PostHog and Analytics Engine adapters, and a browser tracker that waits for consent.",
+  "core": true,
+  "requires": [],
+  "vars": {
+    "ANALYTICS_PROVIDER": {
+      "description": "Where analytics events go: none, console, posthog or analytics-engine",
+      "required": false,
+      "default": "console"
+    },
+    "POSTHOG_HOST": {
+      "description": "PostHog ingest host",
+      "required": false,
+      "default": "https://us.i.posthog.com"
+    }
+  },
+  "secrets": {
+    "POSTHOG_KEY": {
+      "description": "PostHog project API key, used when ANALYTICS_PROVIDER is posthog",
+      "required": false,
+      "help": "https://posthog.com/docs/api"
+    }
+  }
+}
