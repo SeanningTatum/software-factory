@@ -13,6 +13,8 @@ import { hasTables, scaffold } from "../src/scaffold.ts";
 
 const repo = join(import.meta.dirname, "../../..");
 const template = join(import.meta.dirname, "../template");
+/** The Claude workflows ship with every project, so the gates must pass with them in place. */
+const harness = join(import.meta.dirname, "../harness");
 const outDir =
   process.argv[2] && !process.argv[2].startsWith("--")
     ? process.argv[2]
@@ -88,7 +90,7 @@ for (const [name, features] of Object.entries(combos)) {
   const dir = join(outDir, name);
   const kept = scaffold({
     templateDir: template,
-    harnessDir: undefined,
+    harnessDir: harness,
     targetDir: dir,
     name: `matrix-${name}`,
     features,

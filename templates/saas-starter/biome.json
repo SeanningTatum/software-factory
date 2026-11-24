@@ -17,7 +17,8 @@
       "!wrangler.jsonc",
       "!cf-saas.json",
       "!harness.lock.json",
-      "!.tanstack"
+      "!.tanstack",
+      "!.claude"
     ]
   },
   "overrides": [

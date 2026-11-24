@@ -16,3 +16,4 @@ playwright-report
 test-results
 apps/cli/template
 apps/cli/harness
+apps/cli/.packs
