@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, normalize, relative } from "node:path";
+import { dirname, join, normalize, posix, relative } from "node:path";
+import { importSpecifiers, TIMELINE_FILE, toSlash } from "@tanstack-cf-saas/lint";
 import { FEATURES_INDEX, featuresIndex } from "./features-index.ts";
 import { devVarsExample, generateFiles } from "./generate.ts";
 import { withRequirements } from "./graph.ts";
@@ -15,7 +16,7 @@ import {
 import { packageText, withBlockPackages } from "./package-json.ts";
 import { readProject, writeProject } from "./project.ts";
 import { scanFeature } from "./scan.ts";
-import { TIMELINE_FILE, timelinePath, timelineSection, timelineText } from "./timeline.ts";
+import { timelinePath, timelineSection, timelineText } from "./timeline.ts";
 import { patchWrangler, WRANGLER_FILE } from "./wrangler.ts";
 
 const DEV_VARS_EXAMPLE = ".dev.vars.example";
@@ -69,7 +70,6 @@ export const sync = (root: string): ReadonlyArray<string> => {
 };
 
 const SOURCE = /\.(ts|tsx)$/;
-const IMPORT = /(?:import|export)[^"'`]*?from\s*["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)/g;
 
 /** Every file under `dir`, skipping node_modules and dotfiles. */
 const walk = (dir: string): ReadonlyArray<string> => {
@@ -117,8 +117,9 @@ const folderOf = (path: string, owner: string) =>
   path.startsWith(`${CORE_DIR}/${owner}/`) ? `${CORE_DIR}/${owner}` : `${FEATURES_DIR}/${owner}`;
 
 const resolveImport = (root: string, file: string, spec: string): string | undefined => {
-  if (spec.startsWith("#/")) return `src/${spec.slice(2)}`;
-  if (spec.startsWith(".")) return relative(root, normalize(join(dirname(join(root, file)), spec)));
+  if (spec.startsWith("#/")) return posix.normalize(`src/${spec.slice(2)}`);
+  if (spec.startsWith("."))
+    return toSlash(relative(root, normalize(join(dirname(join(root, file)), spec))));
   return undefined;
 };
 
@@ -165,9 +166,8 @@ const crossing = (manifests: Features, owner: string, target: string): string | 
 const importProblems = (root: string, manifests: Features, file: string, owner: string) => {
   const problems: Array<Problem> = [];
   const text = readFileSync(join(root, file), "utf8");
-  for (const match of text.matchAll(IMPORT)) {
-    const spec = match[1] ?? match[2];
-    const target = spec ? resolveImport(root, file, spec) : undefined;
+  for (const spec of importSpecifiers(text)) {
+    const target = resolveImport(root, file, spec);
     const targetOwner = target ? ownerOf(target) : undefined;
     const message = targetOwner ? crossing(manifests, owner, targetOwner) : undefined;
     if (message) problems.push({ file, message: `${message} (${spec})` });
@@ -194,7 +194,7 @@ const placeProblem = (manifests: Features, file: string, owner: string | undefin
 export const boundaryProblems = (root: string): ReadonlyArray<Problem> => {
   const manifests = loadManifests(root);
   const problems: Array<Problem> = [];
-  for (const file of walk(join(root, "src")).map((f) => relative(root, f))) {
+  for (const file of walk(join(root, "src")).map((f) => toSlash(relative(root, f)))) {
     const owner = ownerOf(file);
     if (owner === "gen") continue;
     const message = placeProblem(manifests, file, owner);

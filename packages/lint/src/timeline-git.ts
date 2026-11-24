@@ -25,7 +25,8 @@ const git = (root: string, args: ReadonlyArray<string>): string | undefined => {
 const verified = (root: string, ref: string) =>
   git(root, ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`]) !== undefined;
 
-const lines = (text: string | undefined) => (text ?? "").split("\n").filter(Boolean);
+/** NUL-separated `-z` output: paths exactly as stored, never quoted. */
+const paths = (text: string | undefined) => (text ?? "").split("\0").filter(Boolean);
 
 const skipped = (why: string): TimelineResult => ({
   code: 0,
@@ -46,8 +47,9 @@ export const runTimeline = (root: string, options: TimelineOptions = {}): Timeli
   if (!base) return skipped(`no base ref (${candidates.join(", ")})`);
   const from = git(root, ["merge-base", base, "HEAD"])?.trim() || base;
   const changed = [
-    ...lines(git(root, ["diff", "--name-only", "--relative", from])),
-    ...lines(git(root, ["ls-files", "--others", "--exclude-standard"])),
+    // --no-renames: a file moved between features changes both of them.
+    ...paths(git(root, ["diff", "--name-only", "-z", "--no-renames", "--relative", from])),
+    ...paths(git(root, ["ls-files", "-z", "--others", "--exclude-standard"])),
   ];
   const { dir, core } = loadConfig(root).featureLayout;
   const timelines = new Map<string, TimelineText>();

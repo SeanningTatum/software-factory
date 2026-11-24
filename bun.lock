@@ -91,6 +91,7 @@
         "cf-saas-blocks": "./dist/bin.js",
       },
       "dependencies": {
+        "@tanstack-cf-saas/lint": "^0.1.0",
         "effect": "^4.1.5",
         "jsonc-parser": "^3.3.1",
       },
@@ -107,11 +108,14 @@
       },
       "dependencies": {
         "typescript": "^6.0.2",
-        "xstate": "5.33.4",
       },
       "devDependencies": {
         "@tanstack-cf-saas/tsconfig": "workspace:*",
         "@types/bun": "latest",
+        "xstate": "5.33.4",
+      },
+      "peerDependencies": {
+        "xstate": "^5.0.0",
       },
     },
     "packages/tsconfig": {

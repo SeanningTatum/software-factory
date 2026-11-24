@@ -52,4 +52,18 @@ describe("runTimeline", () => {
     write(root, "src/features/kv/TIMELINE.md", "## Decisions\n\n## History\n- 2026-11-25 — x.\n");
     expect(runTimeline(root, { base: "HEAD" }).code).toBe(0);
   });
+
+  test("sees a file name git would quote, and both ends of a move", () => {
+    const root = repo();
+    write(root, "src/features/auth/TIMELINE.md", "## History\n");
+    git(root, "add", ".");
+    git(root, "commit", "-qm", "auth");
+    write(root, "src/features/kv/api/naïve.ts", "export const n = 1;\n");
+    expect(runTimeline(root, { base: "HEAD" }).lines[0]).toStartWith("kv changed (api/naïve.ts)");
+    git(root, "add", ".");
+    git(root, "commit", "-qm", "naive");
+    git(root, "mv", "src/features/kv/api/key-value.ts", "src/features/auth/key-value.ts");
+    const moved = runTimeline(root, { base: "HEAD" });
+    expect(moved.lines.slice(0, 2).map((l) => l.slice(0, l.indexOf(" ")))).toEqual(["auth", "kv"]);
+  });
 });

@@ -1,4 +1,11 @@
-import { applyEdits, type FormattingOptions, modify, parse } from "jsonc-parser";
+import {
+  applyEdits,
+  type FormattingOptions,
+  modify,
+  type ParseError,
+  parse,
+  printParseErrorCode,
+} from "jsonc-parser";
 import type { Manifests } from "./graph.ts";
 import type { Binding, EnvName } from "./manifest.ts";
 
@@ -7,7 +14,27 @@ export const PLACEHOLDER_D1_ID = "00000000-0000-0000-0000-000000000000";
 export const PLACEHOLDER_KV_ID = "00000000000000000000000000000000";
 const STAGING_NAMESPACE_OFFSET = 1000;
 
-const formatting: FormattingOptions = { insertSpaces: false, tabSize: 1, eol: "\n" };
+/** The file's own indent: the first indented line's tab or spaces. */
+const formattingOf = (text: string): FormattingOptions => {
+  const indent = /^([ \t]+)\S/m.exec(text)?.[1] ?? "\t";
+  return indent.startsWith("\t")
+    ? { insertSpaces: false, tabSize: 1, eol: "\n" }
+    : { insertSpaces: true, tabSize: indent.length, eol: "\n" };
+};
+
+/** The parsed file. Throws on a syntax error, so a broken file is never edited into a worse one. */
+const parseWrangler = (text: string): Entry => {
+  const errors: Array<ParseError> = [];
+  const value = parse(text, errors, { allowTrailingComma: true });
+  const [first] = errors;
+  if (first) {
+    const line = text.slice(0, first.offset).split("\n").length;
+    throw new Error(
+      `${WRANGLER_FILE}: ${printParseErrorCode(first.error)} on line ${line}. Fix it, then run sync again; nothing was changed.`,
+    );
+  }
+  return (value ?? {}) as Entry;
+};
 
 type Entry = Record<string, unknown>;
 type Section =
@@ -106,40 +133,74 @@ interface Wanted {
   readonly dropVar: ReadonlySet<string>;
 }
 
-const write = (text: string, path: ReadonlyArray<string>, value: unknown) =>
-  applyEdits(text, modify(text, [...path], value, { formattingOptions: formatting }));
+type Path = ReadonlyArray<string | number>;
 
+const write = (text: string, path: Path, value: unknown, isArrayInsertion = false) =>
+  applyEdits(
+    text,
+    modify(text, [...path], value, { formattingOptions: formattingOf(text), isArrayInsertion }),
+  );
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/** Appends a binding's entry, or sets the fields the tool owns on the one already there. */
+const upsert = (
+  text: string,
+  path: ReadonlyArray<string>,
+  section: Section,
+  binding: Binding,
+  project: string,
+  env: EnvName,
+) => {
+  const current = (at(parseWrangler(text), path) as Array<Entry> | undefined) ?? [];
+  const index = current.findIndex((e) => keyOf(section, e) === binding.binding);
+  const entry = entryFor(binding, project, env, current[index]);
+  if (index < 0) return write(text, [...path, -1], entry, true);
+  let out = text;
+  for (const [field, value] of Object.entries(entry)) {
+    if (!same(current[index]?.[field], value)) out = write(out, [...path, index, field], value);
+  }
+  return out;
+};
+
+/**
+ * Brings one section in line with the manifests, one edit at a time so comments, field order and
+ * fields the tool does not set (`preview_id`, `remote`, ...) survive.
+ */
 const patchSection = (
   text: string,
   scope: (typeof scopes)[number],
   section: Section,
   want: Wanted,
 ) => {
-  const current = at(parse(text), scope.path) ?? {};
-  const existing = (current[section] as Array<Entry> | undefined) ?? [];
-  const byKey = new Map(existing.map((e) => [keyOf(section, e), e]));
-  const kept = existing.filter((e) => {
-    const key = keyOf(section, e);
-    return !want.dropBinding.has(key) && !want.managedBindings.has(key);
-  });
-  const added = want.bindings
-    .filter((b) => sectionOf[b.type] === section)
-    .map((b) => entryFor(b, want.project, scope.env, byKey.get(b.binding)));
-  const next = [...kept, ...added];
-  const value = next.length ? next : undefined;
-  if (JSON.stringify(value) === JSON.stringify(current[section])) return text;
-  return write(text, [...scope.path, section], value);
+  let out = text;
+  const path = [...scope.path, section];
+  const wanted = want.bindings.filter((b) => sectionOf[b.type] === section);
+  const entries = () => (at(parseWrangler(out), path) as Array<Entry> | undefined) ?? [];
+  const existed = at(parseWrangler(out), scope.path)?.[section] !== undefined;
+  // Drop what the tool added and no longer wants, from the end so earlier indexes hold.
+  const before = entries();
+  for (let i = before.length - 1; i >= 0; i--) {
+    const key = keyOf(section, before[i] as Entry);
+    const drop = want.dropBinding.has(key) || want.managedBindings.has(key);
+    if (drop && !wanted.some((b) => b.binding === key)) out = write(out, [...path, i], undefined);
+  }
+  for (const binding of wanted) out = upsert(out, path, section, binding, want.project, scope.env);
+  return existed && !entries().length ? write(out, path, undefined) : out;
 };
 
 const patchVars = (text: string, scope: (typeof scopes)[number], want: Wanted) => {
-  const currentVars = (at(parse(text), [...scope.path, "vars"]) ?? {}) as Record<string, unknown>;
-  const nextVars: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(currentVars)) {
-    if (!want.dropVar.has(key)) nextVars[key] = value;
+  let out = text;
+  const path = [...scope.path, "vars"];
+  const vars = () => (at(parseWrangler(out), path) ?? {}) as Record<string, unknown>;
+  const existed = Object.keys(vars()).length > 0;
+  for (const key of Object.keys(vars())) {
+    if (want.dropVar.has(key)) out = write(out, [...path, key], undefined);
   }
-  for (const [key, value] of want.vars) if (!(key in nextVars)) nextVars[key] = value;
-  if (JSON.stringify(nextVars) === JSON.stringify(currentVars)) return text;
-  return write(text, [...scope.path, "vars"], Object.keys(nextVars).length ? nextVars : undefined);
+  for (const [key, value] of want.vars) {
+    if (!(key in vars())) out = write(out, [...path, key], value);
+  }
+  return existed && !Object.keys(vars()).length ? write(out, path, undefined) : out;
 };
 
 /**
@@ -148,6 +209,7 @@ const patchVars = (text: string, scope: (typeof scopes)[number], want: Wanted) =
  * outside the edited arrays are kept.
  */
 export const patchWrangler = (text: string, patch: WranglerPatch): WranglerResult => {
+  parseWrangler(text);
   const bindings = [...patch.manifests.values()].flatMap((m) => m.bindings ?? []);
   const vars = new Map(
     [...patch.manifests.values()].flatMap((m) =>
@@ -184,13 +246,10 @@ export const setBindingField = (
   value: string,
 ): string => {
   const path = env === "staging" ? ["env", "staging"] : [];
-  const entries = (at(parse(text), path)?.[section] as Array<Entry> | undefined) ?? [];
+  const entries = (at(parseWrangler(text), path)?.[section] as Array<Entry> | undefined) ?? [];
   const index = entries.findIndex((e) => keyOf(section, e) === binding);
   if (index < 0) throw new Error(`${WRANGLER_FILE}: no ${section} entry for ${binding} (${env})`);
-  return applyEdits(
-    text,
-    modify(text, [...path, section, index, field], value, { formattingOptions: formatting }),
-  );
+  return write(text, [...path, section, index, field], value);
 };
 
 export const readBinding = (
@@ -200,7 +259,7 @@ export const readBinding = (
   binding: string,
 ): Entry | undefined => {
   const path = env === "staging" ? ["env", "staging"] : [];
-  const entries = (at(parse(text), path)?.[section] as Array<Entry> | undefined) ?? [];
+  const entries = (at(parseWrangler(text), path)?.[section] as Array<Entry> | undefined) ?? [];
   return entries.find((e) => keyOf(section, e) === binding);
 };
 

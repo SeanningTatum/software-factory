@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import ts from "typescript";
 import { type LintConfig, loadConfig } from "./config.ts";
+import { toSlash } from "./files.ts";
 import { matchesAny } from "./glob.ts";
 import {
   externalCallSpan,
@@ -38,7 +39,7 @@ const walk = (root: string, dir: string): ReadonlyArray<string> =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     if (entry.name === "node_modules" || entry.name.startsWith(".")) return [];
     const path = join(dir, entry.name);
-    return entry.isDirectory() ? walk(root, path) : [relative(root, path)];
+    return entry.isDirectory() ? walk(root, path) : [toSlash(relative(root, path))];
   });
 
 const fileFindings = (

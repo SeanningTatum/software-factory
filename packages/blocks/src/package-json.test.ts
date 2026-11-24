@@ -34,4 +34,11 @@ describe("package.json entries", () => {
     );
     expect(out.dependencies).toEqual({ shared: "1", react: "19" });
   });
+
+  test("keeps entries the project pinned or rewrote, and adds no empty fields", () => {
+    const billing = block("billing", { stripe: "^23.0.0" }, { "db:migrate": "wrangler d1" });
+    const pkg = { dependencies: { stripe: "^18.0.0" }, scripts: { "db:migrate": "bash x.sh" } };
+    const added = withBlockPackages(pkg, [billing]);
+    expect(withoutBlockPackages(added, [billing], [])).toEqual(pkg);
+  });
 });

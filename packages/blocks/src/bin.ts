@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { BlockError, check, loadManifests, removeBlock, sync } from "./index.ts";
+import { check, loadManifests, removeBlock, sync } from "./index.ts";
 
 const [command, arg] = process.argv.slice(2);
 const root = process.cwd();
@@ -51,6 +51,7 @@ const run = () => {
 try {
   process.exitCode = run();
 } catch (error) {
-  console.error(error instanceof BlockError ? error.message : error);
+  // The tool's own errors say what to fix; a stack would only bury that.
+  console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
 }

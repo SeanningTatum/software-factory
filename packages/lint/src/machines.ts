@@ -23,11 +23,26 @@ const descendants = (node: AnyStateNode): ReadonlyArray<AnyStateNode> =>
 const initialTargets = (node: AnyStateNode): ReadonlyArray<AnyStateNode> =>
   node.type === "parallel" ? children(node) : (node.initial?.target ?? []);
 
-/** The node plus whatever entering it also enters: initial children, or every region of a parallel state. */
-const entered = (node: AnyStateNode): ReadonlyArray<AnyStateNode> => [
-  node,
-  ...initialTargets(node).flatMap(entered),
-];
+/** Where entering a history state lands when nothing is remembered yet: its target, or the parent's start. */
+const historyTargets = (node: AnyStateNode): ReadonlyArray<AnyStateNode> => {
+  const parent = node.parent as AnyStateNode;
+  const targets = [node.config.target ?? []].flat() as ReadonlyArray<string>;
+  if (!targets.length) return parent.type === "parallel" ? [parent] : initialTargets(parent);
+  return targets.map((t) =>
+    t.startsWith("#")
+      ? node.machine.getStateNodeById(t.slice(1))
+      : t.split(".").reduce((n: AnyStateNode, key) => n.states[key] as AnyStateNode, parent),
+  );
+};
+
+/**
+ * The node plus whatever entering it also enters: initial children, every region of a parallel
+ * state, or a history state's default target.
+ */
+const entered = (node: AnyStateNode): ReadonlyArray<AnyStateNode> =>
+  node.type === "history"
+    ? [node, ...historyTargets(node).flatMap(entered)]
+    : [node, ...initialTargets(node).flatMap(entered)];
 
 const label = (eventType: string) => {
   if (eventType.startsWith("xstate.done.actor.")) return `done: ${eventType.slice(18)}`;
@@ -52,18 +67,31 @@ export const edgesOf = (node: AnyStateNode): ReadonlyArray<Edge> => {
 const ancestors = (node: AnyStateNode): ReadonlyArray<AnyStateNode> =>
   node.parent ? [node.parent, ...ancestors(node.parent)] : [];
 
-/** Where a node can go next: its own transitions and those inherited from its ancestors. */
-const next = (node: AnyStateNode): ReadonlyArray<AnyStateNode> =>
-  [node, ...ancestors(node)].flatMap(edgesOf).flatMap((e) => entered(e.to));
+/** A parallel state's onDone: it fires only once every region is final, so it is no way out of one. */
+const isParallelDone = (e: Edge) =>
+  e.from.type === "parallel" && e.label.startsWith("xstate.done.state.");
 
-const reachableFrom = (starts: ReadonlyArray<AnyStateNode>): Set<AnyStateNode> => {
+/**
+ * Where a node can go next: its own transitions and those inherited from its ancestors. With
+ * `inRegion`, a parallel state's onDone does not count.
+ */
+const next = (node: AnyStateNode, inRegion = false): ReadonlyArray<AnyStateNode> =>
+  [node, ...ancestors(node)]
+    .flatMap(edgesOf)
+    .filter((e) => !(inRegion && isParallelDone(e)))
+    .flatMap((e) => entered(e.to));
+
+const reachableFrom = (
+  starts: ReadonlyArray<AnyStateNode>,
+  inRegion = false,
+): Set<AnyStateNode> => {
   const seen = new Set<AnyStateNode>();
   const queue = [...starts];
   while (queue.length) {
     const node = queue.shift() as AnyStateNode;
     if (seen.has(node)) continue;
     seen.add(node);
-    queue.push(...next(node), ...initialTargets(node));
+    queue.push(...next(node, inRegion), ...initialTargets(node));
   }
   return seen;
 };
@@ -90,7 +118,9 @@ export const checkMachine = (machine: AnyStateMachine): ReadonlyArray<MachinePro
   const all = descendants(root);
   const initial = initialTargets(root);
   const start = settled(initial);
-  const reachable = reachableFrom(initial.flatMap(entered));
+  const reached = reachableFrom(initial.flatMap(entered));
+  // A state is active whenever a state inside it is, e.g. after a transition straight to a child.
+  const reachable = new Set([...reached].flatMap((n) => [n, ...ancestors(n)]));
 
   for (const node of all) {
     if (!reachable.has(node))
@@ -100,7 +130,7 @@ export const checkMachine = (machine: AnyStateMachine): ReadonlyArray<MachinePro
   const atomic = all.filter((n) => n.type === "atomic" || n.type === "final");
   for (const node of atomic) {
     if (!reachable.has(node) || isFinal(node) || start.includes(node)) continue;
-    const onward = reachableFrom(next(node));
+    const onward = reachableFrom(next(node, true), true);
     const recovers = [...onward].some((n) => start.includes(n) || isFinal(n));
     if (!recovers) {
       problems.push({
@@ -110,7 +140,7 @@ export const checkMachine = (machine: AnyStateMachine): ReadonlyArray<MachinePro
     }
   }
 
-  for (const node of [root, ...initial.flatMap(entered)]) {
+  for (const node of [root, ...start]) {
     if (node.invoke.length) {
       problems.push({
         state: name(node),

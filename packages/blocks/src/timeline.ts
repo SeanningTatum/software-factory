@@ -1,14 +1,10 @@
 import { existsSync } from "node:fs";
 import { join, posix } from "node:path";
+// The timeline gate in lint reads the same markers, so they are defined there once.
+import { GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@tanstack-cf-saas/lint";
 import { contributions, GEN_DIR, ROUTES_DIR } from "./generate.ts";
 import { type BlockManifest, type Feature, type Features, isCoreModule } from "./manifest.ts";
 import type { FeatureScan } from "./scan.ts";
-
-/** Each feature's notes: a generated block `sync` owns, and Decisions and History people write. */
-export const TIMELINE_FILE = "TIMELINE.md";
-/** Same markers as `@tanstack-cf-saas/lint`, which reads them for the timeline gate. */
-export const GENERATED_START = "<!-- generated:start -->";
-export const GENERATED_END = "<!-- generated:end -->";
 
 /** Where a feature's TIMELINE.md is, from the project root. */
 export const timelinePath = (feature: Pick<Feature, "dir">) => `${feature.dir}/${TIMELINE_FILE}`;

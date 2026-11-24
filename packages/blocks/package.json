@@ -12,21 +12,18 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
-    },
-    "./define": {
-      "types": "./src/define.ts",
-      "default": "./dist/define.js"
     }
   },
   "bin": {
     "cf-saas-blocks": "./dist/bin.js"
   },
   "scripts": {
-    "build": "bun build src/index.ts src/define.ts src/bin.ts --outdir dist --target node --packages external",
+    "build": "bun build src/index.ts src/bin.ts --outdir dist --target node --packages external",
     "typecheck": "tsc -p .",
     "test": "bun test"
   },
   "dependencies": {
+    "@tanstack-cf-saas/lint": "^0.1.0",
     "effect": "^4.1.5",
     "jsonc-parser": "^3.3.1"
   },

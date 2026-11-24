@@ -20,6 +20,14 @@ const collect = (source: ts.SourceFile, match: (n: ts.Node) => string | undefine
 
 const callee = (n: ts.Node) => (ts.isCallExpression(n) ? n.expression.getText() : undefined);
 
+/** The called name, whatever it is reached through: `runPromise` for `E.runPromise(...)` or `runPromise(...)`. */
+const calledName = (n: ts.Node): string | undefined => {
+  if (!ts.isCallExpression(n)) return undefined;
+  const e = n.expression;
+  if (ts.isIdentifier(e)) return e.text;
+  return ts.isPropertyAccessExpression(e) ? e.name.text : undefined;
+};
+
 export const noThrow: Rule = {
   id: "no-throw",
   description: "Fail in the error channel (`return yield* new SomeError()`), not with `throw`.",
@@ -40,19 +48,49 @@ export const noTryCatch: Rule = {
     ),
 };
 
-const RUNNERS = /^Effect\.run(Promise|PromiseExit|Sync|SyncExit|Fork|Callback)$/;
+const RUNNERS = /^run(Promise|PromiseExit|Sync|SyncExit|Fork|Callback)$/;
 
 export const noRunEffect: Rule = {
   id: "no-run-effect",
   description:
     "Only edges run effects: server functions go through runEffect, the worker through the request runtime.",
   check: ({ source }) =>
-    collect(source, (n) => {
-      const name = callee(n);
-      return name && RUNNERS.test(name)
-        ? `${name} outside an edge; return the Effect and let the edge run it`
-        : undefined;
-    }),
+    collect(source, (n) =>
+      RUNNERS.test(calledName(n) ?? "")
+        ? `${callee(n)} outside an edge; return the Effect and let the edge run it`
+        : undefined,
+    ),
+};
+
+/** `process` or `globalThis.process`. */
+const isProcess = (e: ts.Expression): boolean =>
+  (ts.isIdentifier(e) && e.text === "process") ||
+  (ts.isPropertyAccessExpression(e) &&
+    e.name.text === "process" &&
+    ts.isIdentifier(e.expression) &&
+    e.expression.text === "globalThis");
+
+/** Whether a node reads `env` off process: `.env`, `?.env`, `["env"]`, `{ env } = process`, or `import { env } from "node:process"`. */
+const readsProcessEnv = (n: ts.Node): boolean => {
+  if (ts.isPropertyAccessExpression(n)) return n.name.text === "env" && isProcess(n.expression);
+  if (ts.isElementAccessExpression(n)) {
+    const key = n.argumentExpression;
+    return ts.isStringLiteralLike(key) && key.text === "env" && isProcess(n.expression);
+  }
+  if (ts.isVariableDeclaration(n) && n.initializer && ts.isObjectBindingPattern(n.name)) {
+    const names = n.name.elements.map((el) => (el.propertyName ?? el.name).getText());
+    return names.includes("env") && isProcess(n.initializer);
+  }
+  if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier)) {
+    const bindings = n.importClause?.namedBindings;
+    return (
+      /^(node:)?process$/.test(n.moduleSpecifier.text) &&
+      bindings !== undefined &&
+      ts.isNamedImports(bindings) &&
+      bindings.elements.some((el) => (el.propertyName ?? el.name).text === "env")
+    );
+  }
+  return false;
 };
 
 export const noProcessEnv: Rule = {
@@ -60,7 +98,7 @@ export const noProcessEnv: Rule = {
   description: "Workers have no process.env; read settings from the CloudflareEnv service.",
   check: ({ source }) =>
     collect(source, (n) =>
-      ts.isPropertyAccessExpression(n) && n.getText() === "process.env"
+      readsProcessEnv(n)
         ? "read settings from the CloudflareEnv service, not process.env"
         : undefined,
     ),
@@ -71,11 +109,13 @@ const isSpanned = (node: ts.Node): boolean => {
     if (ts.isCallExpression(cur)) {
       const text = cur.expression.getText();
       if (
-        /^Effect\.fn\(\s*["'`]/.test(text) ||
-        (/^Effect\.fn$/.test(text) && cur.arguments[0] && ts.isStringLiteralLike(cur.arguments[0]))
+        /^(?:\w+\.)?fn\(\s*["'`]/.test(text) ||
+        (/^(?:\w+\.)?fn$/.test(text) &&
+          cur.arguments[0] &&
+          ts.isStringLiteralLike(cur.arguments[0]))
       )
         return true;
-      if (/\.pipe$/.test(text) && cur.arguments.some((a) => /Effect\.withSpan\(/.test(a.getText())))
+      if (/\.pipe$/.test(text) && cur.arguments.some((a) => /\bwithSpan\(/.test(a.getText())))
         return true;
     }
   }
@@ -88,7 +128,7 @@ export const externalCallSpan: Rule = {
     'Every outside call (Effect.tryPromise) runs inside Effect.fn("name") or pipes Effect.withSpan.',
   check: ({ source }) =>
     collect(source, (n) =>
-      callee(n) === "Effect.tryPromise" && !isSpanned(n)
+      calledName(n) === "tryPromise" && !isSpanned(n)
         ? 'wrap this outside call in Effect.fn("Name.method") or pipe Effect.withSpan(...)'
         : undefined,
     ),

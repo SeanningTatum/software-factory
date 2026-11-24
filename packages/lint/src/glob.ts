@@ -10,6 +10,8 @@ const token = (glob: string, i: number): { readonly out: string; readonly used: 
   if (c === "?") return { out: "[^/]", used: 1 };
   if (c === "{") {
     const end = glob.indexOf("}", i);
+    // An unclosed brace is a literal `{`, never an endless loop.
+    if (end < 0) return { out: "\\{", used: 1 };
     // Each option is a glob itself, so `{*,core/*}` matches one folder or one under core/.
     const options = glob
       .slice(i + 1, end)

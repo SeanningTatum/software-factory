@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, posix, win32 } from "node:path";
 import { Schema } from "effect";
 
 const EnvName = Schema.Literals(["production", "staging"]);
@@ -116,6 +116,18 @@ export const readManifest = (path: string): BlockManifest => {
   return decodeManifest(raw);
 };
 
+/** Lower-case words joined by single hyphens, so the generated code can name it. */
+const NAME = /^[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*$/;
+
+/** Why a `files` entry is unsafe to copy or delete, or undefined: it must stay inside the project. */
+const unsafeFile = (file: string): string | undefined => {
+  const path = posix.normalize(file.replaceAll("\\", "/"));
+  if (!file.trim() || path === "." || path.startsWith("./")) return "is the project itself";
+  if (isAbsolute(file) || win32.isAbsolute(file)) return "is absolute";
+  if (path === ".." || path.startsWith("../")) return "climbs out of the project";
+  return undefined;
+};
+
 /** Whether a feature lives in the core group. */
 export const isCoreModule = (feature: Pick<Feature, "dir">) =>
   feature.dir.startsWith(`${CORE_DIR}/`);
@@ -148,6 +160,13 @@ export const loadManifests = (root: string): Map<string, Feature> => {
     const manifest = readManifest(join(root, path));
     if (manifest.name !== folder) {
       throw new Error(`${path}: name "${manifest.name}" must match its folder "${folder}"`);
+    }
+    if (!NAME.test(manifest.name)) {
+      throw new Error(`${path}: name "${manifest.name}" must be lower-case words joined by "-"`);
+    }
+    for (const file of manifest.files ?? []) {
+      const why = unsafeFile(file);
+      if (why) throw new Error(`${path}: "files" entry "${file}" ${why}; list paths inside it`);
     }
     if (RESERVED_NAMES.includes(manifest.name)) {
       throw new Error(`${path}: "${manifest.name}" is a reserved name; choose another`);

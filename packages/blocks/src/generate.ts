@@ -23,7 +23,21 @@ export type Contribution = (typeof contributions)[number];
 /** The folder of file routes a feature may provide; src/gen/routes.ts mounts it at the URL root. */
 export const ROUTES_DIR = "routes";
 
-const camel = (name: string) => name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+/** Words a module may not bind, so a feature named `export` or `import` still generates valid code. */
+const RESERVED = new Set(
+  (
+    "arguments await break case catch class const continue debugger default delete do else enum " +
+    "eval export extends false finally for function if implements import in instanceof interface " +
+    "let new null package private protected public return static super switch this throw true try " +
+    "typeof var void while with yield"
+  ).split(" "),
+);
+
+/** A feature's name as an identifier: `two-factor` is `twoFactor`, `export` is `exportFeature`. */
+const camel = (name: string) => {
+  const id = name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  return RESERVED.has(id) ? `${id}Feature` : id;
+};
 
 const has = (root: string, feature: Feature, file: Contribution) =>
   existsSync(join(root, feature.dir, `${file}.ts`));

@@ -1,19 +1,37 @@
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { dependentsOf, withRequirements } from "./graph.ts";
-import { loadManifests, ownedPaths } from "./manifest.ts";
+import { type Feature, loadManifests, ownedPaths } from "./manifest.ts";
 import {
   type PackageJson,
   packageText,
   withBlockPackages,
   withoutBlockPackages,
 } from "./package-json.ts";
-import { sync } from "./sync.ts";
+import { plan, sync } from "./sync.ts";
 
 const readPackage = (root: string): PackageJson =>
   JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const writePackage = (root: string, pkg: PackageJson) =>
   writeFileSync(join(root, "package.json"), packageText(pkg));
+
+/** A path from the root in one spelling, for comparing what features own. */
+const tidy = (path: string) => posix.normalize(path.replaceAll("\\", "/")).replace(/\/$/, "");
+const overlaps = (a: string, b: string) =>
+  a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
+
+/** Deletes what `removed` own, except paths a kept feature owns too (or that hold or sit in one). */
+const deleteOwned = (
+  root: string,
+  removed: ReadonlyArray<Feature>,
+  kept: ReadonlyArray<Feature>,
+) => {
+  const others = kept.flatMap(ownedPaths).map(tidy);
+  for (const path of removed.flatMap(ownedPaths).map(tidy)) {
+    if (!others.some((o) => overlaps(path, o)))
+      rmSync(join(root, path), { recursive: true, force: true });
+  }
+};
 
 /**
  * Keeps only `selected` features (plus what they require, and every required feature) in a project
@@ -26,9 +44,9 @@ export const prune = (root: string, selected: ReadonlyArray<string>): ReadonlyAr
   const keep = withRequirements(manifests, optional).filter((n) => !manifests.get(n)?.required);
   const all = [...manifests.values()].filter((m) => !m.required);
   const removed = all.filter((m) => !keep.includes(m.name));
-  for (const m of removed)
-    for (const path of ownedPaths(m)) rmSync(join(root, path), { recursive: true, force: true });
   const kept = [...manifests.values()].filter((m) => !removed.includes(m));
+  plan(root); // fails on a broken project before anything is deleted
+  deleteOwned(root, removed, kept);
   writePackage(root, withoutBlockPackages(readPackage(root), removed, kept));
   sync(root);
   return keep;
@@ -49,9 +67,9 @@ export const removeBlock = (root: string, name: string) => {
   if (dependents.length) {
     throw new BlockError(`"${name}" is required by ${dependents.join(", ")}; remove those first`);
   }
-  for (const path of ownedPaths(manifest))
-    rmSync(join(root, path), { recursive: true, force: true });
   const kept = [...manifests.values()].filter((m) => m.name !== name);
+  plan(root); // fails on a broken project before anything is deleted
+  deleteOwned(root, [manifest], kept);
   writePackage(root, withoutBlockPackages(readPackage(root), [manifest], kept));
   sync(root);
 };

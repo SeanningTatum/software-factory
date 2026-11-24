@@ -67,6 +67,57 @@ describe("checkMachine", () => {
   });
 });
 
+describe("checkMachine on history, transient starts and parallel regions", () => {
+  test("a history state enters its parent and the parent's start", () => {
+    const m = createMachine({
+      id: "h",
+      initial: "off",
+      states: {
+        off: { on: { ON: "on.hist" } },
+        on: {
+          initial: "a",
+          states: {
+            a: { on: { NEXT: "b" } },
+            b: { on: { OFF: "#h.off" } },
+            hist: { type: "history" },
+          },
+        },
+      },
+    });
+    expect(checkMachine(m)).toEqual([]);
+  });
+
+  test("refuses an invoke where the start settles through always", () => {
+    const m = setup({ actors: { load: fromPromise(async () => 1) } }).createMachine({
+      initial: "idle",
+      states: {
+        idle: { always: "loading" },
+        loading: { invoke: { src: "load", onDone: "ready" } },
+        ready: { on: { RELOAD: "loading" } },
+      },
+    });
+    expect(checkMachine(m).map((p) => p.state)).toEqual(["loading"]);
+  });
+
+  test("finds a trap in one region of a parallel state", () => {
+    const m = createMachine({
+      initial: "work",
+      states: {
+        work: {
+          type: "parallel",
+          onDone: "done",
+          states: {
+            A: { initial: "a1", states: { a1: { on: { X: "a2" } }, a2: { type: "final" } } },
+            B: { initial: "b1", states: { b1: { on: { Y: "b2" } }, b2: {} } },
+          },
+        },
+        done: { type: "final" },
+      },
+    });
+    expect(checkMachine(m).map((p) => p.state)).toEqual(["work.B.b2"]);
+  });
+});
+
 describe("toMermaid", () => {
   test("draws states, events and final states", () => {
     const text = toMermaid(good);

@@ -34,7 +34,10 @@ export const withBlockPackages = (
   return out;
 };
 
-/** Drops the entries only `removed` blocks listed; entries a kept block also lists stay. */
+/**
+ * Drops the entries only `removed` blocks listed, when they still hold the block's value. Entries a
+ * kept block also lists stay, and so does anything the project pinned or rewrote: it may be its own.
+ */
 export const withoutBlockPackages = (
   pkg: PackageJson,
   removed: ReadonlyArray<BlockManifest>,
@@ -42,11 +45,13 @@ export const withoutBlockPackages = (
 ): PackageJson => {
   const out: PackageJson = { ...pkg };
   for (const field of fields) {
+    const existing = pkg[field];
+    if (!existing) continue;
     const stillUsed = new Set(kept.flatMap((m) => Object.keys(m.packageJson?.[field] ?? {})));
-    const current = { ...(pkg[field] ?? {}) };
+    const current = { ...existing };
     for (const m of removed) {
-      for (const key of Object.keys(m.packageJson?.[field] ?? {}))
-        if (!stillUsed.has(key)) delete current[key];
+      for (const [key, value] of Object.entries(m.packageJson?.[field] ?? {}))
+        if (!stillUsed.has(key) && current[key] === value) delete current[key];
     }
     out[field] = current;
   }

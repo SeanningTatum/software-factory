@@ -27,11 +27,14 @@
     "test": "bun test"
   },
   "dependencies": {
-    "typescript": "^6.0.2",
-    "xstate": "5.33.4"
+    "typescript": "^6.0.2"
   },
   "devDependencies": {
     "@tanstack-cf-saas/tsconfig": "workspace:*",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "xstate": "5.33.4"
+  },
+  "peerDependencies": {
+    "xstate": "^5.0.0"
   }
 }

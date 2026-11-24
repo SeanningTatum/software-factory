@@ -75,6 +75,36 @@ describe("patchWrangler", () => {
     ).toBe(second.text);
   });
 
+  test("keeps fields and comments on managed entries, and the file's indent", () => {
+    const text = `{
+  "name": "app",
+  "kv_namespaces": [
+    {
+      // prod KV, made by ops
+      "binding": "KV",
+      "id": "abc",
+      "preview_id": "def"
+    }
+  ]
+}`;
+    const manifests = new Map([["kv", kv]]);
+    const out = patchWrangler(text, { project: "acme", manifests, previouslyManaged: none }).text;
+    expect(out).toContain("// prod KV, made by ops");
+    expect(parse(out).kv_namespaces).toEqual([{ binding: "KV", id: "abc", preview_id: "def" }]);
+    expect(out).not.toContain("\t");
+  });
+
+  test("refuses a file with a syntax error instead of editing it", () => {
+    const broken = '{\n  "name": "app",\n  "kv_namespaces": [{ "binding": "KV" }\n}';
+    expect(() =>
+      patchWrangler(broken, {
+        project: "acme",
+        manifests: new Map([["kv", kv]]),
+        previouslyManaged: none,
+      }),
+    ).toThrow(/wrangler.jsonc: .* on line 4/);
+  });
+
   test("removes only what it added once a block is gone", () => {
     const added = patchWrangler(base, {
       project: "acme",

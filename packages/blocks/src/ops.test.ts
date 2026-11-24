@@ -60,6 +60,36 @@ describe("removeBlock", () => {
   });
 });
 
+describe("removeBlock safety", () => {
+  test("refuses a files entry outside the project and deletes nothing", () => {
+    for (const bad of ["../outside", "", "/", "a/../.."]) {
+      const root = project();
+      writeFileSync(
+        join(root, "src/features/core/kv/feature.json"),
+        manifest("kv", { files: [bad] }),
+      );
+      expect(() => removeBlock(root, "kv")).toThrow(/"files" entry/);
+      expect(existsSync(join(root, "src/features/core/kv/layer.ts"))).toBe(true);
+    }
+  });
+
+  test("keeps a path another feature owns too", () => {
+    const root = project();
+    const files = ["drizzle.config.ts"];
+    writeFileSync(join(root, "src/features/core/kv/feature.json"), manifest("kv", { files }));
+    removeBlock(root, "kv");
+    expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
+    expect(existsSync(join(root, "drizzle.config.ts"))).toBe(true);
+  });
+
+  test("deletes nothing when the project cannot be synced afterwards", () => {
+    const root = project();
+    writeFileSync(join(root, "wrangler.jsonc"), '{ "name": "app" ');
+    expect(() => removeBlock(root, "kv")).toThrow(/wrangler.jsonc/);
+    expect(existsSync(join(root, "src/features/core/kv/layer.ts"))).toBe(true);
+  });
+});
+
 describe("addBlock", () => {
   test("puts a core module back in core, with what it requires", () => {
     const template = project();

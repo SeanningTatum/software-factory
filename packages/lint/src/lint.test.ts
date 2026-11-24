@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { defaults } from "./config.ts";
+import { importSpecifiers, toSlash } from "./files.ts";
 import { globToRegExp } from "./glob.ts";
 import { lint } from "./lint.ts";
 
@@ -24,6 +25,37 @@ describe("glob", () => {
     expect(both.test("src/features/auth/routes/login.tsx")).toBe(true);
     expect(both.test("src/features/core/kv/routes/api/kv.ts")).toBe(true);
     expect(both.test("src/features/core/kv/lib/x.ts")).toBe(false);
+  });
+
+  test("reads an unclosed brace as a literal instead of looping forever", () => {
+    expect(globToRegExp("src/{app,features/*.ts").test("src/{app,features/a.ts")).toBe(true);
+  });
+});
+
+describe("files", () => {
+  test("turns Windows separators into slashes", () => {
+    expect(toSlash("src\\features\\auth\\a.ts", "\\")).toBe("src/features/auth/a.ts");
+  });
+
+  test("finds every import form and nothing in comments or strings", () => {
+    const text = [
+      'import "#/features/uploads/side.ts";',
+      'import x = require("./required.ts");',
+      "const m = await import(`./template.ts`);",
+      'const n = await import("./options.ts", { with: {} });',
+      'export * from "./star.ts";',
+      'import type { T } from "./types.ts";',
+      '// import { a } from "./comment.ts"',
+      "export const s = \"import { b } from './string.ts'\";",
+    ].join("\n");
+    expect(importSpecifiers(text)).toEqual([
+      "#/features/uploads/side.ts",
+      "./required.ts",
+      "./template.ts",
+      "./options.ts",
+      "./star.ts",
+      "./types.ts",
+    ]);
   });
 });
 
@@ -48,6 +80,32 @@ describe("lint", () => {
       "no-process-env:4",
       "external-call-span:5",
       "no-run-effect:7",
+    ]);
+  });
+
+  test("sees runners, outside calls and process.env through aliases and destructuring", () => {
+    const root = project({
+      "src/core/sneaky.ts": [
+        'import { Effect as E } from "effect";',
+        'import { runPromise } from "effect/Effect";',
+        "const { env } = process;",
+        "export const a = () => E.runPromise(E.succeed(env.X));",
+        "export const b = () => runPromise(E.succeed(process?.env.Y));",
+        'export const c = () => E.tryPromise(() => fetch("https://x"));',
+        "export const d = globalThis.process.env.Z;",
+        'export const e = process["env"].W;',
+        'export const f = E.fn("f")(function* () { return yield* E.tryPromise(() => fetch("x")) });',
+      ].join("\n"),
+      "src/core/sneaky.test.ts": "",
+    });
+    expect(lint(root).map((f) => `${f.rule}:${f.line}`)).toEqual([
+      "no-process-env:3",
+      "no-run-effect:4",
+      "no-run-effect:5",
+      "no-process-env:5",
+      "external-call-span:6",
+      "no-process-env:7",
+      "no-process-env:8",
     ]);
   });
 

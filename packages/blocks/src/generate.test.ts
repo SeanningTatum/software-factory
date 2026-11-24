@@ -34,6 +34,16 @@ const project = (files: ReadonlyArray<string>) => {
   return root;
 };
 
+describe("generated names", () => {
+  test("a feature named like a keyword still generates code that parses", () => {
+    const root = project(["src/features/export/layer.ts", "src/features/export/nav.ts"]);
+    const files = generateFiles(root, new Map([["export", feature("export")]]));
+    const transpiler = new Bun.Transpiler({ loader: "ts" });
+    for (const text of files.values()) expect(() => transpiler.transformSync(text)).not.toThrow();
+    expect(files.get("src/gen/nav.ts")).toContain("nav as exportFeature");
+  });
+});
+
 describe("enabledOrder", () => {
   test("puts required features first, then the rest after what they require", () => {
     expect(enabledOrder(manifests)).toEqual(["analytics", "home", "ui", "db", "auth"]);

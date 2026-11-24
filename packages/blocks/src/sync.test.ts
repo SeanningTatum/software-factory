@@ -68,6 +68,11 @@ describe("loadManifests", () => {
     expect([...features.keys()].sort()).toEqual(["auth", "consent", "db", "kv", "ui"]);
   });
 
+  test("refuses a name the generated code cannot use", () => {
+    const root = project({ "src/features/2fa/feature.json": manifest("2fa") });
+    expect(() => loadManifests(root)).toThrow(/lower-case words/);
+  });
+
   test("refuses reserved names, a name used twice and the old core flag", () => {
     expect(() =>
       loadManifests(project({ "src/features/lib/feature.json": manifest("lib") })),
@@ -86,6 +91,23 @@ describe("loadManifests", () => {
 describe("boundaryProblems", () => {
   test("a clean project has none", () => {
     expect(messages(project({}))).toEqual([]);
+  });
+
+  test("sees side-effect, require and literal dynamic imports, not ones in comments or strings", () => {
+    const root = project({
+      "src/features/consent/lib/a.ts": [
+        'import "#/features/auth/api/auth.ts";',
+        'import x = require("../../core/kv/api/key-value.ts");',
+        "const m = await import(`../../auth/api/auth.ts`);",
+        '// import { db } from "#/features/core/db/api/database.ts"',
+        "export const s = \"import { db } from '#/features/core/db/api/database.ts'\";",
+      ].join("\n"),
+    });
+    expect(messages(root).map((m) => m.slice(m.lastIndexOf("(")))).toEqual([
+      "(#/features/auth/api/auth.ts)",
+      "(../../auth/api/auth.ts)",
+      "(../../core/kv/api/key-value.ts)",
+    ]);
   });
 
   test("the app may import itself, src/gen and required features, but no optional one", () => {
