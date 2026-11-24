@@ -5,7 +5,7 @@ the website that documents it.
 
 ## Run it locally
 
-You need [Bun](https://bun.sh) 1.4 or newer. Nothing else: the database, KV and R2 run on your
+You need [Bun](https://bun.sh) 1.4 or newer and git. Nothing else: the database, KV and R2 run on your
 machine through wrangler, with no Cloudflare account.
 
 ```bash
@@ -68,7 +68,8 @@ bun run try
 ```
 
 This builds the CLI, then runs the real wizard and creates a project in `../cf-saas-try`, beside
-this repo. Run it again and it replaces that folder. Then follow the steps the wizard prints:
+this repo, with a first commit. Run it again and it replaces that folder. Then follow the steps the
+wizard prints:
 
 ```bash
 cd ../cf-saas-try

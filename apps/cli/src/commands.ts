@@ -157,6 +157,16 @@ export const create = async (args: CreateArgs) => {
         git: fromPromise(async ({ input }) => {
           await run("git", ["init", "--quiet"], input.targetDir);
           await run("git", ["add", "-A"], input.targetDir);
+          await run(
+            "git",
+            [
+              "commit",
+              "--quiet",
+              "-m",
+              `chore: create project with create-tanstack-cf-saas ${VERSION}`,
+            ],
+            input.targetDir,
+          );
         }),
       },
     }),
