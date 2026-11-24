@@ -4,6 +4,15 @@
   "description": "A typed event catalog, an Analytics service with console, PostHog and Analytics Engine adapters, the browser helpers that send page views and web vitals, and /api/events.",
   "required": true,
   "requires": [],
+  "bindings": [
+    {
+      "type": "ratelimit",
+      "binding": "EVENTS_LIMITER",
+      "namespace_id": "1003",
+      "limit": 60,
+      "period": 60
+    }
+  ],
   "vars": {
     "ANALYTICS_PROVIDER": {
       "description": "Where analytics events go: none, console, posthog or analytics-engine",

@@ -45,6 +45,22 @@
             "limit": 20,
             "period": 60
           }
+        },
+        {
+          "name": "EVENTS_LIMITER",
+          "namespace_id": "2003",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        },
+        {
+          "name": "REPORT_LIMITER",
+          "namespace_id": "2004",
+          "simple": {
+            "limit": 10,
+            "period": 60
+          }
         }
       ],
       "kv_namespaces": [
@@ -100,6 +116,22 @@
       "namespace_id": "1002",
       "simple": {
         "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "EVENTS_LIMITER",
+      "namespace_id": "1003",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    },
+    {
+      "name": "REPORT_LIMITER",
+      "namespace_id": "1004",
+      "simple": {
+        "limit": 10,
         "period": 60
       }
     }

@@ -1,8 +1,9 @@
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
-import { NotConfigured, NotFound, RateLimited } from "#/app/errors.ts";
+import { NotConfigured, NotFound, type RateLimited } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
+import { checkLimit, type Limiter } from "#/features/core/lib/rate-limit.ts";
 import { type AllowedType, check, type Rejection } from "../lib/validate.ts";
 
 export class UploadRejected extends Schema.TaggedError<UploadRejected>()("UploadRejected", {
@@ -15,7 +16,8 @@ export class StorageError extends Schema.TaggedError<StorageError>()("StorageErr
 }) {}
 
 export interface StoredFile {
-  readonly key: string;
+  /** The file's id within its owner's files: what /api/uploads/$id takes. */
+  readonly id: string;
   readonly name: string;
   readonly contentType: string;
   readonly size: number;
@@ -29,15 +31,20 @@ export interface Bucket {
     value: ArrayBuffer,
     options: { httpMetadata: { contentType: string }; customMetadata: Record<string, string> },
   ): Promise<unknown>;
-  get(
-    key: string,
-  ): Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null>;
+  get(key: string): Promise<{
+    body: ReadableStream;
+    httpMetadata?: { contentType?: string };
+    customMetadata?: Record<string, string>;
+  } | null>;
   delete(key: string): Promise<void>;
   list(options: {
     prefix: string;
     limit: number;
+    cursor?: string;
     include?: Array<"customMetadata" | "httpMetadata">;
   }): Promise<{
+    truncated: boolean;
+    cursor?: string;
     objects: Array<{
       key: string;
       size: number;
@@ -47,17 +54,13 @@ export interface Bucket {
     }>;
   }>;
 }
-interface Limiter {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
-
-const LIST_LIMIT = 100;
+/** R2's own maximum per list call; the list follows the cursor until it has every file. */
+const LIST_LIMIT = 1000;
 const HEAD_BYTES = 16;
 const NAME_MAX = 200;
-const RETRY_SECONDS = 60;
 
 /** Every user's files live under their own prefix, so one user can never name another's file. */
-export const prefixFor = (userId: string) => `users/${userId}/`;
+const prefixFor = (userId: string) => `users/${userId}/`;
 const safeName = (name: string) => name.replace(/[^\w.\- ]+/g, "_").slice(0, NAME_MAX) || "file";
 
 export class Uploads extends Context.Service<
@@ -86,16 +89,14 @@ export class Uploads extends Context.Service<
     const reject = (reason: Rejection) => new UploadRejected({ reason });
 
     const upload = Effect.fn("Uploads.upload")(function* (userId: string, file: File) {
-      if (limiter) {
-        const { success } = yield* call("ratelimit", () => limiter.limit({ key: userId }));
-        if (!success) return yield* new RateLimited({ retryAfterSeconds: RETRY_SECONDS });
-      }
+      yield* checkLimit(limiter, userId);
       const early = check(file);
       if (early) return yield* reject(early);
       const bytes = yield* call("read", () => file.arrayBuffer());
       const late = check(file, new Uint8Array(bytes.slice(0, HEAD_BYTES)));
       if (late) return yield* reject(late);
-      const key = `${prefixFor(userId)}${crypto.randomUUID()}`;
+      const id = crypto.randomUUID();
+      const key = `${prefixFor(userId)}${id}`;
       const name = safeName(file.name);
       const uploadedAt = DateTime.formatIso(yield* DateTime.now);
       yield* call("put", () =>
@@ -104,24 +105,36 @@ export class Uploads extends Context.Service<
           customMetadata: { name, uploadedAt },
         }),
       );
-      return { key, name, contentType: file.type as AllowedType, size: file.size, uploadedAt };
+      return { id, name, contentType: file.type as AllowedType, size: file.size, uploadedAt };
     });
 
     const list = Effect.fn("Uploads.list")(function* (userId: string) {
-      const { objects } = yield* call("list", () =>
-        bucket.list({
-          prefix: prefixFor(userId),
-          limit: LIST_LIMIT,
-          include: ["customMetadata", "httpMetadata"],
-        }),
-      );
-      return objects.map((o) => ({
-        key: o.key,
-        name: o.customMetadata?.name ?? "file",
-        contentType: o.httpMetadata?.contentType ?? "application/octet-stream",
-        size: o.size,
-        uploadedAt: o.customMetadata?.uploadedAt ?? o.uploaded.toISOString(),
-      }));
+      const prefix = prefixFor(userId);
+      const files: Array<StoredFile> = [];
+      let cursor: string | undefined;
+      do {
+        const after = cursor;
+        const page = yield* call("list", () =>
+          bucket.list({
+            prefix,
+            limit: LIST_LIMIT,
+            include: ["customMetadata", "httpMetadata"],
+            ...(after ? { cursor: after } : {}),
+          }),
+        );
+        for (const o of page.objects) {
+          files.push({
+            id: o.key.slice(prefix.length),
+            name: o.customMetadata?.name ?? "file",
+            contentType: o.httpMetadata?.contentType ?? "application/octet-stream",
+            size: o.size,
+            uploadedAt: o.customMetadata?.uploadedAt ?? o.uploaded.toISOString(),
+          });
+        }
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
+      // Keys are random, so R2's key order means nothing to people: newest first.
+      return files.sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
     });
 
     const download = Effect.fn("Uploads.download")(function* (userId: string, id: string) {
@@ -130,7 +143,8 @@ export class Uploads extends Context.Service<
       return new Response(object.body, {
         headers: {
           "content-type": object.httpMetadata?.contentType ?? "application/octet-stream",
-          "content-disposition": "attachment",
+          // The name was reduced to [\w.\- ] at upload, so it is safe inside the quotes.
+          "content-disposition": `attachment; filename="${object.customMetadata?.name ?? "file"}"`,
           "x-content-type-options": "nosniff",
         },
       });

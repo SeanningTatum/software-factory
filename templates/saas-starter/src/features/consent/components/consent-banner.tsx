@@ -1,5 +1,6 @@
 import { useMachine } from "@xstate/react";
 import { createContext, type ReactNode, useContext } from "react";
+import { clearAnonIdCookie } from "#/features/core/analytics/lib/browser.ts";
 import { Button } from "#/features/core/ui/components/button.tsx";
 import { consentCookie } from "../lib/consent.ts";
 import { type ConsentInput, consentMachine } from "./consent.machine.ts";
@@ -17,6 +18,8 @@ export function ConsentProvider({ input, children }: { input: ConsentInput; chil
         persist: (_, { choice }) => {
           // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is not in every browser yet.
           document.cookie = consentCookie(choice);
+          // biome-ignore lint/suspicious/noDocumentCookie: as above.
+          if (choice === "denied") document.cookie = clearAnonIdCookie;
         },
       },
     }),

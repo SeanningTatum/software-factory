@@ -47,6 +47,10 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Better Auth's log lines go to the request's logger, and its errors to the error reporter, through the `logger.log` option; plugins get `loggedErrors()` to see them. Why: plugins such as Stripe's catch their own failures and only log them, so a console logger hid them from on-call.
+- 2026-11-24 — A GitHub callback counts as `sign_in_succeeded` only when the response sets a session cookie. Why: Better Auth answers every OAuth failure with a redirect too, so a redirect status proved nothing.
+- 2026-11-24 — After sign-in the page goes back with `navigate({ href })` and the `redirect` param must be a local path (`/` not followed by `/` or `\`). Why: as a `to`, a stored href with a search string became part of the path and showed Page not found.
+- 2026-11-24 — The rate-limited paths are sign-in, sign-up and `request-password-reset`, through the shared fail-open `checkLimit` in `core/lib/rate-limit.ts`. Why: `forget-password` does not exist in Better Auth 1.7, so reset emails would have been unlimited once enabled.
 - 2026-11-24 — The sign-in and sign-up form uses `method="post"`, and its button waits for hydration. Why: a submit before React loaded put the password in the URL, the browser history and the server log.
 - 2026-11-24 — Without `BETTER_AUTH_SECRET` (32+ characters), `APP_URL` or the `DB` binding, Auth degrades: everyone is signed out and `/api/auth` answers 503 with `NotConfigured` naming the setting. Why: the rest of the app keeps working.
 - 2026-11-24 — Better Auth's own rate limit is off; the `AUTH_LIMITER` binding limits sign-in, sign-up and forget-password per IP and path, and a limiter outage lets requests through. Why: only password paths need it, and an outage must not lock everyone out.
@@ -58,6 +62,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Added the indexes Better Auth's own schema asks for (`session.user_id`, `account.user_id`, `verification.identifier`) and `user.stripe_customer_id`, in migration `0001_indexes`.
 - 2026-11-24 — `APP_URL` defaults to `http://localhost:3001`, so the website runs beside the template on 3000.
 - 2026-11-24 — Auth calls run through `outsideCall` and the rate limiter binding is read with `binding`, both from `core/lib`; imports db, analytics and ui from `src/features/core/`.
 - 2026-11-24 — The path specs wait for an enabled button, give each test its own visitor IP so the sign-up limiter does not trip on a second run, and wait for sign-out before signing up again; `reaches submitting` now signs up for real. Added an SSR test for the form.

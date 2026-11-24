@@ -17,7 +17,12 @@ interface AuthPluginDeps {
   readonly onEvent: (event: AnalyticsEvent) => void;
   /** Queues a warning for the request's log, with the request id on it. */
   readonly onWarning: (message: string, details: Record<string, unknown>) => void;
+  /** How many errors Better Auth has logged while serving this request. */
+  readonly loggedErrors: () => number;
 }
+
+/** Where Better Auth's own log lines go: the request's log and, for errors, the error reporter. */
+export type AuthLog = (level: "debug" | "info" | "warn" | "error", message: string) => void;
 export type AuthPluginFactory = (deps: AuthPluginDeps) => ReadonlyArray<BetterAuthPlugin>;
 
 export interface AuthConfig {
@@ -48,7 +53,12 @@ export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string
   };
 };
 
-export const makeAuth = (config: AuthConfig, db: Db, plugins: ReadonlyArray<BetterAuthPlugin>) =>
+export const makeAuth = (
+  config: AuthConfig,
+  db: Db,
+  plugins: ReadonlyArray<BetterAuthPlugin>,
+  log: AuthLog,
+) =>
   betterAuth({
     secret: config.secret,
     baseURL: config.baseURL,
@@ -64,5 +74,8 @@ export const makeAuth = (config: AuthConfig, db: Db, plugins: ReadonlyArray<Bett
     // Workers rate-limit bindings guard sign-in and sign-up instead; see rate-limit.ts.
     rateLimit: { enabled: false },
     advanced: { useSecureCookies: config.baseURL.startsWith("https://") },
+    // Plugins (Stripe's webhook, for one) catch their own failures and only log them; route those
+    // lines to our logger and error reporter instead of the console.
+    logger: { level: "warn", log: (level, message) => log(level, message) },
     plugins: [...plugins, tanstackStartCookies()],
   });

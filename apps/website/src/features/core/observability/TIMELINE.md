@@ -8,7 +8,7 @@ JSON logs stamped with the request id and user, redaction, error reports to the 
 - Kind: core module, required; it can't be removed
 - Depends on: none
 - Used by: none
-- Bindings: none
+- Bindings: `REPORT_LIMITER` (ratelimit)
 - Vars: `ERROR_REPORTER`, `LOG_LEVEL`
 - Secrets: `SENTRY_DSN`
 - Also owns: none
@@ -24,6 +24,7 @@ JSON logs stamped with the request id and user, redaction, error reports to the 
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `/api/browser-report` is rate-limited per address by the new `REPORT_LIMITER` binding (10 a minute) and reads at most 8 KB as it arrives. Why: anyone could spend the error tracker's quota, after which real errors are dropped.
 - 2026-11-24 — Lives in `src/features/core/` as a services-only module; its only route is the server route `/api/browser-report`. Why: core holds shared modules of one kind, and this one is services and helpers.
 - 2026-11-24 — Every log line is one JSON object stamped with the request id, the user and the current span. Why: Workers Logs reads JSON, and one id ties a request's lines together.
 - 2026-11-24 — `lib/log-sink.ts` is the only file that writes to the console. Why: logs leave through one door, and Biome's `noConsole` stays on everywhere else.

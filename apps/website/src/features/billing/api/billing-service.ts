@@ -4,12 +4,17 @@ import { CloudflareEnv, setting } from "#/app/env.ts";
 import type { NotConfigured } from "#/app/errors.ts";
 import { Database, type DatabaseError } from "#/features/core/db/api/database.ts";
 import { FREE_PLAN, type Plan, plansFrom } from "../lib/plans.ts";
+import { isEntitled, isStatus } from "../machines/subscription.machine.ts";
 import { subscription } from "../schema.ts";
 
 export interface BillingState {
   /** False until Stripe keys and a price are set; the page then says what is missing. */
   readonly configured: boolean;
+  /** Whether the user gets paid features now. Gate on this; it is the one place that decides. */
+  readonly entitled: boolean;
+  /** The plan the user gets now: the subscription's plan when entitled, else free. */
   readonly plan: string;
+  /** The subscription's Stripe status; set while there is one to manage, even when not entitled. */
   readonly status: string | undefined;
   readonly cancelAtPeriodEnd: boolean;
   readonly plans: ReadonlyArray<Pick<Plan, "name" | "label">>;
@@ -47,9 +52,11 @@ export class Billing extends Context.Service<
             .limit(1),
         );
         const current = rows[0];
+        const entitled = Boolean(current && isStatus(current.status) && isEntitled(current.status));
         return {
           configured,
-          plan: current?.plan ?? FREE_PLAN,
+          entitled,
+          plan: entitled && current ? current.plan : FREE_PLAN,
           status: current?.status,
           cancelAtPeriodEnd: current?.cancelAtPeriodEnd ?? false,
           plans: plans.map(({ name, label }) => ({ name, label })),

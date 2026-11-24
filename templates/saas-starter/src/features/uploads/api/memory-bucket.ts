@@ -1,6 +1,6 @@
 import type { Bucket } from "./uploads.ts";
 
-/** An in-memory R2 bucket for tests. */
+/** An in-memory R2 bucket for tests. Lists in key order and pages with a cursor, as R2 does. */
 export const memoryBucket = () => {
   const store = new Map<
     string,
@@ -19,21 +19,35 @@ export const memoryBucket = () => {
         ? {
             body: new Response(entry.bytes).body as ReadableStream,
             httpMetadata: { contentType: entry.contentType },
+            customMetadata: entry.meta,
           }
         : null;
     },
     delete: async (key) => void store.delete(key),
-    list: async ({ prefix }) => ({
-      objects: [...store.entries()]
-        .filter(([key]) => key.startsWith(prefix))
-        .map(([key, e]) => ({
-          key,
-          size: e.bytes.byteLength,
-          uploaded: new Date(0),
-          customMetadata: e.meta,
-          httpMetadata: { contentType: e.contentType },
-        })),
-    }),
+    list: async ({ prefix, limit, cursor }) => {
+      const keys = [...store.keys()]
+        .filter((key) => key.startsWith(prefix) && (!cursor || key > cursor))
+        .sort();
+      const page = keys.slice(0, limit);
+      return {
+        truncated: keys.length > limit,
+        ...(keys.length > limit ? { cursor: page.at(-1) } : {}),
+        objects: page.map((key) => {
+          const e = store.get(key) as {
+            bytes: ArrayBuffer;
+            contentType: string;
+            meta: Record<string, string>;
+          };
+          return {
+            key,
+            size: e.bytes.byteLength,
+            uploaded: new Date(0),
+            customMetadata: e.meta,
+            httpMetadata: { contentType: e.contentType },
+          };
+        }),
+      };
+    },
   };
   return { bucket, store };
 };

@@ -4,6 +4,15 @@
   "description": "JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, and /api/browser-report.",
   "required": true,
   "requires": [],
+  "bindings": [
+    {
+      "type": "ratelimit",
+      "binding": "REPORT_LIMITER",
+      "namespace_id": "1004",
+      "limit": 10,
+      "period": 60
+    }
+  ],
   "vars": {
     "LOG_LEVEL": {
       "description": "Lowest level written to the logs: Debug, Info, Warn or Error",

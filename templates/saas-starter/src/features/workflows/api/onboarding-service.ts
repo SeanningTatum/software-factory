@@ -11,6 +11,9 @@ export interface WorkflowBinding {
   get(id: string): Promise<{ status(): Promise<{ status: string }> }>;
 }
 
+/** The run's id: fixed per user, so starting twice is the same run. */
+const instanceIdFor = (userId: string) => `onboarding-${userId}`;
+
 export class WorkflowError extends Schema.TaggedError<WorkflowError>()("WorkflowError", {
   operation: Schema.String,
   cause: Schema.Defect(),
@@ -35,7 +38,18 @@ export class Onboarding extends Context.Service<
         (cause) => new WorkflowError({ operation, cause }),
       );
     return Onboarding.of({
-      start: (params) => call("create", () => binding.create({ params })),
+      // One run per user: a retried trigger finds the run it already started instead of a second.
+      start: (params) => {
+        const id = instanceIdFor(params.userId);
+        return call("create", () => binding.create({ id, params })).pipe(
+          Effect.catch((error) =>
+            call("get", () => binding.get(id)).pipe(
+              Effect.as({ id }),
+              Effect.mapError(() => error),
+            ),
+          ),
+        );
+      },
       status: (id) => call("status", async () => (await binding.get(id)).status()),
     });
   };

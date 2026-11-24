@@ -6,8 +6,10 @@
       "AUTH_LIMITER",
       "BUCKET",
       "DB",
+      "EVENTS_LIMITER",
       "KV",
       "ONBOARDING_WORKFLOW",
+      "REPORT_LIMITER",
       "UPLOAD_LIMITER"
     ],
     "vars": [

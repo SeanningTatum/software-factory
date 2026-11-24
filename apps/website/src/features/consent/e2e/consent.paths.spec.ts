@@ -36,3 +36,16 @@ test("@golden consent: Global Privacy Control hides the banner", async ({ browse
   await expect(banner(page)).toBeHidden();
   await context.close();
 });
+
+test("consent: allowing analytics gives an anonymous id, declining removes it", async ({
+  page,
+}) => {
+  const aid = async () =>
+    (await page.context().cookies()).find((cookie) => cookie.name === "aid")?.value;
+  await page.goto("/");
+  await steps.ACCEPT?.(page);
+  await expect.poll(aid).toMatch(/^[0-9a-f-]{36}$/);
+  await steps.REOPEN?.(page);
+  await steps.DECLINE?.(page);
+  await expect.poll(aid).toBeUndefined();
+});

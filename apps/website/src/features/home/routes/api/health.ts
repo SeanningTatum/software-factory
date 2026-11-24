@@ -1,18 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Effect } from "effect";
-import { CurrentRequest } from "#/app/request.ts";
 import { runResponse } from "#/app/run-effect.ts";
+import { readiness } from "#/features/home/api/health.ts";
 
+const UNAVAILABLE = 503;
+
+/** 200 when this deploy can serve users, 503 with what is wrong otherwise. The deploy smoke test. */
 export const Route = createFileRoute("/api/health")({
   server: {
     handlers: {
-      GET: ({ context }) =>
+      GET: ({ request, context }) =>
         runResponse(
           context,
-          Effect.gen(function* () {
-            const { info } = yield* CurrentRequest;
-            return Response.json({ ok: true, requestId: info.id });
-          }),
+          Effect.map(readiness(request.url), (ready) =>
+            Response.json(
+              { ...ready, requestId: context.request.id },
+              ready.ok ? {} : { status: UNAVAILABLE },
+            ),
+          ),
           "health",
         ),
     },

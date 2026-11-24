@@ -45,6 +45,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Onboarding runs have the id `onboarding-<userId>`, and starting one that exists returns it; user ids are letters, digits, `-` and `_`, up to 64. Why: a retried trigger started a second run with duplicate steps and events.
 - 2026-11-24 — The onboarding step order comes from `machines/onboarding.machine.ts`, and a test checks that `runOnboarding` follows it. Why: the diagram is always what production runs.
 - 2026-11-24 — Each step runs in a fresh runtime whose request id is the workflow instance id. Why: every log line from one run shares an id.
 - 2026-11-24 — The HTTP trigger needs `WORKFLOWS_TRIGGER_TOKEN` as a bearer token, compared in constant time, and answers `NotConfigured` when the token is unset. Why: no one may start workflows without it, and timing must not leak it.
@@ -54,5 +55,6 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Each step disposes its runtime even when it fails, so queued analytics are still sent.
 - 2026-11-24 — Workflow calls run through `outsideCall` and the binding is read with `binding`, both from `core/lib`; imports analytics from `src/features/core/`.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

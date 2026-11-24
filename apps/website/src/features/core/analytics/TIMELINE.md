@@ -8,7 +8,7 @@ A typed event catalog, an Analytics service with console, PostHog and Analytics 
 - Kind: core module, required; it can't be removed
 - Depends on: none
 - Used by: none
-- Bindings: none
+- Bindings: `EVENTS_LIMITER` (ratelimit)
 - Vars: `ANALYTICS_PROVIDER`, `POSTHOG_HOST`
 - Secrets: `POSTHOG_KEY`
 - Also owns: none
@@ -24,6 +24,7 @@ A typed event catalog, an Analytics service with console, PostHog and Analytics 
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `/api/events` is rate-limited per address by the new `EVENTS_LIMITER` binding (60 a minute), reads at most 16 KB as it arrives, and attributes events to the signed-in user, else the consented `aid` cookie. Why: anyone could pump unlimited events into the provider, and each event counted as a new anonymous person.
 - 2026-11-24 — The browser tracker now lives in `consent`, not here. Why: it has logic of its own and waits on consent, and a core module holds services or components, never both.
 - 2026-11-24 — Every event is a `Schema.TaggedStruct` in some feature's `events.ts`; `src/gen/events.ts` gathers them and `capture` takes only those. Why: an event outside the catalog does not type-check.
 - 2026-11-24 — Events hold no personal data, and `lib/catalog.test.ts` fails on property names such as email, name, ip or phone. Why: events may leave for a third party, and personal data must not go with them.

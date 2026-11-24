@@ -5,7 +5,7 @@ import { runEffect } from "#/app/run-effect.ts";
 import { Auth } from "#/features/auth/api/auth-service.ts";
 import { ensureSignedIn } from "#/features/auth/api/guard.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "#/features/core/ui/components/card.tsx";
-import { prefixFor, type StoredFile, Uploads } from "#/features/uploads/api/uploads.ts";
+import { type StoredFile, Uploads } from "#/features/uploads/api/uploads.ts";
 import { UploadPanel } from "#/features/uploads/components/upload-panel.tsx";
 
 const listFiles = createServerFn({ method: "GET" }).handler(({ context }) =>
@@ -13,8 +13,7 @@ const listFiles = createServerFn({ method: "GET" }).handler(({ context }) =>
     context,
     Effect.gen(function* () {
       const user = yield* (yield* Auth).requireUser;
-      const files = yield* (yield* Uploads).list(user.id);
-      return files.map((file) => ({ ...file, id: file.key.slice(prefixFor(user.id).length) }));
+      return yield* (yield* Uploads).list(user.id);
     }),
     "uploads.page",
   ),
@@ -29,7 +28,7 @@ export const Route = createFileRoute("/uploads")({
 const KB = 1024;
 
 function UploadsPage() {
-  const files: ReadonlyArray<StoredFile & { id: string }> = Route.useLoaderData();
+  const files: ReadonlyArray<StoredFile> = Route.useLoaderData();
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12">
       <Card>
@@ -43,7 +42,7 @@ function UploadsPage() {
           ) : (
             <ul className="divide-y text-sm">
               {files.map((file) => (
-                <li key={file.key} className="flex items-center justify-between py-2">
+                <li key={file.id} className="flex items-center justify-between py-2">
                   <a
                     href={`/api/uploads/${file.id}`}
                     className="underline-offset-4 hover:underline"

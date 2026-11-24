@@ -1,35 +1,15 @@
 import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
-import { RateLimited } from "#/app/errors.ts";
+import type { RateLimited } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
-
-const WINDOW_SECONDS = 60;
-
-/** The part of a Workers rate-limit binding we use. */
-export interface Limiter {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
+import { checkLimit, clientAddress, type Limiter } from "#/features/core/lib/rate-limit.ts";
 
 export class AuthRateLimiter extends Context.Service<
   AuthRateLimiter,
   { readonly check: (key: string) => Effect.Effect<void, RateLimited> }
 >()("app/features/auth/AuthRateLimiter") {
   static readonly fromLimiter = (limiter: Limiter | undefined) =>
-    AuthRateLimiter.of({
-      check: (key) =>
-        limiter
-          ? Effect.tryPromise(() => limiter.limit({ key })).pipe(
-              Effect.withSpan("AuthRateLimiter.check"),
-              // A limiter outage should not lock everyone out.
-              Effect.catch(() => Effect.succeed({ success: true })),
-              Effect.flatMap(({ success }) =>
-                success
-                  ? Effect.void
-                  : Effect.fail(new RateLimited({ retryAfterSeconds: WINDOW_SECONDS })),
-              ),
-            )
-          : Effect.void,
-    });
+    AuthRateLimiter.of({ check: (key) => checkLimit(limiter, key) });
 
   static readonly layer = Layer.effect(
     AuthRateLimiter,
@@ -44,8 +24,7 @@ export class AuthRateLimiter extends Context.Service<
 export const LIMITED_PATHS = [
   "/api/auth/sign-in/email",
   "/api/auth/sign-up/email",
-  "/api/auth/forget-password",
+  "/api/auth/request-password-reset",
 ];
 
-export const limitKey = (headers: Headers, path: string) =>
-  `${headers.get("cf-connecting-ip") ?? "unknown"}:${path}`;
+export const limitKey = (headers: Headers, path: string) => `${clientAddress(headers)}:${path}`;

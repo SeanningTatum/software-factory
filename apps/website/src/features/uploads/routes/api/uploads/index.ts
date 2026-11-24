@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Effect } from "effect";
+import { readForm } from "#/app/body.ts";
 import { InvalidInput } from "#/app/errors.ts";
 import { runResponse } from "#/app/run-effect.ts";
 import { Auth } from "#/features/auth/api/auth-service.ts";
@@ -19,13 +20,7 @@ export const Route = createFileRoute("/api/uploads/")({
           context,
           Effect.gen(function* () {
             const user = yield* (yield* Auth).requireUser;
-            if (Number(request.headers.get("content-length") ?? 0) > MAX_BYTES + FORM_OVERHEAD) {
-              return yield* new InvalidInput({ issues: "file too large" });
-            }
-            const form = yield* Effect.tryPromise({
-              try: () => request.formData(),
-              catch: () => new InvalidInput({ issues: "expected multipart form data" }),
-            }).pipe(Effect.withSpan("uploads.readForm"));
+            const form = yield* readForm(request, MAX_BYTES + FORM_OVERHEAD);
             const file = form.get("file");
             if (!(file instanceof File)) return yield* new InvalidInput({ issues: "missing file" });
             const stored = yield* (yield* Uploads).upload(user.id, file);

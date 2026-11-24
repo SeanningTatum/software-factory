@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Effect, ErrorReporter, Layer } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 import { type AppEnv, CloudflareEnv } from "#/app/env.ts";
 import { CurrentRequest, requestInfoFrom } from "#/app/request.ts";
@@ -8,7 +8,7 @@ import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb, testDatabaseLayer } from "#/features/core/db/api/test-database.ts";
 import { authSchema } from "../schema.ts";
 import { Auth } from "./auth-service.ts";
-import { AuthRateLimiter } from "./rate-limit.ts";
+import { AuthRateLimiter, LIMITED_PATHS } from "./rate-limit.ts";
 
 const APP = "http://localhost:3000";
 const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as AppEnv;
@@ -16,11 +16,13 @@ const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as A
 /** Runs one request through a real Auth service on an in-memory database. */
 const request = async (db: Db, incoming: Request, allow = true) => {
   const sent: Array<Captured> = [];
+  const reported: Array<string> = [];
   const info = requestInfoFrom(incoming);
   const base = Layer.mergeAll(
     CloudflareEnv.layer(env),
     CurrentRequest.layer(info),
     testDatabaseLayer(db),
+    ErrorReporter.layer([ErrorReporter.make(({ error }) => void reported.push(error.message))]),
   );
   const analytics = Analytics.layerWith(() => ({
     name: "test",
@@ -37,7 +39,7 @@ const request = async (db: Db, incoming: Request, allow = true) => {
     const auth = yield* Auth;
     return yield* auth.handle(incoming);
   }).pipe(Effect.provide(layer), Effect.runPromise);
-  return { response, events: sent.map((c) => c.event._tag), info };
+  return { response, events: sent.map((c) => c.event._tag), info, reported };
 };
 
 const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
@@ -123,5 +125,18 @@ describe("Auth", () => {
     );
     expect(response.status).toBe(429);
     expect(events).toEqual(["sign_in_failed"]);
+  });
+
+  it.each(LIMITED_PATHS)("rate limits %s, a route Better Auth really serves", async (path) => {
+    const { response } = await request(db, post(path, {}));
+    expect(response.status).not.toBe(404);
+  });
+
+  it("sends what Better Auth logs as an error to the error reporter, not the console", async () => {
+    const { reported } = await request(
+      db,
+      post("/api/auth/request-password-reset", { email: "ada@example.com" }),
+    );
+    expect(reported.join(" ")).toContain("Reset password isn't enabled");
   });
 });

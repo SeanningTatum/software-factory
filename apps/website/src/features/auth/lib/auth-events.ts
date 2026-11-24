@@ -15,7 +15,11 @@ const failureReason = (status: number) => {
   return CREDENTIAL_FAILURES.has(status) ? ("invalid_credentials" as const) : ("other" as const);
 };
 
-type Rule = (status: number, userId: string | undefined) => ReadonlyArray<Captured>;
+type Rule = (
+  status: number,
+  userId: string | undefined,
+  signedIn: boolean,
+) => ReadonlyArray<Captured>;
 
 const rules: ReadonlyArray<{ method: string; path: string; prefix?: boolean; rule: Rule }> = [
   {
@@ -38,8 +42,9 @@ const rules: ReadonlyArray<{ method: string; path: string; prefix?: boolean; rul
     method: "GET",
     path: "/api/auth/callback/github",
     prefix: true,
-    rule: (status) =>
-      isOk(status) ? [{ event: { _tag: "sign_in_succeeded", method: "github" } }] : [],
+    // Better Auth answers every OAuth failure with a redirect too; only a new session is a sign-in.
+    rule: (_status, _userId, signedIn) =>
+      signedIn ? [{ event: { _tag: "sign_in_succeeded", method: "github" } }] : [],
   },
   {
     method: "POST",
@@ -47,6 +52,14 @@ const rules: ReadonlyArray<{ method: string; path: string; prefix?: boolean; rul
     rule: (status) => (isOk(status) ? [{ event: { _tag: "signed_out" } }] : []),
   },
 ];
+
+const SESSION_COOKIE = /^(__Secure-)?[\w.-]*session_token=([^;]+)/;
+
+/** Whether a response starts a session: it sets a non-empty session cookie that isn't expiring. */
+export const setsSession = (headers: Headers) =>
+  headers
+    .getSetCookie()
+    .some((cookie) => SESSION_COOKIE.test(cookie) && !/max-age=0\b/i.test(cookie));
 
 /**
  * The analytics events an auth API response proves happened. Read on the server, where Better
@@ -57,10 +70,11 @@ export const authEvents = (
   path: string,
   status: number,
   body: unknown,
+  signedIn = false,
 ): ReadonlyArray<Captured> => {
   const match = rules.find(
     (r) => r.method === method && (r.prefix ? path.startsWith(r.path) : path === r.path),
   );
   const userId = (body as { user?: { id?: string } } | null)?.user?.id;
-  return match ? match.rule(status, userId) : [];
+  return match ? match.rule(status, userId, signedIn) : [];
 };

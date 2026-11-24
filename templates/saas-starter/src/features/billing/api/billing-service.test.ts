@@ -43,6 +43,7 @@ describe("Billing.stateFor", () => {
     ]);
     expect(state).toMatchObject({
       configured: true,
+      entitled: true,
       plan: "pro",
       status: "active",
       plans: [{ name: "pro", label: "Pro" }],
@@ -55,5 +56,12 @@ describe("Billing.stateFor", () => {
       { id: "s2", plan: "pro", referenceId: "u2", status: "active" },
     ]);
     expect(state.plan).toBe("free");
+  });
+
+  it("does not entitle a subscription whose payment failed, but keeps it manageable", async () => {
+    const state = await stateFor(KEYS, [
+      { id: "s1", plan: "pro", referenceId: "u1", status: "past_due" },
+    ]);
+    expect(state).toMatchObject({ entitled: false, plan: "free", status: "past_due" });
   });
 });

@@ -31,14 +31,15 @@ const summary = (state: BillingState) => {
   if (state.status === "past_due")
     return "Your last payment failed. Update your card to keep access.";
   if (state.cancelAtPeriodEnd) return "Your subscription ends at the close of this period.";
-  return state.plan === "free" ? "Upgrade when you're ready." : "Thanks for subscribing.";
+  return state.entitled ? "Thanks for subscribing." : "Upgrade when you're ready.";
 };
 
 type Send = (event: { type: "START"; action: CheckoutAction }) => void;
 
 function Actions({ state, busy, send }: { state: BillingState; busy: boolean; send: Send }) {
   const disabled = busy || !state.configured;
-  if (state.plan !== "free") {
+  // A subscription to manage, even one not paying right now (past due): fixing the card is there.
+  if (state.status) {
     return (
       <Button
         disabled={disabled}
@@ -68,7 +69,7 @@ export function PlanCard({ state }: { state: BillingState }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your plan: {state.plan === "free" ? "Free" : state.plan}</CardTitle>
+        <CardTitle>Your plan: {state.entitled ? state.plan : "Free"}</CardTitle>
         <CardDescription>{summary(state)}</CardDescription>
       </CardHeader>
       {!state.configured && (

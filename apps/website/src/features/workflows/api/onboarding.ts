@@ -2,8 +2,9 @@ import { Effect, Schema } from "effect";
 import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import { stepOrder } from "../machines/onboarding.machine.ts";
 
+/** The user id becomes part of the Workflow instance id, which allows letters, digits, "-" and "_". */
 export const OnboardingParams = Schema.Struct({
-  userId: Schema.String.check(Schema.isMaxLength(128)),
+  userId: Schema.String.check(Schema.isMaxLength(64), Schema.isPattern(/^[\w-]+$/)),
 });
 export type OnboardingParams = typeof OnboardingParams.Type;
 

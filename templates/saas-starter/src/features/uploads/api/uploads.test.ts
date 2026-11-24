@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 import { memoryBucket } from "./memory-bucket.ts";
-import { prefixFor, Uploads } from "./uploads.ts";
+import { Uploads } from "./uploads.ts";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
 const png = (name = "cat.png") => new File([PNG], name, { type: "image/png" });
@@ -11,10 +11,10 @@ describe("Uploads", () => {
     const { bucket } = memoryBucket();
     const uploads = Uploads.make(bucket, undefined);
     const stored = await Effect.runPromise(uploads.upload("u1", png("my cat!.png")));
-    expect(stored.key.startsWith(prefixFor("u1"))).toBe(true);
+    expect(stored.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(stored.name).toBe("my cat_.png");
     const listed = await Effect.runPromise(uploads.list("u1"));
-    expect(listed.map((f) => f.key)).toEqual([stored.key]);
+    expect(listed.map((f) => f.id)).toEqual([stored.id]);
     expect(await Effect.runPromise(uploads.list("u2"))).toEqual([]);
   });
 
@@ -39,11 +39,36 @@ describe("Uploads", () => {
     const { bucket } = memoryBucket();
     const uploads = Uploads.make(bucket, undefined);
     const stored = await Effect.runPromise(uploads.upload("u1", png()));
-    const id = stored.key.slice(prefixFor("u1").length);
+    const id = stored.id;
     const mine = await Effect.runPromise(uploads.download("u1", id));
     expect(mine.headers.get("content-type")).toBe("image/png");
+    expect(mine.headers.get("content-disposition")).toBe('attachment; filename="cat.png"');
     expect(JSON.stringify(await Effect.runPromiseExit(uploads.download("u2", id)))).toContain(
       "NotFound",
     );
+  });
+
+  it("lists every file past one R2 page, newest first", async () => {
+    const { bucket, store } = memoryBucket();
+    for (let i = 0; i < 1005; i++) {
+      store.set(`users/u1/${String(i).padStart(5, "0")}`, {
+        bytes: new ArrayBuffer(1),
+        contentType: "image/png",
+        meta: {
+          name: `f${i}.png`,
+          uploadedAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
+        },
+      });
+    }
+    const listed = await Effect.runPromise(Uploads.make(bucket, undefined).list("u1"));
+    expect(listed).toHaveLength(1005);
+    expect(listed[0]?.name).toBe("f1004.png");
+  });
+
+  it("still uploads when the rate limiter itself is down", async () => {
+    const uploads = Uploads.make(memoryBucket().bucket, {
+      limit: () => Promise.reject(new Error("limiter down")),
+    });
+    expect((await Effect.runPromise(uploads.upload("u1", png()))).name).toBe("cat.png");
   });
 });

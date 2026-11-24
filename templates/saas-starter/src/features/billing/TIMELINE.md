@@ -73,6 +73,9 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `BillingState.entitled` is the one place that decides paid access (active or trialing); `plan` is the plan the user gets now, and `status` stays set while there is a subscription to manage. Why: the page treated past_due as Pro while `isEntitled` said no.
+- 2026-11-24 — A Stripe webhook during which Better Auth logged an error answers 500 (`stripe-webhook-retry` plugin). Why: the Stripe plugin catches D1 errors and answers 200, so Stripe never retried and the change was lost; its handlers write by id, so a retry is safe.
+- 2026-11-24 — The unexpected-change check reads the old status from the event's `previous_attributes`. Why: the plugin passes the row after it was written, so the old check compared a status with itself and never fired.
 - 2026-11-24 — Without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` the Stripe plugin is left out and `/billing` says what is missing. Why: the rest of the app works without Stripe.
 - 2026-11-24 — The subscription lifecycle is a machine, and the `onSubscriptionUpdate` webhook handler checks each status change against it and logs the ones it did not expect. Why: Stripe stays the source of truth, so an odd change earns a warning, not a refusal.
 - 2026-11-24 — A plan exists only when its Stripe price id is set (`STRIPE_PRICE_PRO`). Why: a plan without a price is left out, not broken.
@@ -82,6 +85,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Indexed `subscription.reference_id`, `stripe_subscription_id` and `stripe_customer_id` in migration `0001_indexes`.
 - 2026-11-24 — Imports db and ui from `src/features/core/`.
 - 2026-11-24 — The checkout spec waits for an enabled button and the dashboard before it goes on, and the Stripe Checkout test skips, with the reason, when the page shows the setup hint.
 - 2026-11-24 — Moved into `src/features/billing/` from `src/blocks/billing/`, with pages from `src/routes/(billing)/` when the template switched from blocks to features.

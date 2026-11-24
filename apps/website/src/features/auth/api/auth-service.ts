@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Cause, Context, Effect, ErrorReporter, Layer, Schema } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured, Unauthorized } from "#/app/errors.ts";
 import { CurrentRequest } from "#/app/request.ts";
@@ -7,8 +7,8 @@ import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
-import { authEvents } from "../lib/auth-events.ts";
-import { type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
+import { authEvents, setsSession } from "../lib/auth-events.ts";
+import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
 import { AuthRateLimiter, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
 
 export class AuthServiceError extends Schema.TaggedError<AuthServiceError>()("AuthServiceError", {
@@ -63,16 +63,25 @@ export class Auth extends Context.Service<
 
       const pending: Array<AnalyticsEvent> = [];
       const warnings: Array<readonly [string, Record<string, unknown>]> = [];
+      const errors: Array<string> = [];
+      let errorCount = 0;
       const deps = {
         env,
         onEvent: (event: AnalyticsEvent) => void pending.push(event),
         onWarning: (message: string, details: Record<string, unknown>) =>
           void warnings.push([message, details]),
+        loggedErrors: () => errorCount,
+      };
+      const log: AuthLog = (level, message) => {
+        if (level === "error") {
+          errorCount++;
+          errors.push(message);
+        } else if (level === "warn") warnings.push([message, {}]);
       };
       const plugins = (featureAuthPlugins as ReadonlyArray<AuthPluginFactory>).flatMap((factory) =>
         factory(deps),
       );
-      const instance = makeAuth(config, database.db, plugins);
+      const instance = makeAuth(config, database.db, plugins, log);
       const flushPending = Effect.suspend(() =>
         Effect.all([
           Effect.forEach(pending.splice(0), (event) => analytics.capture(event), { discard: true }),
@@ -82,6 +91,14 @@ export class Auth extends Context.Service<
             {
               discard: true,
             },
+          ),
+          Effect.forEach(
+            errors.splice(0),
+            (message) =>
+              Effect.logError("auth error", { message }).pipe(
+                Effect.andThen(ErrorReporter.report(Cause.die(new Error(message)))),
+              ),
+            { discard: true },
           ),
         ]),
       );
@@ -131,6 +148,7 @@ export class Auth extends Context.Service<
           path,
           response.status,
           body,
+          setsSession(response.headers),
         )) {
           yield* analytics.capture(event, distinctId);
         }

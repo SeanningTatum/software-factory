@@ -29,8 +29,10 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<AppEnv, OnboardingPar
           request,
           waitUntil: (p) => this.ctx.waitUntil(p),
         });
-        await runtime.runPromise(effect.pipe(Effect.withSpan("workflow.onboarding.step")));
-        await runtime.dispose();
+        // Dispose even when the step fails, so the events it queued are still sent.
+        await runtime
+          .runPromise(effect.pipe(Effect.withSpan("workflow.onboarding.step")))
+          .finally(() => runtime.dispose());
       },
     );
   }

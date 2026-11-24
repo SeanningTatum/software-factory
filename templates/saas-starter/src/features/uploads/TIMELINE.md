@@ -51,6 +51,9 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The upload route reads the form through `readForm`, which counts bytes as they arrive. Why: a chunked body has no content-length, so the old check let `formData()` buffer up to the Worker's request limit.
+- 2026-11-24 — Uploads return and list `id`, the file's id within its owner's files, instead of the R2 key; downloads name the file. Why: the API gave out a key that `/api/uploads/$id` could not take, and downloads were saved as a bare UUID.
+- 2026-11-24 — The list follows R2's cursor until it has every file and shows newest first; the upload limiter fails open like auth's. Why: one 100-object page in random key order hid most new files past 100, and a limiter outage answered 503 "storage unavailable".
 - 2026-11-24 — The server checks a file's first bytes against its declared type, not only the type the browser claims. Why: the declared type is whatever the client says.
 - 2026-11-24 — The browser machine and the server run the same `check` from `lib/validate.ts`. Why: the user hears about a bad file before it uploads, and the server still has the last word.
 - 2026-11-24 — Each user's files sit under `users/<id>/` with random keys. Why: one user can never name another's file.

@@ -1,9 +1,17 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { reportWebVitals, sendBrowserEvents } from "#/features/core/analytics/lib/browser.ts";
+import {
+  anonIdCookie,
+  readAnonId,
+  reportWebVitals,
+  sendBrowserEvents,
+} from "#/features/core/analytics/lib/browser.ts";
 import { useConsent } from "./consent-banner.tsx";
 
-/** Sends a page view on each navigation and web vitals once, but only after consent. */
+/**
+ * Sends a page view on each navigation and web vitals once, but only after consent. Consent also
+ * gives a signed-out visitor a random id, so their page views count as one visitor.
+ */
 export function AnalyticsTracker() {
   const { granted } = useConsent();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -13,6 +21,10 @@ export function AnalyticsTracker() {
   useEffect(() => {
     if (!granted || lastPath.current === path) return;
     lastPath.current = path;
+    if (!readAnonId(document.cookie)) {
+      // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is not in every browser yet.
+      document.cookie = anonIdCookie(crypto.randomUUID());
+    }
     sendBrowserEvents([
       {
         _tag: "page_viewed",

@@ -50,6 +50,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Allowing analytics sets an `aid` cookie with a random id; declining clears it. Why: browser events from a signed-out visitor each counted as a new person; the id is random and only exists after consent.
 - 2026-11-24 — Consent stays a feature outside core and owns the analytics tracker and the cookie settings button. Why: it has components and logic of its own (its machine), and both pieces wait on it.
 - 2026-11-24 — Consent is a machine: Do Not Track or Global Privacy Control blocks it with no banner, a saved cookie decides next, and a first visit asks. Why: each outcome is a state with a unit test and an e2e path spec.
 - 2026-11-24 — The choice is saved with `document.cookie`. Why: the Cookie Store API is not in every browser yet.

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Schema } from "effect";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
+import { afterSignIn, RedirectSearch } from "#/features/auth/lib/redirect.ts";
 import {
   Card,
   CardContent,
@@ -10,12 +10,8 @@ import {
   CardTitle,
 } from "#/features/core/ui/components/card.tsx";
 
-const Search = Schema.toStandardSchemaV1(
-  Schema.Struct({ redirect: Schema.optionalKey(Schema.String.check(Schema.isPattern(/^\//))) }),
-);
-
 export const Route = createFileRoute("/login")({
-  validateSearch: Search,
+  validateSearch: RedirectSearch,
   component: Login,
 });
 
@@ -42,7 +38,7 @@ function Login() {
               if (error) return Promise.reject(new Error(error.message ?? "Sign-in failed"));
             }}
             onDone={() =>
-              void router.invalidate().then(() => router.navigate({ to: redirect ?? "/dashboard" }))
+              void router.invalidate().then(() => router.navigate(afterSignIn(redirect)))
             }
           />
         </CardContent>
