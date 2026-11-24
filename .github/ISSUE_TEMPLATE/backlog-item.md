@@ -1,5 +1,4 @@
 ---
-
 name: Backlog item
 about: One change someone can finish and check. Same format as BACKLOG.md.
 title: "Short title that says the outcome"
