@@ -1,15 +1,26 @@
 {
   "name": "@tanstack-cf-saas/blocks",
   "version": "0.1.0",
-  "description": "Building-block manifests and the generators that wire blocks into a tanstack-cf-saas project",
+  "description": "Feature manifests and the generators that wire features into a tanstack-cf-saas project",
   "license": "MIT",
   "type": "module",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./dist/index.js" },
-    "./define": { "types": "./src/define.ts", "default": "./dist/define.js" }
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./define": {
+      "types": "./src/define.ts",
+      "default": "./dist/define.js"
+    }
   },
-  "bin": { "cf-saas-blocks": "./dist/bin.js" },
+  "bin": {
+    "cf-saas-blocks": "./dist/bin.js"
+  },
   "scripts": {
     "build": "bun build src/index.ts src/define.ts src/bin.ts --outdir dist --target node --packages external",
     "typecheck": "tsc -p .",

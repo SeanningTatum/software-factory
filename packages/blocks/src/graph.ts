@@ -4,11 +4,11 @@ export type Manifests = ReadonlyMap<string, BlockManifest>;
 
 const lookup = (manifests: Manifests, name: string): BlockManifest => {
   const manifest = manifests.get(name);
-  if (!manifest) throw new Error(`Unknown block "${name}"`);
+  if (!manifest) throw new Error(`Unknown feature "${name}"`);
   return manifest;
 };
 
-/** The selected blocks plus everything they require, transitively. */
+/** The selected features plus everything they require, transitively. */
 export const withRequirements = (
   manifests: Manifests,
   selected: Iterable<string>,
@@ -23,18 +23,22 @@ export const withRequirements = (
   return topoSort(manifests, [...out]);
 };
 
-/** Sorts blocks so each comes after everything it requires. Stable by name. */
-export const topoSort = (manifests: Manifests, names: ReadonlyArray<string>): ReadonlyArray<string> => {
+/** Sorts features so each comes after everything it requires. Stable by name. */
+export const topoSort = (
+  manifests: Manifests,
+  names: ReadonlyArray<string>,
+): ReadonlyArray<string> => {
   const wanted = new Set(names);
   const done = new Set<string>();
   const visiting = new Set<string>();
   const order: Array<string> = [];
   const visit = (name: string) => {
     if (done.has(name)) return;
-    if (visiting.has(name)) throw new Error(`Blocks require each other in a cycle at "${name}"`);
+    if (visiting.has(name)) throw new Error(`Features require each other in a cycle at "${name}"`);
     visiting.add(name);
     for (const dep of lookup(manifests, name).requires) {
-      if (!wanted.has(dep)) throw new Error(`Block "${name}" requires "${dep}", which is not enabled`);
+      if (!wanted.has(dep))
+        throw new Error(`Feature "${name}" requires "${dep}", which is not enabled`);
       visit(dep);
     }
     visiting.delete(name);
@@ -45,7 +49,7 @@ export const topoSort = (manifests: Manifests, names: ReadonlyArray<string>): Re
   return order;
 };
 
-/** Enabled blocks that require `name`, directly or not. */
+/** Enabled features that require `name`, directly or not. */
 export const dependentsOf = (
   manifests: Manifests,
   enabled: ReadonlyArray<string>,

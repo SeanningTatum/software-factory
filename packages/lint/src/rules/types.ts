@@ -21,3 +21,16 @@ export interface Rule {
   readonly description: string;
   readonly check: (ctx: FileContext) => ReadonlyArray<Omit<Finding, "rule" | "file">>;
 }
+
+export interface ProjectContext {
+  readonly root: string;
+  readonly config: LintConfig;
+  readonly allFiles: ReadonlySet<string>;
+}
+
+/** A rule over the whole project's file list rather than one source file. */
+export interface ProjectRule {
+  readonly id: string;
+  readonly description: string;
+  readonly checkProject: (ctx: ProjectContext) => ReadonlyArray<Omit<Finding, "rule">>;
+}

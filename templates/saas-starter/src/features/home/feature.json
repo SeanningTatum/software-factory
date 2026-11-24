@@ -1,0 +1,7 @@
+{
+  "name": "home",
+  "title": "Home",
+  "description": "The home page and the /api/health check.",
+  "core": true,
+  "requires": []
+}

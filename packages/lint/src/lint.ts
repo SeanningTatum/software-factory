@@ -3,9 +3,17 @@ import { join, relative } from "node:path";
 import ts from "typescript";
 import { type LintConfig, loadConfig } from "./config.ts";
 import { matchesAny } from "./glob.ts";
-import { externalCallSpan, fileSize, noProcessEnv, noRunEffect, noThrow, noTryCatch } from "./rules/ast-rules.ts";
+import {
+  externalCallSpan,
+  fileSize,
+  noProcessEnv,
+  noRunEffect,
+  noThrow,
+  noTryCatch,
+} from "./rules/ast-rules.ts";
+import { featureLayout } from "./rules/feature-layout.ts";
 import { testMap } from "./rules/test-map.ts";
-import type { Finding, Rule } from "./rules/types.ts";
+import type { Finding, ProjectRule, Rule } from "./rules/types.ts";
 
 export const rules: ReadonlyArray<Rule> = [
   noThrow,
@@ -16,6 +24,9 @@ export const rules: ReadonlyArray<Rule> = [
   fileSize,
   testMap,
 ];
+
+/** Rules over the whole file list, not one source file. */
+export const projectRules: ReadonlyArray<ProjectRule> = [featureLayout];
 
 /** Rules that tests may break: they throw from mocks and run effects directly. */
 const SOURCE_ONLY = new Set(["no-throw", "no-try-catch", "no-run-effect", "external-call-span"]);
@@ -28,20 +39,47 @@ const walk = (root: string, dir: string): ReadonlyArray<string> =>
     return entry.isDirectory() ? walk(root, path) : [relative(root, path)];
   });
 
-export const lint = (root: string, config: LintConfig = loadConfig(root)): ReadonlyArray<Finding> => {
+const fileFindings = (
+  root: string,
+  file: string,
+  config: LintConfig,
+  allFiles: ReadonlySet<string>,
+): ReadonlyArray<Finding> => {
+  const text = readFileSync(join(root, file), "utf8");
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  return rules
+    .filter((rule) => !(TEST_FILE.test(file) && SOURCE_ONLY.has(rule.id)))
+    .filter((rule) => !matchesAny(file, config.allow[rule.id] ?? []))
+    .flatMap((rule) =>
+      rule
+        .check({ root, file, source, config, allFiles })
+        .map((f) => ({ rule: rule.id, file, ...f })),
+    );
+};
+
+const projectFindings = (
+  root: string,
+  config: LintConfig,
+  allFiles: ReadonlySet<string>,
+): ReadonlyArray<Finding> =>
+  projectRules.flatMap((rule) =>
+    rule
+      .checkProject({ root, config, allFiles })
+      .filter((f) => !matchesAny(f.file, config.allow[rule.id] ?? []))
+      .map((f) => ({ rule: rule.id, ...f })),
+  );
+
+export const lint = (
+  root: string,
+  config: LintConfig = loadConfig(root),
+): ReadonlyArray<Finding> => {
   const allFiles = new Set(walk(root, root));
-  const targets = [...allFiles].filter((f) => matchesAny(f, config.include) && !matchesAny(f, config.exclude));
-  const findings: Array<Finding> = [];
-  for (const file of targets.sort()) {
-    const text = readFileSync(join(root, file), "utf8");
-    const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
-    for (const rule of rules) {
-      if (TEST_FILE.test(file) && SOURCE_ONLY.has(rule.id)) continue;
-      if (matchesAny(file, config.allow[rule.id] ?? [])) continue;
-      for (const f of rule.check({ root, file, source, config, allFiles })) {
-        findings.push({ rule: rule.id, file, ...f });
-      }
-    }
-  }
+  const targets = [...allFiles].filter(
+    (f) => matchesAny(f, config.include) && !matchesAny(f, config.exclude),
+  );
+  const findings = [
+    ...targets.sort().flatMap((file) => fileFindings(root, file, config, allFiles)),
+    ...projectFindings(root, config, allFiles),
+  ];
   return findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
 };

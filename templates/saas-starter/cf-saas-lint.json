@@ -1,13 +1,17 @@
 {
   "allow": {
-    "no-throw": ["src/blocks/auth/guard.ts", "src/core/run-effect.ts", "src/routes/__root.tsx"],
+    "no-throw": [
+      "src/features/auth/api/guard.ts",
+      "src/app/run-effect.ts",
+      "src/routes/__root.tsx"
+    ],
     "no-run-effect": [
-      "src/core/run-effect.ts",
-      "src/core/middleware.ts",
-      "src/blocks/*/workflows.ts"
+      "src/app/run-effect.ts",
+      "src/app/middleware.ts",
+      "src/features/*/workflows.ts"
     ],
     "no-try-catch": [],
-    "no-process-env": ["e2e/**", "src/core/machines.test.ts"]
+    "no-process-env": ["src/features/*/e2e/**", "src/app/machines.test.ts"]
   },
   "testExempt": [
     "src/**/*.tsx",
@@ -18,14 +22,14 @@
     "src/**/nav.ts",
     "src/**/schema.ts",
     "src/**/viewer.ts",
-    "src/blocks/*/*-client.ts",
-    "src/blocks/*/guard.ts",
-    "src/blocks/*/memory-*.ts",
-    "src/blocks/*/test-*.ts",
-    "src/blocks/*/workflows.ts",
-    "src/core/block.json",
-    "src/core/log-sink.ts",
-    "src/core/shell.ts",
-    "src/test/**"
+    "src/features/*/routes/**",
+    "src/features/*/lib/*-client.ts",
+    "src/features/*/api/guard.ts",
+    "src/features/*/api/memory-*.ts",
+    "src/features/*/api/test-*.ts",
+    "src/features/*/workflows.ts",
+    "src/features/observability/lib/log-sink.ts",
+    "src/app/shell.ts",
+    "src/app/testing/**"
   ]
 }

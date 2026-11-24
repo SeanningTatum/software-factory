@@ -1,4 +1,5 @@
 import type { AnyStateMachine, AnyStateNode } from "xstate";
+import { GENERATED_END, MACHINES_END, MACHINES_START, withBlock } from "./timeline-doc.ts";
 
 /**
  * Structural checks for an XState v5 machine, so every flow stays easy to test and to draw:
@@ -43,7 +44,8 @@ export const edgesOf = (node: AnyStateNode): ReadonlyArray<Edge> => {
       for (const to of t.target ?? []) out.push({ from: node, to, label: label(eventType) });
     }
   }
-  for (const t of node.always ?? []) for (const to of t.target ?? []) out.push({ from: node, to, label: "always" });
+  for (const t of node.always ?? [])
+    for (const to of t.target ?? []) out.push({ from: node, to, label: "always" });
   return out;
 };
 
@@ -91,7 +93,8 @@ export const checkMachine = (machine: AnyStateMachine): ReadonlyArray<MachinePro
   const reachable = reachableFrom(initial.flatMap(entered));
 
   for (const node of all) {
-    if (!reachable.has(node)) problems.push({ state: name(node), message: "cannot be reached from the start" });
+    if (!reachable.has(node))
+      problems.push({ state: name(node), message: "cannot be reached from the start" });
   }
 
   const atomic = all.filter((n) => n.type === "atomic" || n.type === "final");
@@ -100,13 +103,19 @@ export const checkMachine = (machine: AnyStateMachine): ReadonlyArray<MachinePro
     const onward = reachableFrom(next(node));
     const recovers = [...onward].some((n) => start.includes(n) || isFinal(n));
     if (!recovers) {
-      problems.push({ state: name(node), message: "is a trap: it is not final and cannot reach the start or a final state" });
+      problems.push({
+        state: name(node),
+        message: "is a trap: it is not final and cannot reach the start or a final state",
+      });
     }
   }
 
   for (const node of [root, ...initial.flatMap(entered)]) {
     if (node.invoke.length) {
-      problems.push({ state: name(node), message: "invokes an actor in the initial state; start it from an event instead" });
+      problems.push({
+        state: name(node),
+        message: "invokes an actor in the initial state; start it from an event instead",
+      });
     }
   }
   return problems;
@@ -119,17 +128,50 @@ const renderNode = (node: AnyStateNode, depth: number): ReadonlyArray<string> =>
   const lines: Array<string> = [];
   const kids = children(node);
   const init = initialTargets(node);
-  if (node.type !== "parallel") for (const target of init) lines.push(`${pad}[*] --> ${mermaidId(target)}`);
+  if (node.type !== "parallel")
+    for (const target of init) lines.push(`${pad}[*] --> ${mermaidId(target)}`);
   for (const child of kids) {
     if (children(child).length) {
       lines.push(`${pad}state ${mermaidId(child)} {`, ...renderNode(child, depth + 1), `${pad}}`);
     }
     if (isFinal(child)) lines.push(`${pad}${mermaidId(child)} --> [*]`);
-    for (const edge of edgesOf(child)) lines.push(`${pad}${mermaidId(edge.from)} --> ${mermaidId(edge.to)} : ${edge.label}`);
+    for (const edge of edgesOf(child))
+      lines.push(`${pad}${mermaidId(edge.from)} --> ${mermaidId(edge.to)} : ${edge.label}`);
   }
   return lines;
 };
 
 /** A Mermaid stateDiagram-v2 of the machine, for docs, plans and pull requests. */
 export const toMermaid = (machine: AnyStateMachine): string =>
-  ["stateDiagram-v2", ...renderNode(machine.root, 1), ...edgesOf(machine.root).map((e) => `  ${mermaidId(e.from) || "root"} --> ${mermaidId(e.to)} : ${e.label}`)].join("\n");
+  [
+    "stateDiagram-v2",
+    ...renderNode(machine.root, 1),
+    ...edgesOf(machine.root).map(
+      (e) => `  ${mermaidId(e.from) || "root"} --> ${mermaidId(e.to)} : ${e.label}`,
+    ),
+  ].join("\n");
+
+export interface MachineDoc {
+  /** Where the machine lives, from the project root. */
+  readonly source: string;
+  readonly machine: AnyStateMachine;
+}
+
+/** The machines block of a feature's TIMELINE.md: one Mermaid diagram per machine, by source. */
+export const machinesBlock = (docs: ReadonlyArray<MachineDoc>): string => {
+  if (!docs.length) return "";
+  const sorted = [...docs].sort(
+    (a, b) => a.source.localeCompare(b.source) || a.machine.id.localeCompare(b.machine.id),
+  );
+  const sections = sorted.map(
+    ({ source, machine }) =>
+      `### ${machine.id}\n\nSource: \`${source}\`\n\n\`\`\`mermaid\n${toMermaid(machine)}\n\`\`\``,
+  );
+  const intro =
+    "Written by `bun run machines:print`. `bun run test` fails when a diagram is out of date.";
+  return [MACHINES_START, "## Machines", intro, ...sections, MACHINES_END].join("\n\n");
+};
+
+/** TIMELINE.md text with its machines block replaced, added after the generated block, or removed. */
+export const withMachines = (timeline: string, docs: ReadonlyArray<MachineDoc>): string =>
+  withBlock(timeline, MACHINES_START, MACHINES_END, machinesBlock(docs), GENERATED_END);

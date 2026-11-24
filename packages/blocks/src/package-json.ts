@@ -16,21 +16,20 @@ const sorted = (record: Record<string, string>) =>
  * Adds every entry the blocks list that package.json lacks. Versions and scripts already there are
  * kept, so a project can pin or rewrite them.
  */
-export const withBlockPackages = (pkg: PackageJson, blocks: Iterable<BlockManifest>): PackageJson => {
+export const withBlockPackages = (
+  pkg: PackageJson,
+  blocks: Iterable<BlockManifest>,
+): PackageJson => {
   const manifests = [...blocks];
   const out: PackageJson = { ...pkg };
   for (const field of fields) {
     const current = { ...(pkg[field] ?? {}) };
-    let added = false;
-    for (const m of manifests) {
-      for (const [key, value] of Object.entries(m.packageJson?.[field] ?? {})) {
-        if (!(key in current)) {
-          current[key] = value;
-          added = true;
-        }
-      }
-    }
-    if (added) out[field] = field === "scripts" ? current : sorted(current);
+    const missing = manifests
+      .flatMap((m) => Object.entries(m.packageJson?.[field] ?? {}))
+      .filter(([key]) => !(key in current));
+    if (!missing.length) continue;
+    for (const [key, value] of missing) if (!(key in current)) current[key] = value;
+    out[field] = field === "scripts" ? current : sorted(current);
   }
   return out;
 };
@@ -46,7 +45,8 @@ export const withoutBlockPackages = (
     const stillUsed = new Set(kept.flatMap((m) => Object.keys(m.packageJson?.[field] ?? {})));
     const current = { ...(pkg[field] ?? {}) };
     for (const m of removed) {
-      for (const key of Object.keys(m.packageJson?.[field] ?? {})) if (!stillUsed.has(key)) delete current[key];
+      for (const key of Object.keys(m.packageJson?.[field] ?? {}))
+        if (!stillUsed.has(key)) delete current[key];
     }
     out[field] = current;
   }

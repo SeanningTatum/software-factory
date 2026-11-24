@@ -52,9 +52,7 @@
         "useFilenamingConvention": {
           "level": "error",
           "options": {
-            "filenameCases": [
-              "kebab-case"
-            ],
+            "filenameCases": ["kebab-case"],
             "requireAscii": true
           }
         },
@@ -96,11 +94,7 @@
       }
     },
     {
-      "includes": [
-        "**/routes/**",
-        "**/routeTree.gen.ts",
-        "**/scripts/**"
-      ],
+      "includes": ["**/routes/**", "**/routeTree.gen.ts", "**/scripts/**"],
       "linter": {
         "rules": {
           "style": {

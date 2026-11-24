@@ -90,23 +90,21 @@ export const envNames: ReadonlyArray<EnvName> = ["production", "staging"];
 
 const decodeManifest = Schema.decodeUnknownSync(BlockManifest);
 
-export const CORE_MANIFEST = "src/core/block.json";
-export const BLOCKS_DIR = "src/blocks";
+export const FEATURES_DIR = "src/features";
+export const MANIFEST_FILE = "feature.json";
 
 export const readManifest = (path: string): BlockManifest =>
   decodeManifest(JSON.parse(readFileSync(path, "utf8")));
 
-export const blockManifestPath = (name: string) => `${BLOCKS_DIR}/${name}/block.json`;
+export const featureManifestPath = (name: string) => `${FEATURES_DIR}/${name}/${MANIFEST_FILE}`;
 
-/** Reads core plus every block folder that has a block.json. */
+/** Reads every feature folder that has a feature.json, core features included. */
 export const loadManifests = (root: string): Map<string, BlockManifest> => {
   const manifests = new Map<string, BlockManifest>();
-  const core = join(root, CORE_MANIFEST);
-  if (existsSync(core)) manifests.set("core", readManifest(core));
-  const blocksDir = join(root, BLOCKS_DIR);
-  if (!existsSync(blocksDir)) return manifests;
-  for (const entry of readdirSync(blocksDir, { withFileTypes: true })) {
-    const path = join(blocksDir, entry.name, "block.json");
+  const featuresDir = join(root, FEATURES_DIR);
+  if (!existsSync(featuresDir)) return manifests;
+  for (const entry of readdirSync(featuresDir, { withFileTypes: true })) {
+    const path = join(featuresDir, entry.name, MANIFEST_FILE);
     if (entry.isDirectory() && existsSync(path)) {
       const manifest = readManifest(path);
       if (manifest.name !== entry.name) {
@@ -118,10 +116,8 @@ export const loadManifests = (root: string): Map<string, BlockManifest> => {
   return manifests;
 };
 
-/** The three places a block owns, plus any extra paths its manifest lists. */
+/** What a feature owns: its folder, plus any extra paths its manifest lists. */
 export const ownedPaths = (manifest: BlockManifest): ReadonlyArray<string> => [
-  `${BLOCKS_DIR}/${manifest.name}`,
-  `src/routes/(${manifest.name})`,
-  `e2e/${manifest.name}`,
+  `${FEATURES_DIR}/${manifest.name}`,
   ...(manifest.files ?? []),
 ];

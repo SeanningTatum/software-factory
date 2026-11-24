@@ -10,10 +10,10 @@
     "cssVariables": true
   },
   "aliases": {
-    "components": "#/components",
-    "utils": "#/lib/cn",
-    "ui": "#/components/ui",
-    "lib": "#/lib",
-    "hooks": "#/hooks"
+    "components": "#/features/ui/components",
+    "utils": "#/features/ui/lib/cn",
+    "ui": "#/features/ui/components",
+    "lib": "#/features/ui/lib",
+    "hooks": "#/features/ui/hooks"
   }
 }

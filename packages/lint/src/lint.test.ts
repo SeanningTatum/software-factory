@@ -38,24 +38,41 @@ describe("lint", () => {
       "src/core/bad.test.ts": "throw new Error('fine in tests')",
     });
     const rules = lint(root).map((f) => `${f.rule}:${f.line}`);
-    expect(rules).toEqual(["no-throw:2", "no-try-catch:3", "no-process-env:4", "external-call-span:5", "no-run-effect:7"]);
+    expect(rules).toEqual([
+      "no-throw:2",
+      "no-try-catch:3",
+      "no-process-env:4",
+      "external-call-span:5",
+      "no-run-effect:7",
+    ]);
   });
 
   test("requires the tests the test map lists", () => {
     const root = project({
-      "src/core/thing.ts": "export const x = 1;",
-      "src/blocks/upload/ui/upload.machine.ts": "export const m = 1;",
-      "src/blocks/upload/ui/upload.machine.test.ts": "",
+      "src/app/thing.ts": "export const x = 1;",
+      "src/features/uploads/feature.json": "{}",
+      "src/features/uploads/TIMELINE.md": "",
+      "src/features/uploads/components/upload.machine.ts": "export const m = 1;",
+      "src/features/uploads/components/upload.machine.test.ts": "",
+      "src/features/billing/feature.json": "{}",
+      "src/features/billing/TIMELINE.md": "",
+      "src/features/billing/components/checkout.machine.ts": "export const m = 1;",
+      "src/features/billing/components/checkout.machine.test.ts": "",
+      "src/features/billing/e2e/checkout.paths.spec.ts": "",
+      "src/features/billing/e2e/upload.paths.spec.ts": "",
     });
     const findings = lint(root).map((f) => `${f.file} ${f.message}`);
     expect(findings).toEqual([
-      "src/blocks/upload/ui/upload.machine.ts missing its test: e2e/**/upload.paths.spec.ts",
-      "src/core/thing.ts missing its test: src/core/thing.test.ts",
+      "src/app/thing.ts missing its test: src/app/thing.test.ts",
+      "src/features/uploads/components/upload.machine.ts missing its test: src/features/uploads/e2e/upload.paths.spec.ts",
     ]);
   });
 
   test("honours the allow list", () => {
-    const root = project({ "src/core/edge.ts": "throw new Error('edge');", "src/core/edge.test.ts": "" });
+    const root = project({
+      "src/core/edge.ts": "throw new Error('edge');",
+      "src/core/edge.test.ts": "",
+    });
     expect(lint(root, { ...defaults, allow: { "no-throw": ["src/core/edge.ts"] } })).toEqual([]);
   });
 });

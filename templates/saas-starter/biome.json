@@ -6,10 +6,11 @@
     "includes": [
       "**",
       "!src/gen",
+      "!FEATURES.md",
+      "!src/features/*/TIMELINE.md",
       "!src/routeTree.gen.ts",
       "!worker-configuration.d.ts",
       "!drizzle",
-      "!docs/machines",
       "!.wrangler",
       "!dist",
       "!wrangler.jsonc",
@@ -20,7 +21,10 @@
   },
   "overrides": [
     {
-      "includes": ["src/core/log-sink.ts", "src/core/error-reporter.ts"],
+      "includes": [
+        "src/features/observability/lib/log-sink.ts",
+        "src/features/observability/api/error-reporter.ts"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
@@ -30,7 +34,7 @@
       }
     },
     {
-      "includes": ["src/server.ts", "src/core/analytics/adapters/**"],
+      "includes": ["src/server.ts", "src/features/analytics/api/adapters/**"],
       "linter": {
         "rules": {
           "performance": {
@@ -44,7 +48,7 @@
       }
     },
     {
-      "includes": ["src/components/ui/**"],
+      "includes": ["src/features/ui/components/**"],
       "linter": {
         "rules": {
           "style": {

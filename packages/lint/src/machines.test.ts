@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createMachine, fromPromise, setup } from "xstate";
-import { checkMachine, toMermaid } from "./machines.ts";
+import { checkMachine, machinesBlock, toMermaid, withMachines } from "./machines.ts";
 
 const good = createMachine({
   id: "upload",
@@ -23,7 +23,9 @@ describe("checkMachine", () => {
       initial: "a",
       states: { a: { on: { GO: "b" } }, b: { on: { BACK: "a" } }, orphan: { on: { GO: "a" } } },
     });
-    expect(checkMachine(m)).toEqual([{ state: "orphan", message: "cannot be reached from the start" }]);
+    expect(checkMachine(m)).toEqual([
+      { state: "orphan", message: "cannot be reached from the start" },
+    ]);
   });
 
   test("finds a trap state", () => {
@@ -34,7 +36,10 @@ describe("checkMachine", () => {
   test("refuses an initial state that invokes an actor", () => {
     const m = setup({ actors: { load: fromPromise(async () => 1) } }).createMachine({
       initial: "loading",
-      states: { loading: { invoke: { src: "load", onDone: "ready" } }, ready: { on: { RELOAD: "loading" } } },
+      states: {
+        loading: { invoke: { src: "load", onDone: "ready" } },
+        ready: { on: { RELOAD: "loading" } },
+      },
     });
     expect(checkMachine(m)).toContainEqual({
       state: "loading",
@@ -49,7 +54,10 @@ describe("checkMachine", () => {
         form: {
           initial: "editing",
           on: { CANCEL: "#nested.closed" },
-          states: { editing: { on: { SUBMIT: "sending" } }, sending: { on: { OK: "#nested.closed" } } },
+          states: {
+            editing: { on: { SUBMIT: "sending" } },
+            sending: { on: { OK: "#nested.closed" } },
+          },
         },
         closed: { type: "final" },
       },
@@ -80,5 +88,26 @@ describe("checkMachine with a transient start", () => {
       },
     });
     expect(checkMachine(m)).toEqual([]);
+  });
+});
+
+describe("withMachines", () => {
+  const timeline = "<!-- generated:start -->\n# Uploads\n<!-- generated:end -->\n\n## Decisions\n";
+
+  test("writes one diagram per machine after the generated block, and is stable", () => {
+    const docs = [{ source: "src/features/uploads/components/upload.machine.ts", machine: good }];
+    const once = withMachines(timeline, docs);
+    expect(once).toContain(`<!-- generated:end -->\n\n<!-- machines:start -->\n\n## Machines\n\n`);
+    expect(once).toContain(
+      `### upload\n\nSource: \`src/features/uploads/components/upload.machine.ts\`\n\n\`\`\`mermaid\n${toMermaid(good)}\n\`\`\``,
+    );
+    expect(once).toEndWith("<!-- machines:end -->\n\n## Decisions\n");
+    expect(withMachines(once, docs)).toBe(once);
+  });
+
+  test("removes the block when a feature has no machines", () => {
+    expect(machinesBlock([])).toBe("");
+    const docs = [{ source: "a.machine.ts", machine: good }];
+    expect(withMachines(withMachines(timeline, docs), [])).toBe(timeline);
   });
 });

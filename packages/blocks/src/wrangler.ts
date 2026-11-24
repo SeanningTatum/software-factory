@@ -33,7 +33,9 @@ const keyOf = (section: Section, entry: Entry) =>
   String(section === "ratelimits" ? entry.name : entry.binding);
 
 export const resourceName = (template: string, project: string, env: EnvName) =>
-  template.replaceAll("{project}", project).replaceAll("{suffix}", env === "staging" ? "-staging" : "");
+  template
+    .replaceAll("{project}", project)
+    .replaceAll("{suffix}", env === "staging" ? "-staging" : "");
 
 /** The entry wrangler wants for a binding. `existing` keeps ids that setup already filled in. */
 const entryFor = (binding: Binding, project: string, env: EnvName, existing?: Entry): Entry => {
@@ -72,7 +74,10 @@ export interface WranglerPatch {
   readonly project: string;
   readonly manifests: Manifests;
   /** Binding and var names the tool added before; only these are ever removed. */
-  readonly previouslyManaged: { readonly bindings: ReadonlyArray<string>; readonly vars: ReadonlyArray<string> };
+  readonly previouslyManaged: {
+    readonly bindings: ReadonlyArray<string>;
+    readonly vars: ReadonlyArray<string>;
+  };
 }
 
 export interface WranglerResult {
@@ -91,8 +96,54 @@ const at = (value: unknown, path: ReadonlyArray<string>): Entry | undefined => {
   return cursor as Entry | undefined;
 };
 
+/** What one patch run wants: the bindings and vars to add, and the names to drop. */
+interface Wanted {
+  readonly project: string;
+  readonly bindings: ReadonlyArray<Binding>;
+  readonly managedBindings: ReadonlySet<string>;
+  readonly dropBinding: ReadonlySet<string>;
+  readonly vars: ReadonlyMap<string, string>;
+  readonly dropVar: ReadonlySet<string>;
+}
+
+const write = (text: string, path: ReadonlyArray<string>, value: unknown) =>
+  applyEdits(text, modify(text, [...path], value, { formattingOptions: formatting }));
+
+const patchSection = (
+  text: string,
+  scope: (typeof scopes)[number],
+  section: Section,
+  want: Wanted,
+) => {
+  const current = at(parse(text), scope.path) ?? {};
+  const existing = (current[section] as Array<Entry> | undefined) ?? [];
+  const byKey = new Map(existing.map((e) => [keyOf(section, e), e]));
+  const kept = existing.filter((e) => {
+    const key = keyOf(section, e);
+    return !want.dropBinding.has(key) && !want.managedBindings.has(key);
+  });
+  const added = want.bindings
+    .filter((b) => sectionOf[b.type] === section)
+    .map((b) => entryFor(b, want.project, scope.env, byKey.get(b.binding)));
+  const next = [...kept, ...added];
+  const value = next.length ? next : undefined;
+  if (JSON.stringify(value) === JSON.stringify(current[section])) return text;
+  return write(text, [...scope.path, section], value);
+};
+
+const patchVars = (text: string, scope: (typeof scopes)[number], want: Wanted) => {
+  const currentVars = (at(parse(text), [...scope.path, "vars"]) ?? {}) as Record<string, unknown>;
+  const nextVars: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(currentVars)) {
+    if (!want.dropVar.has(key)) nextVars[key] = value;
+  }
+  for (const [key, value] of want.vars) if (!(key in nextVars)) nextVars[key] = value;
+  if (JSON.stringify(nextVars) === JSON.stringify(currentVars)) return text;
+  return write(text, [...scope.path, "vars"], Object.keys(nextVars).length ? nextVars : undefined);
+};
+
 /**
- * Adds every enabled block's bindings and vars to wrangler.jsonc, for production and staging.
+ * Adds every enabled feature's bindings and vars to wrangler.jsonc, for production and staging.
  * Entries the tool did not add, ids already filled in, var values already set and all comments
  * outside the edited arrays are kept.
  */
@@ -104,38 +155,23 @@ export const patchWrangler = (text: string, patch: WranglerPatch): WranglerResul
     ),
   );
   const managedBindings = new Set(bindings.map((b) => b.binding));
-  const dropBinding = new Set(patch.previouslyManaged.bindings.filter((b) => !managedBindings.has(b)));
-  const dropVar = new Set(patch.previouslyManaged.vars.filter((v) => !vars.has(v)));
-
+  const want: Wanted = {
+    project: patch.project,
+    bindings,
+    managedBindings,
+    dropBinding: new Set(patch.previouslyManaged.bindings.filter((b) => !managedBindings.has(b))),
+    vars,
+    dropVar: new Set(patch.previouslyManaged.vars.filter((v) => !vars.has(v))),
+  };
   let out = text;
   for (const scope of scopes) {
-    const current = at(parse(out), scope.path) ?? {};
-    for (const section of sections) {
-      const existing = (current[section] as Array<Entry> | undefined) ?? [];
-      const byKey = new Map(existing.map((e) => [keyOf(section, e), e]));
-      const kept = existing.filter((e) => {
-        const key = keyOf(section, e);
-        return !dropBinding.has(key) && !managedBindings.has(key);
-      });
-      const wanted = bindings
-        .filter((b) => sectionOf[b.type] === section)
-        .map((b) => entryFor(b, patch.project, scope.env, byKey.get(b.binding)));
-      const next = [...kept, ...wanted];
-      const value = next.length ? next : undefined;
-      if (JSON.stringify(value) !== JSON.stringify(current[section])) {
-        out = applyEdits(out, modify(out, [...scope.path, section], value, { formattingOptions: formatting }));
-      }
-    }
-    const currentVars = (at(parse(out), [...scope.path, "vars"]) ?? {}) as Record<string, unknown>;
-    const nextVars: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(currentVars)) if (!dropVar.has(key)) nextVars[key] = value;
-    for (const [key, value] of vars) if (!(key in nextVars)) nextVars[key] = value;
-    if (JSON.stringify(nextVars) !== JSON.stringify(currentVars)) {
-      const value = Object.keys(nextVars).length ? nextVars : undefined;
-      out = applyEdits(out, modify(out, [...scope.path, "vars"], value, { formattingOptions: formatting }));
-    }
+    for (const section of sections) out = patchSection(out, scope, section, want);
+    out = patchVars(out, scope, want);
   }
-  return { text: out, managed: { bindings: [...managedBindings].sort(), vars: [...vars.keys()].sort() } };
+  return {
+    text: out,
+    managed: { bindings: [...managedBindings].sort(), vars: [...vars.keys()].sort() },
+  };
 };
 
 /** Sets one field on one binding, for setup to record a created resource's id. */
@@ -151,7 +187,10 @@ export const setBindingField = (
   const entries = (at(parse(text), path)?.[section] as Array<Entry> | undefined) ?? [];
   const index = entries.findIndex((e) => keyOf(section, e) === binding);
   if (index < 0) throw new Error(`${WRANGLER_FILE}: no ${section} entry for ${binding} (${env})`);
-  return applyEdits(text, modify(text, [...path, section, index, field], value, { formattingOptions: formatting }));
+  return applyEdits(
+    text,
+    modify(text, [...path, section, index, field], value, { formattingOptions: formatting }),
+  );
 };
 
 export const readBinding = (

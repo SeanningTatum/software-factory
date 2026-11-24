@@ -1,5 +1,5 @@
 import { createStart } from "@tanstack/react-start";
-import { requestRuntime } from "./core/middleware.ts";
+import { requestRuntime } from "./app/middleware.ts";
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [requestRuntime],
