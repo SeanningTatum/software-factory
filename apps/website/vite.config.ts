@@ -7,7 +7,8 @@ import { defineConfig } from "vite";
 export default defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    // Its own inspector port, so it can run beside the template (`bun run dev` at the repo root).
+    cloudflare({ viteEnvironment: { name: "ssr" }, inspectorPort: 9239 }),
     tailwindcss(),
     tanstackStart({
       router: {

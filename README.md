@@ -35,10 +35,20 @@ cd apps/website
 cp .dev.vars.example .dev.vars
 echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> .dev.vars
 bun run db:migrate:local
-bun run dev --port 3001
+bun run dev
 ```
 
 Open http://localhost:3001.
+
+### Both at once
+
+Once each has its `.dev.vars` and migrated database, from the repo root:
+
+```bash
+bun run dev
+```
+
+The template runs on http://localhost:3000 and the website on http://localhost:3001.
 
 ## Check your changes
 

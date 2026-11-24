@@ -18,7 +18,7 @@ SENTRY_DSN=
 
 # --- Auth ---
 # Public origin of the app, e.g. https://app.example.com (required).
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:3001
 # Extra origins allowed to call the auth API, comma-separated (optional).
 TRUSTED_ORIGINS=
 # GitHub OAuth app client id; GitHub sign-in is off without it (optional). See https://github.com/settings/developers

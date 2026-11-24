@@ -16,7 +16,7 @@
     "APP_URL": {
       "description": "Public origin of the app, e.g. https://app.example.com",
       "required": true,
-      "default": "http://localhost:3000"
+      "default": "http://localhost:3001"
     },
     "TRUSTED_ORIGINS": {
       "description": "Extra origins allowed to call the auth API, comma-separated",
