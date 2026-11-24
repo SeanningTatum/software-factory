@@ -1,0 +1,126 @@
+// Bindings and vars marked in cf-saas.json are managed by `bun run blocks:sync`.
+// Everything else here is yours: it is kept when blocks are added or removed.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "saas-starter",
+  "main": "./src/server.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "upload_source_maps": true,
+  "placement": { "mode": "smart" },
+  "env": {
+    "staging": {
+      "vars": {
+        "APP_URL": "http://localhost:3000",
+        "LOG_LEVEL": "Info",
+        "ERROR_REPORTER": "console",
+        "ANALYTICS_PROVIDER": "console",
+        "POSTHOG_HOST": "https://us.i.posthog.com",
+        "TRUSTED_ORIGINS": "",
+        "GITHUB_CLIENT_ID": "",
+        "STRIPE_PRICE_PRO": ""
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "saas-starter-db-staging",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "drizzle"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "AUTH_LIMITER",
+          "namespace_id": "2001",
+          "simple": {
+            "limit": 10,
+            "period": 60
+          }
+        },
+        {
+          "name": "UPLOAD_LIMITER",
+          "namespace_id": "2002",
+          "simple": {
+            "limit": 20,
+            "period": 60
+          }
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "workflows": [
+        {
+          "binding": "ONBOARDING_WORKFLOW",
+          "name": "saas-starter-onboarding-staging",
+          "class_name": "OnboardingWorkflow"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BUCKET",
+          "bucket_name": "saas-starter-uploads-staging"
+        }
+      ]
+    }
+  },
+  "vars": {
+    "APP_URL": "http://localhost:3000",
+    "LOG_LEVEL": "Info",
+    "ERROR_REPORTER": "console",
+    "ANALYTICS_PROVIDER": "console",
+    "POSTHOG_HOST": "https://us.i.posthog.com",
+    "TRUSTED_ORIGINS": "",
+    "GITHUB_CLIENT_ID": "",
+    "STRIPE_PRICE_PRO": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "saas-starter-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "AUTH_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    },
+    {
+      "name": "UPLOAD_LIMITER",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "ONBOARDING_WORKFLOW",
+      "name": "saas-starter-onboarding",
+      "class_name": "OnboardingWorkflow"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "saas-starter-uploads"
+    }
+  ]
+}

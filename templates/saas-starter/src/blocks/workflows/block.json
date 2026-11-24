@@ -1,0 +1,20 @@
+{
+  "name": "workflows",
+  "title": "Workflows",
+  "description": "A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a state machine sets.",
+  "requires": [],
+  "bindings": [
+    {
+      "type": "workflow",
+      "binding": "ONBOARDING_WORKFLOW",
+      "name": "{project}-onboarding{suffix}",
+      "class_name": "OnboardingWorkflow"
+    }
+  ],
+  "secrets": {
+    "WORKFLOWS_TRIGGER_TOKEN": {
+      "description": "Bearer token that may start workflows through /api/workflows/onboarding",
+      "required": false
+    }
+  }
+}

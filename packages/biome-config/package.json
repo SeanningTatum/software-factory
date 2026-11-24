@@ -1,0 +1,17 @@
+{
+  "name": "@tanstack-cf-saas/biome-config",
+  "version": "0.1.0",
+  "description": "Shared Biome rules for tanstack-cf-saas projects",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "biome.json"
+  ],
+  "exports": {
+    ".": "./biome.json",
+    "./biome": "./biome.json"
+  },
+  "peerDependencies": {
+    "@biomejs/biome": "^2.6.0"
+  }
+}

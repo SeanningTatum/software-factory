@@ -1,0 +1,57 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "root": true,
+  "extends": ["@tanstack-cf-saas/biome-config"],
+  "files": {
+    "includes": [
+      "**",
+      "!src/gen",
+      "!src/routeTree.gen.ts",
+      "!worker-configuration.d.ts",
+      "!drizzle",
+      "!docs/machines",
+      "!.wrangler",
+      "!dist",
+      "!wrangler.jsonc",
+      "!cf-saas.json",
+      "!harness.lock.json",
+      "!.tanstack"
+    ]
+  },
+  "overrides": [
+    {
+      "includes": ["src/core/log-sink.ts", "src/core/error-reporter.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/server.ts", "src/core/analytics/adapters/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noReExportAll": "off",
+            "noBarrelFile": "off"
+          },
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/components/ui/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "create-tanstack-cf-saas",
+  "version": "0.1.0",
+  "description": "Create a TanStack Start SaaS on Cloudflare Workers from building blocks: D1, auth, billing, KV, Workflows, R2.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-tanstack-cf-saas": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "template",
+    "harness"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "bundle": "bun scripts/bundle-template.ts",
+    "build": "bun run bundle && bun build src/index.ts --outdir dist --target node --external jsonc-parser",
+    "typecheck": "tsc -p .",
+    "test": "bun test ./src",
+    "test:matrix": "bun scripts/block-matrix.ts"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  },
+  "devDependencies": {
+    "@clack/prompts": "^1.9.0",
+    "@tanstack-cf-saas/blocks": "workspace:*",
+    "@tanstack-cf-saas/tsconfig": "workspace:*",
+    "@types/bun": "latest",
+    "citty": "^0.2.2",
+    "picocolors": "^1.1.1",
+    "xstate": "5.33.4",
+    "@tanstack-cf-saas/lint": "workspace:*"
+  }
+}

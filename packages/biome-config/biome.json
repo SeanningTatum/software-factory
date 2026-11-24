@@ -1,0 +1,136 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always"
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 15
+          }
+        }
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      },
+      "performance": {
+        "noBarrelFile": "error",
+        "noReExportAll": "error"
+      },
+      "style": {
+        "noDefaultExport": "error",
+        "useImportType": "error",
+        "useExportType": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": [
+              "kebab-case"
+            ],
+            "requireAscii": true
+          }
+        },
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "zod": "Use Effect Schema (effect/Schema) for validation.",
+              "posthog-js": "Send events through the Analytics service; only its adapter talks to PostHog.",
+              "posthog-node": "Send events through the Analytics service; only its adapter talks to PostHog.",
+              "@sentry/browser": "Report errors through the ErrorReporter service.",
+              "@sentry/cloudflare": "Report errors through the ErrorReporter service."
+            }
+          }
+        }
+      },
+      "suspicious": {
+        "noConsole": "error",
+        "noExplicitAny": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "**/routes/**",
+        "**/*.config.ts",
+        "**/vite.config.ts",
+        "**/server.ts",
+        "**/scripts/**",
+        "**/bin/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/routes/**",
+        "**/routeTree.gen.ts",
+        "**/scripts/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/scripts/**",
+        "**/bin/**",
+        "**/apps/cli/**",
+        "**/packages/lint/**",
+        "**/packages/blocks/**",
+        "**/e2e/**",
+        "**/*.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ],
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
+}

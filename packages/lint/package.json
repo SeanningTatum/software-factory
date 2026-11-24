@@ -1,0 +1,37 @@
+{
+  "name": "@tanstack-cf-saas/lint",
+  "version": "0.1.0",
+  "description": "House lint rules for tanstack-cf-saas projects: Effect rules, the test map and the state machine gate",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./machines": {
+      "types": "./src/machines.ts",
+      "default": "./dist/machines.js"
+    }
+  },
+  "bin": {
+    "cf-saas-lint": "./dist/bin.js"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts src/machines.ts src/bin.ts --outdir dist --target node --packages external",
+    "typecheck": "tsc -p .",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "typescript": "^6.0.2",
+    "xstate": "5.33.4"
+  },
+  "devDependencies": {
+    "@tanstack-cf-saas/tsconfig": "workspace:*",
+    "@types/bun": "latest"
+  }
+}

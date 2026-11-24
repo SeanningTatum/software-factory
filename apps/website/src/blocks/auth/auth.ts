@@ -1,0 +1,68 @@
+import { type BetterAuthPlugin, betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
+import type { Db } from "#/blocks/d1/database.ts";
+import type { AnalyticsEvent } from "#/core/analytics/events.ts";
+import { type AppEnv, setting } from "#/core/env.ts";
+import { authSchema } from "./schema.ts";
+
+const MIN_SECRET_LENGTH = 32;
+const SESSION_DAYS = 30;
+const DAY_SECONDS = 60 * 60 * 24;
+
+/** What a block that extends auth (billing, for one) gets to build its Better Auth plugins. */
+interface AuthPluginDeps {
+  readonly env: AppEnv;
+  /** Queues an analytics event; it is sent with the request's batch. */
+  readonly onEvent: (event: AnalyticsEvent) => void;
+  /** Queues a warning for the request's log, with the request id on it. */
+  readonly onWarning: (message: string, details: Record<string, unknown>) => void;
+}
+export type AuthPluginFactory = (deps: AuthPluginDeps) => ReadonlyArray<BetterAuthPlugin>;
+
+export interface AuthConfig {
+  readonly secret: string;
+  readonly baseURL: string;
+  readonly trustedOrigins: ReadonlyArray<string>;
+  readonly github: { clientId: string; clientSecret: string } | undefined;
+}
+
+/** Checks the settings auth needs. Returns the name of the first bad one, or the config. */
+export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string } => {
+  const secret = setting(env, "BETTER_AUTH_SECRET");
+  if (!secret || secret.length < MIN_SECRET_LENGTH)
+    return { missing: "BETTER_AUTH_SECRET (32+ characters)" };
+  const baseURL = setting(env, "APP_URL");
+  if (!baseURL) return { missing: "APP_URL" };
+  const extra = (setting(env, "TRUSTED_ORIGINS") ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin && origin !== "*");
+  const clientId = setting(env, "GITHUB_CLIENT_ID");
+  const clientSecret = setting(env, "GITHUB_CLIENT_SECRET");
+  return {
+    secret,
+    baseURL,
+    trustedOrigins: [new URL(baseURL).origin, ...extra],
+    github: clientId && clientSecret ? { clientId, clientSecret } : undefined,
+  };
+};
+
+export const makeAuth = (config: AuthConfig, db: Db, plugins: ReadonlyArray<BetterAuthPlugin>) =>
+  betterAuth({
+    secret: config.secret,
+    baseURL: config.baseURL,
+    basePath: "/api/auth",
+    trustedOrigins: [...config.trustedOrigins],
+    database: drizzleAdapter(db, { provider: "sqlite", schema: authSchema }),
+    emailAndPassword: { enabled: true, minPasswordLength: 10 },
+    socialProviders: config.github ? { github: config.github } : {},
+    session: {
+      expiresIn: SESSION_DAYS * DAY_SECONDS,
+      cookieCache: { enabled: true, maxAge: 5 * 60 },
+    },
+    // Workers rate-limit bindings guard sign-in and sign-up instead; see rate-limit.ts.
+    rateLimit: { enabled: false },
+    advanced: { useSecureCookies: config.baseURL.startsWith("https://") },
+    plugins: [...plugins, tanstackStartCookies()],
+  });

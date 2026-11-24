@@ -1,0 +1,127 @@
+import { Effect, Layer } from "effect";
+import { beforeAll, describe, expect, it } from "vitest";
+import type { Db } from "#/blocks/d1/database.ts";
+import { makeTestDb, testDatabaseLayer } from "#/blocks/d1/test-database.ts";
+import type { Captured } from "#/core/analytics/adapter.ts";
+import { Analytics } from "#/core/analytics/analytics.ts";
+import { type AppEnv, CloudflareEnv } from "#/core/env.ts";
+import { CurrentRequest, requestInfoFrom } from "#/core/request.ts";
+import { Auth } from "./auth-service.ts";
+import { AuthRateLimiter } from "./rate-limit.ts";
+import { authSchema } from "./schema.ts";
+
+const APP = "http://localhost:3000";
+const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as AppEnv;
+
+/** Runs one request through a real Auth service on an in-memory database. */
+const request = async (db: Db, incoming: Request, allow = true) => {
+  const sent: Array<Captured> = [];
+  const info = requestInfoFrom(incoming);
+  const base = Layer.mergeAll(
+    CloudflareEnv.layer(env),
+    CurrentRequest.layer(info),
+    testDatabaseLayer(db),
+  );
+  const analytics = Analytics.layerWith(() => ({
+    name: "test",
+    send: (batch) => Effect.sync(() => void sent.push(...batch)),
+  }));
+  const limiter = Layer.succeed(AuthRateLimiter)(
+    AuthRateLimiter.fromLimiter({ limit: async () => ({ success: allow }) }),
+  );
+  const layer = Auth.layer.pipe(
+    Layer.provideMerge(Layer.mergeAll(analytics, limiter)),
+    Layer.provideMerge(base),
+  );
+  const response = await Effect.gen(function* () {
+    const auth = yield* Auth;
+    return yield* auth.handle(incoming);
+  }).pipe(Effect.provide(layer), Effect.runPromise);
+  return { response, events: sent.map((c) => c.event._tag), info };
+};
+
+const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+  new Request(`${APP}${path}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: { "content-type": "application/json", origin: APP, ...headers },
+  });
+
+describe("Auth", () => {
+  let db: Db;
+  beforeAll(async () => {
+    db = await makeTestDb(authSchema);
+  });
+
+  it("signs up, then signs in, and records both on the server", async () => {
+    const credentials = {
+      email: "ada@example.com",
+      password: "correct horse battery",
+      name: "Ada",
+    };
+    const signUp = await request(db, post("/api/auth/sign-up/email", credentials));
+    expect(signUp.response.status).toBe(200);
+    expect(signUp.events).toEqual(["sign_up_completed"]);
+
+    const signIn = await request(db, post("/api/auth/sign-in/email", credentials));
+    expect(signIn.response.status).toBe(200);
+    expect(signIn.events).toEqual(["sign_in_succeeded"]);
+    expect(signIn.response.headers.get("set-cookie")).toContain("better-auth.session_token");
+  });
+
+  it("reads the session from the cookie and tags the request with the user", async () => {
+    const credentials = {
+      email: "lin@example.com",
+      password: "correct horse battery",
+      name: "Lin",
+    };
+    const { response } = await request(db, post("/api/auth/sign-up/email", credentials));
+    const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const incoming = new Request(`${APP}/dashboard`, { headers: { cookie } });
+    const info = requestInfoFrom(incoming);
+    const user = await Effect.gen(function* () {
+      const auth = yield* Auth;
+      return yield* auth.currentUser;
+    }).pipe(
+      Effect.provide(
+        Auth.layer.pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(
+              Analytics.layerWith(() => ({ name: "t", send: () => Effect.void })),
+              AuthRateLimiter.layer,
+            ),
+          ),
+          Layer.provideMerge(
+            Layer.mergeAll(
+              CloudflareEnv.layer(env),
+              CurrentRequest.layer(info),
+              testDatabaseLayer(db),
+            ),
+          ),
+        ),
+      ),
+      Effect.runPromise,
+    );
+    expect(user).toMatchObject({ email: "lin@example.com", name: "Lin" });
+    expect(info.userId).toBe(user?.id);
+  });
+
+  it("records a failed sign-in without the email", async () => {
+    const { response, events } = await request(
+      db,
+      post("/api/auth/sign-in/email", { email: "nobody@example.com", password: "wrong password!" }),
+    );
+    expect(response.status).toBe(401);
+    expect(events).toEqual(["sign_in_failed"]);
+  });
+
+  it("answers 429 when the limiter says so, without reaching Better Auth", async () => {
+    const { response, events } = await request(
+      db,
+      post("/api/auth/sign-in/email", { email: "a@b.dev", password: "whatever123" }),
+      false,
+    );
+    expect(response.status).toBe(429);
+    expect(events).toEqual(["sign_in_failed"]);
+  });
+});

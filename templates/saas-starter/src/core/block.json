@@ -1,0 +1,46 @@
+{
+  "name": "core",
+  "title": "Core",
+  "description": "Request context, logging, error reporting, analytics, security headers and the UI shell. Always on.",
+  "core": true,
+  "requires": [],
+  "vars": {
+    "APP_URL": {
+      "description": "Public origin of the app, e.g. https://app.example.com",
+      "required": true,
+      "default": "http://localhost:3000"
+    },
+    "LOG_LEVEL": {
+      "description": "Lowest level written to the logs: Debug, Info, Warn or Error",
+      "required": false,
+      "default": "Info"
+    },
+    "ERROR_REPORTER": {
+      "description": "Where errors go: none, console or sentry",
+      "required": false,
+      "default": "console"
+    },
+    "ANALYTICS_PROVIDER": {
+      "description": "Where analytics events go: none, console, posthog or analytics-engine",
+      "required": false,
+      "default": "console"
+    },
+    "POSTHOG_HOST": {
+      "description": "PostHog ingest host",
+      "required": false,
+      "default": "https://us.i.posthog.com"
+    }
+  },
+  "secrets": {
+    "SENTRY_DSN": {
+      "description": "Sentry DSN, used when ERROR_REPORTER is sentry",
+      "required": false,
+      "help": "https://docs.sentry.io/concepts/key-terms/dsn-explainer/"
+    },
+    "POSTHOG_KEY": {
+      "description": "PostHog project API key, used when ANALYTICS_PROVIDER is posthog",
+      "required": false,
+      "help": "https://posthog.com/docs/api"
+    }
+  }
+}

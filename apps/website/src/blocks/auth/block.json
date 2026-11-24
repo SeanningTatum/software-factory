@@ -1,0 +1,38 @@
+{
+  "name": "auth",
+  "title": "Auth",
+  "description": "Better Auth with email and password (GitHub when keys are set), sessions in D1, rate-limited sign-in and sign-up.",
+  "requires": ["d1"],
+  "bindings": [
+    {
+      "type": "ratelimit",
+      "binding": "AUTH_LIMITER",
+      "namespace_id": "1001",
+      "limit": 10,
+      "period": 60
+    }
+  ],
+  "vars": {
+    "TRUSTED_ORIGINS": {
+      "description": "Extra origins allowed to call the auth API, comma-separated",
+      "required": false,
+      "default": ""
+    },
+    "GITHUB_CLIENT_ID": {
+      "description": "GitHub OAuth app client id; GitHub sign-in is off without it",
+      "required": false,
+      "default": "",
+      "help": "https://github.com/settings/developers"
+    }
+  },
+  "secrets": {
+    "BETTER_AUTH_SECRET": {
+      "description": "Signs sessions; at least 32 random characters",
+      "required": true
+    },
+    "GITHUB_CLIENT_SECRET": { "description": "GitHub OAuth app client secret", "required": false }
+  },
+  "packageJson": {
+    "dependencies": { "better-auth": "^1.7.27" }
+  }
+}

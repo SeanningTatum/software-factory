@@ -1,0 +1,23 @@
+import type ts from "typescript";
+import type { LintConfig } from "../config.ts";
+
+export interface Finding {
+  readonly rule: string;
+  readonly file: string;
+  readonly line: number;
+  readonly message: string;
+}
+
+export interface FileContext {
+  readonly root: string;
+  readonly file: string;
+  readonly source: ts.SourceFile;
+  readonly config: LintConfig;
+  readonly allFiles: ReadonlySet<string>;
+}
+
+export interface Rule {
+  readonly id: string;
+  readonly description: string;
+  readonly check: (ctx: FileContext) => ReadonlyArray<Omit<Finding, "rule" | "file">>;
+}

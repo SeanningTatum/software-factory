@@ -1,0 +1,24 @@
+name: blocks
+on:
+  pull_request:
+    paths: ["templates/**", "packages/**", "apps/cli/**"]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        combo: [core, d1, auth, billing, kv, workflows, r2, all]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run --filter './packages/*' build
+      - run: bun run --cwd apps/cli bundle
+      - run: bun run --cwd apps/cli test:matrix -- "$RUNNER_TEMP/matrix" --only ${{ matrix.combo }}

@@ -1,0 +1,29 @@
+{
+  "name": "tanstack-cf-saas-starter",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "templates/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "biome check . && turbo run lint",
+    "format": "biome check --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "check": "bun run lint && turbo run typecheck test build",
+    "changeset": "changeset",
+    "release": "turbo run build --filter=./packages/* --filter=create-tanstack-cf-saas && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8",
+    "@changesets/cli": "^3.0.3",
+    "@tanstack-cf-saas/biome-config": "workspace:*",
+    "turbo": "^2.11.13",
+    "typescript": "^6.0.2"
+  }
+}

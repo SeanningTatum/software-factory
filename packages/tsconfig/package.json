@@ -1,0 +1,14 @@
+{
+  "name": "@tanstack-cf-saas/tsconfig",
+  "version": "0.1.0",
+  "description": "Shared TypeScript presets for tanstack-cf-saas projects",
+  "license": "MIT",
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./app.json": "./app.json",
+    "./node.json": "./node.json"
+  }
+}

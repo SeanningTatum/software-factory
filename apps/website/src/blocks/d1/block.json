@@ -1,0 +1,32 @@
+{
+  "name": "d1",
+  "title": "D1 database",
+  "description": "Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real-SQL tests.",
+  "requires": [],
+  "files": ["drizzle.config.ts", "drizzle"],
+  "bindings": [
+    {
+      "type": "d1",
+      "binding": "DB",
+      "database": "{project}-db{suffix}",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "packageJson": {
+    "dependencies": { "drizzle-orm": "^0.45.4" },
+    "devDependencies": { "drizzle-kit": "^0.31.11", "@libsql/client": "^0.18.0" },
+    "scripts": {
+      "db:generate": "drizzle-kit generate",
+      "db:migrate:local": "wrangler d1 migrations apply DB --local",
+      "db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
+      "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+      "db:studio": "drizzle-kit studio"
+    }
+  },
+  "setup": [
+    {
+      "id": "d1-migrate",
+      "description": "Apply migrations to each environment after creating the databases: bun run db:migrate:remote"
+    }
+  ]
+}

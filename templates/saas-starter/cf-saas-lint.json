@@ -1,0 +1,31 @@
+{
+  "allow": {
+    "no-throw": ["src/blocks/auth/guard.ts", "src/core/run-effect.ts", "src/routes/__root.tsx"],
+    "no-run-effect": [
+      "src/core/run-effect.ts",
+      "src/core/middleware.ts",
+      "src/blocks/*/workflows.ts"
+    ],
+    "no-try-catch": [],
+    "no-process-env": ["e2e/**", "src/core/machines.test.ts"]
+  },
+  "testExempt": [
+    "src/**/*.tsx",
+    "src/**/auth-plugins.ts",
+    "src/**/errors.ts",
+    "src/**/events.ts",
+    "src/**/layer.ts",
+    "src/**/nav.ts",
+    "src/**/schema.ts",
+    "src/**/viewer.ts",
+    "src/blocks/*/*-client.ts",
+    "src/blocks/*/guard.ts",
+    "src/blocks/*/memory-*.ts",
+    "src/blocks/*/test-*.ts",
+    "src/blocks/*/workflows.ts",
+    "src/core/block.json",
+    "src/core/log-sink.ts",
+    "src/core/shell.ts",
+    "src/test/**"
+  ]
+}

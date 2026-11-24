@@ -1,0 +1,24 @@
+{
+  "root": true,
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "@tanstack-cf-saas/biome-config"
+  ],
+  "files": {
+    "includes": [
+      "**",
+      "!claude",
+      "!**/dist",
+      "!**/template",
+      "!**/.wrangler",
+      "!**/.output",
+      "!**/routeTree.gen.ts",
+      "!**/worker-configuration.d.ts",
+      "!**/drizzle/meta",
+      "!templates",
+      "!apps/website",
+      "!apps/cli/template",
+      "!apps/cli/harness"
+    ]
+  }
+}

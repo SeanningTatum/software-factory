@@ -1,0 +1,24 @@
+{
+  "name": "saas-starter",
+  "template": "saas-starter",
+  "managed": {
+    "bindings": [
+      "AUTH_LIMITER",
+      "BUCKET",
+      "DB",
+      "KV",
+      "ONBOARDING_WORKFLOW",
+      "UPLOAD_LIMITER"
+    ],
+    "vars": [
+      "ANALYTICS_PROVIDER",
+      "APP_URL",
+      "ERROR_REPORTER",
+      "GITHUB_CLIENT_ID",
+      "LOG_LEVEL",
+      "POSTHOG_HOST",
+      "STRIPE_PRICE_PRO",
+      "TRUSTED_ORIGINS"
+    ]
+  }
+}
