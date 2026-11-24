@@ -21,7 +21,10 @@ export function CredentialsForm({ mode, submit, onDone }: Props) {
   const busy = snapshot.matches("submitting") || snapshot.status === "done";
 
   return (
+    // POST, so a submit that somehow lands before hydration never puts the password in the URL.
+    // The button stays disabled until then (see Button), which also blocks submitting with Enter.
     <form
+      method="post"
       className="flex flex-col gap-4"
       onChange={() => snapshot.matches("failed") && send({ type: "EDIT" })}
       onSubmit={(event) => {

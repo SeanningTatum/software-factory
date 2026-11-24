@@ -24,6 +24,7 @@ shadcn/ui components, the cn helper, and the site header and footer.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `Button` stays disabled until React hydrates, through the new `components/use-hydrated.ts` hook, and the footer's cookie settings button does the same. Why: a click before hydration did nothing, or sent a form natively as a GET with the password in the URL.
 - 2026-11-24 — Components are shadcn/ui (new-york style) in `components/`, the one place Biome allows default exports. Why: shadcn generates them that way, and we keep them close to upstream.
 - 2026-11-24 — `cn` merges class names with clsx and tailwind-merge. Why: later Tailwind classes win over earlier ones without hand-written checks.
 

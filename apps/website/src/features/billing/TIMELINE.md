@@ -82,4 +82,5 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The checkout spec waits for an enabled button and the dashboard before it goes on, and the Stripe Checkout test skips, with the reason, when the page shows the setup hint.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

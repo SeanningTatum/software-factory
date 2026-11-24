@@ -62,4 +62,5 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The file picker stays disabled until hydration, and the spec waits for it, and for the dashboard, before it goes on.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

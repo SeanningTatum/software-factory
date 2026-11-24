@@ -4,6 +4,7 @@ import { useId } from "react";
 import { fromPromise } from "xstate";
 import { Button } from "#/features/ui/components/button.tsx";
 import { Label } from "#/features/ui/components/label.tsx";
+import { useHydrated } from "#/features/ui/components/use-hydrated.ts";
 import { uploadMachine } from "./upload.machine.ts";
 
 const send = async (file: File) => {
@@ -19,6 +20,7 @@ const send = async (file: File) => {
 export function UploadPanel() {
   const router = useRouter();
   const id = useId();
+  const hydrated = useHydrated();
   const [snapshot, dispatch] = useMachine(
     uploadMachine.provide({
       actors: {
@@ -37,7 +39,7 @@ export function UploadPanel() {
         id={id}
         type="file"
         accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
-        disabled={snapshot.matches("uploading")}
+        disabled={!hydrated || snapshot.matches("uploading")}
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           if (file) dispatch({ type: "PICK", file });

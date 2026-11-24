@@ -32,4 +32,5 @@ The website's own pages: the landing page at / and the docs under /docs.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The copy button stays disabled until hydration, like the shared `Button`, so an early click is not silently lost.
 - 2026-11-24 — Moved the landing page and docs from `src/routes/` and `src/site/` into this feature, regenerated the rest of the website with the feature layout, and renamed `/docs/blocks` to `/docs/features`.

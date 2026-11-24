@@ -82,4 +82,5 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The checkout spec waits for an enabled button and the dashboard before it goes on, and the Stripe Checkout test skips, with the reason, when the page shows the setup hint.
 - 2026-11-24 — Moved into `src/features/billing/` from `src/blocks/billing/`, with pages from `src/routes/(billing)/` when the template switched from blocks to features.

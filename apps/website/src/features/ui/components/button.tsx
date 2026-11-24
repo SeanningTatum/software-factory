@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "#/features/ui/lib/cn.ts";
+import { useHydrated } from "./use-hydrated.ts";
 
 export const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background disabled:pointer-events-none disabled:opacity-50",
@@ -19,11 +20,23 @@ export const buttonVariants = cva(
   },
 );
 
+/**
+ * Every button here needs JavaScript, so it stays disabled until React hydrates. A click before then
+ * would do nothing, or submit its form natively with the fields in the URL.
+ */
 export function Button({
   className,
   variant,
   size,
+  disabled,
   ...props
 }: ComponentProps<"button"> & VariantProps<typeof buttonVariants>) {
-  return <button className={cn(buttonVariants({ variant, size }), className)} {...props} />;
+  const hydrated = useHydrated();
+  return (
+    <button
+      className={cn(buttonVariants({ variant, size }), className)}
+      disabled={!hydrated || disabled}
+      {...props}
+    />
+  );
 }
