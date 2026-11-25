@@ -26,6 +26,18 @@ describe("requestRuntime", () => {
     expect(nonceFor(request)).toEqual(expect.any(String));
   });
 
+  it("answers 413 to a huge body without calling the route", async () => {
+    const next = vi.fn(async () => ({ response: new Response("ok") }));
+    const request = new Request("https://x.dev/api/auth/stripe/webhook", {
+      method: "POST",
+      body: "{}",
+      headers: { "content-length": String(100 * 1024 * 1024) },
+    });
+    const result = await server({ request, context: {}, next });
+    expect((result as unknown as Response).status).toBe(413);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("keeps a header the route already set", async () => {
     const next = async () => ({
       response: new Response("ok", { headers: { "x-frame-options": "SAMEORIGIN" } }),

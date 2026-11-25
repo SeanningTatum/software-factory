@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { readBody, readForm } from "./body.ts";
+import { bodyTooLarge, readBody, readForm } from "./body.ts";
 
 const post = (body: BodyInit, headers: Record<string, string> = {}) =>
   new Request("https://x.dev/", { method: "POST", body, headers });
@@ -44,6 +44,27 @@ describe("readBody", () => {
     expect(JSON.stringify(exit)).toContain("body over 16384 bytes");
     expect(state.pulled).toBeLessThanOrEqual(2);
   });
+});
+
+describe("bodyTooLarge", () => {
+  const to = (path: string, headers: Record<string, string>, body: BodyInit | null = "{}") =>
+    bodyTooLarge(new Request(`https://x.dev${path}`, { method: "POST", body, headers }));
+  const MB = 1024 * 1024;
+
+  it("answers 413 for a webhook body over 1 MB", () =>
+    expect(to("/api/auth/stripe/webhook", { "content-length": String(100 * MB) })?.status).toBe(
+      413,
+    ));
+  it("lets a small body through", () =>
+    expect(to("/api/auth/sign-in/email", { "content-length": "20" })).toBeUndefined());
+  it("lets an upload of 5 MB through but not 7 MB", () => {
+    expect(to("/api/uploads", { "content-length": String(5 * MB) })).toBeUndefined();
+    expect(to("/api/uploads", { "content-length": String(7 * MB) })?.status).toBe(413);
+  });
+  it("answers 411 for a body with no content-length", () =>
+    expect(to("/api/auth/stripe/webhook", {})?.status).toBe(411));
+  it("ignores a request with no body", () =>
+    expect(bodyTooLarge(new Request("https://x.dev/"))).toBeUndefined());
 });
 
 describe("readForm", () => {

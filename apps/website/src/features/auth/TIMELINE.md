@@ -80,3 +80,4 @@ stateDiagram-v2
 - 2026-11-24 — Auth calls run through `outsideCall` and the rate limiter binding is read with `binding`, both from `core/lib`; imports db, analytics and ui from `src/features/core/`.
 - 2026-11-24 — The path specs wait for an enabled button, give each test its own visitor IP so the sign-up limiter does not trip on a second run, and wait for sign-out before signing up again; `reaches submitting` now signs up for real. Added an SSR test for the form.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.
+- 2026-11-25 — Auth hardening from an audit: a failed sign-up deletes the user row it left without a password; sign-in is also limited per account (`acct:<email>`) and IPv6 clients by their /64; the four Stripe subscription endpoints are rate limited; a Stripe webhook answered 5xx drops its queued analytics and audit events so the retry records them once. (https://github.com/SeanningTatum/tanstack-cf-saas-starter/pull/17)
