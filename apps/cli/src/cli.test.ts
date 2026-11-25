@@ -107,6 +107,13 @@ describe("the command line", () => {
     expect(result.stderr).not.toContain("    at ");
   });
 
+  test("setup --var without = is an error, not dropped", () => {
+    const dir = scratch();
+    const result = cli(["setup", "--check", "--var", "FOO"], dir);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--var needs KEY=value, got "FOO"');
+  });
+
   test("add outside a project changes nothing", () => {
     const dir = scratch();
     writeFileSync(join(dir, "package.json"), "{}");

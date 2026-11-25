@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { addBlock, prune, removeBlock } from "./ops.ts";
+import { check, plan, sync } from "./sync.ts";
 
 const manifest = (name: string, extra: Record<string, unknown> = {}) =>
   JSON.stringify({ name, title: name, description: name, requires: [], ...extra });
@@ -63,7 +64,7 @@ describe("removeBlock", () => {
 
 describe("removeBlock safety", () => {
   test("refuses a files entry outside the project and deletes nothing", () => {
-    for (const bad of ["../outside", "", "/", "a/../.."]) {
+    for (const bad of ["../outside", "", "/", "a/../..", ".git", "node_modules/x"]) {
       const root = project();
       writeFileSync(
         join(root, "src/features/core/kv/feature.json"),
@@ -125,6 +126,28 @@ describe("addBlock", () => {
     expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
   });
 
+  test("refuses to overwrite a file the project already has", () => {
+    const template = project();
+    const root = project();
+    removeBlock(root, "auth", { force: true });
+    removeBlock(root, "db", { force: true });
+    writeFileSync(join(root, "drizzle.config.ts"), "mine\n");
+    expect(() => addBlock(root, template, "db")).toThrow(/already exist: .*drizzle\.config\.ts/);
+    expect(readFileSync(join(root, "drizzle.config.ts"), "utf8")).toBe("mine\n");
+    expect(existsSync(join(root, "src/features/core/db"))).toBe(false);
+  });
+
+  test("copies nothing when a name clashes with an enabled feature", () => {
+    const template = project();
+    const root = project();
+    removeBlock(root, "kv", { force: true });
+    const vars = { KEY: { description: "x", required: false } };
+    writeFileSync(join(template, "src/features/core/kv/feature.json"), manifest("kv", { vars }));
+    writeFileSync(join(root, "src/features/auth/feature.json"), manifest("auth", { vars }));
+    expect(() => addBlock(root, template, "kv")).toThrow(/"KEY" is declared by both/);
+    expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
+  });
+
   test("puts a core module back in core, with what it requires", () => {
     const template = project();
     const root = project();
@@ -138,6 +161,20 @@ describe("addBlock", () => {
     expect(readFileSync(join(root, "src/gen/layers.ts"), "utf8")).toContain(
       'import { layer as kv } from "../features/core/kv/layer.ts";',
     );
+  });
+});
+
+describe("check on a CRLF checkout", () => {
+  test("generated files with CRLF are not stale", () => {
+    const root = project();
+    sync(root);
+    for (const path of plan(root).files.keys()) {
+      const full = join(root, path);
+      writeFileSync(full, readFileSync(full, "utf8").replaceAll("\n", "\r\n"));
+    }
+    const stale = check(root).filter((p) => /out of date|missing/.test(p.message));
+    expect(stale).toEqual([]);
+    expect(sync(root)).toEqual([]);
   });
 });
 
