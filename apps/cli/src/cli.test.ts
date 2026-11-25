@@ -39,7 +39,7 @@ describe("create", () => {
     expect(cli([".", ...QUICK], join(dir, "My App")).status).toBe(0);
     expect(JSON.parse(readFileSync(join(dir, "My App/package.json"), "utf8")).name).toBe("my-app");
     expect(nameFromDir("/x/_Weird.Name__")).toBe("weird-name");
-  });
+  }, 20_000); // two full scaffolds: over 5 s on a busy CI runner
 
   test("a failed scaffold stops the spinner and exits non-zero instead of hanging", () => {
     const dir = scratch();
