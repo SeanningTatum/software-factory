@@ -2,7 +2,7 @@
  * Size budgets: run after `vite build`, reads `dist/` only.
  * Fails when a page's first-load JS or the Worker goes over its budget in `size-budgets.json`.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
@@ -28,6 +28,22 @@ export const manifestRoutes = (manifest: string): string[] =>
 export const unbudgeted = (manifest: string, budgets: Budgets): string[] =>
   manifestRoutes(manifest).filter((route) => !(route in budgets.routes));
 
+const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} kB`;
+
+/** What was measured, its gzipped bytes, and its budget in bytes. */
+type Row = readonly [name: string, bytes: number, budget: number];
+
+/** The size table as markdown, for a pull request's description. */
+export const markdownTable = (rows: ReadonlyArray<Row>) =>
+  [
+    "| What | Size (gzip) | Budget | |",
+    "| --- | ---: | ---: | --- |",
+    ...rows.map(
+      ([name, bytes, budget]) =>
+        `| ${name} | ${kb(bytes)} | ${kb(budget)} | ${bytes > budget ? "over" : "ok"} |`,
+    ),
+  ].join("\n");
+
 const gzipped = (file: string) => gzipSync(readFileSync(file)).length;
 
 /** Gzipped bytes of every distinct file a first load of the route fetches (root files too). */
@@ -48,7 +64,15 @@ const jsFiles = (dir: string): string[] =>
     return statSync(path).isDirectory() ? jsFiles(path) : name.endsWith(".js") ? [path] : [];
   });
 
-const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} kB`;
+const printTable = (rows: ReadonlyArray<Row>) => {
+  process.stdout.write(`${"what".padEnd(22)}${"size".padStart(11)}${"budget".padStart(11)}\n`);
+  for (const [name, bytes, budget] of rows) {
+    const over = bytes > budget ? "  OVER" : "";
+    process.stdout.write(
+      `${name.padEnd(22)}${kb(bytes).padStart(11)}${kb(budget).padStart(11)}${over}\n`,
+    );
+  }
+};
 
 const main = () => {
   const budgets = JSON.parse(readFileSync("size-budgets.json", "utf8")) as Budgets;
@@ -68,7 +92,7 @@ const main = () => {
     process.exitCode = 1;
     return;
   }
-  const rows: [string, number, number][] = [];
+  const rows: Row[] = [];
   for (const [route, { budget }] of Object.entries(budgets.routes)) {
     const bytes = firstLoadBytes(manifest, route, (path) => gzipped(join("dist/client", path)));
     if (bytes === undefined) process.stdout.write(`size: ${route} is not in this build, skipped\n`);
@@ -84,13 +108,10 @@ const main = () => {
   const worker = jsFiles("dist/server").reduce((sum, file) => sum + gzipped(file), 0);
   rows.push(["Worker (gzip)", worker, budgets.worker.budget * 1024]);
 
-  process.stdout.write(`${"what".padEnd(22)}${"size".padStart(11)}${"budget".padStart(11)}\n`);
-  for (const [name, bytes, budget] of rows) {
-    const over = bytes > budget ? "  OVER" : "";
-    process.stdout.write(
-      `${name.padEnd(22)}${kb(bytes).padStart(11)}${kb(budget).padStart(11)}${over}\n`,
-    );
-  }
+  printTable(rows);
+  // `--markdown=<file>` also writes the table there; CI puts it in the pull request's description.
+  const markdown = process.argv.find((arg) => arg.startsWith("--markdown="))?.slice(11);
+  if (markdown) writeFileSync(markdown, `${markdownTable(rows)}\n`);
   const over = rows.filter(([, bytes, budget]) => bytes > budget);
   if (over.length > 0) {
     process.stderr.write(

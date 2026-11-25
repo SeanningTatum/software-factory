@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write # to write the size table into the pull request's description
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -22,8 +23,24 @@ jobs:
       - run: bun run check
       - name: The template and website stay under their size budgets
         run: |
-          bun run --cwd templates/saas-starter size
-          bun run --cwd apps/website size
+          bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"
+          bun run --cwd apps/website size --markdown="$RUNNER_TEMP/website.md"
+      - name: Size table in the pull request's description
+        # Production deploys from main, so each pull request into it shows what it will ship.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          for app in template website; do
+            if test -s "$RUNNER_TEMP/$app.md"; then printf '### %s\n\n%s\n\n' "$app" "$(cat "$RUNNER_TEMP/$app.md")"; fi
+          done > "$RUNNER_TEMP/tables.md"
+          test -s "$RUNNER_TEMP/tables.md" || exit 0
+          gh pr view "$PR" --json body --jq .body > "$RUNNER_TEMP/body.md"
+          perl -0pi -e 's/\n*<!-- size:start -->.*?<!-- size:end -->\n?//s' "$RUNNER_TEMP/body.md"
+          { cat "$RUNNER_TEMP/body.md"; printf '\n\n<!-- size:start -->\n## Size\n\n'; cat "$RUNNER_TEMP/tables.md"
+            printf '\nBudgets live in `size-budgets.json`. CI rewrites this section on each push.\n<!-- size:end -->\n'; } > "$RUNNER_TEMP/new.md"
+          gh pr edit "$PR" --body-file "$RUNNER_TEMP/new.md"
       - name: No package with a known high or critical hole
         run: bun audit --audit-level=high
       - name: Migrations match the schema
