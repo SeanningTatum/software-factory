@@ -1,7 +1,0 @@
-{
-  "name": "kv",
-  "title": "KV",
-  "description": "A Workers KV namespace behind a typed, Schema-checked KeyValue service with a read-through cache helper.",
-  "requires": [],
-  "bindings": [{ "type": "kv", "binding": "KV", "namespace": "{project}-kv{suffix}" }]
-}

@@ -27,9 +27,10 @@ export const ingestBrowserEvents = Effect.fn("Analytics.ingest")(function* (
 ) {
   const env = yield* CloudflareEnv;
   yield* checkLimit(binding<Limiter>(env, "EVENTS_LIMITER"), clientAddress(request.headers));
-  const payload = yield* Schema.decodeUnknownEffect(Payload)(
-    yield* readBody(request, MAX_BYTES),
-  ).pipe(Effect.mapError((issue) => new InvalidInput({ issues: String(issue) })));
+  const body = yield* readBody(request, MAX_BYTES);
+  const payload = yield* Schema.decodeUnknownEffect(Payload)(body).pipe(
+    Effect.mapError((issue) => new InvalidInput({ issues: String(issue) })),
+  );
   const distinctId = browserDistinctId(yield* userId, request.headers.get("cookie"), requestId);
   const analytics = yield* Analytics;
   yield* Effect.forEach(payload.events, (event) => analytics.capture(event, distinctId), {

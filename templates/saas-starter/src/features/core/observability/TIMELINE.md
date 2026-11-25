@@ -39,8 +39,3 @@ JSON logs stamped with the request id and user, redaction, error reports to the 
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-24 — Set `logpush: true` in `wrangler.jsonc`; the runbook now shows the R2 Logpush job and retention (3 or 7 days in Cloudflare, until the lifecycle rule in R2), a failed production deploy posts to `ALERT_WEBHOOK_URL`, and `src/app/runbook.test.ts` fails when any of it goes missing.
-- 2026-11-24 — Added the alert webhook to the error reporter, and `docs/runbook.md` (listed in `files`): a bad deploy, a failed migration, a Stripe outage, finding a request, reading the audit log.
-- 2026-11-24 — Moved to `src/features/core/observability/` from `src/features/observability/`.
-- 2026-11-24 — Moved into `src/features/observability/` from `src/core/` (log, redact, error-reporter, log-sink) when the template switched from blocks to features.

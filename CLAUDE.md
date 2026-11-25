@@ -1,7 +1,7 @@
 # tanstack-cf-saas-starter
 
-A monorepo for a SaaS template (TanStack Start on Cloudflare Workers, written in Effect), the CLI
-that builds projects from it, and the website that sells it.
+A monorepo for a SaaS template (TanStack Start on Cloudflare Workers, written in Effect) and the CLI
+that builds projects from it.
 
 ## Layout
 
@@ -9,7 +9,6 @@ that builds projects from it, and the website that sells it.
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `templates/saas-starter/` | The template, with every feature on. Its own `CLAUDE.md` holds the code rules.                                                |
 | `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `harness`. Ships the template and `claude/`.                   |
-| `apps/website/`           | The marketing and docs site: the CLI's output with every feature, plus its own required feature `site`.                       |
 | `packages/biome-config/`  | Shared Biome rules (published).                                                                                               |
 | `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                        |
 | `packages/lint/`          | `cf-saas-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |
@@ -28,8 +27,11 @@ that builds projects from it, and the website that sells it.
   is `src/app/`. Shared wiring is generated into `src/gen/` by `cf-saas-blocks sync`; never
   hand-edit it. Required ones (`"required": true`: `observability`, `analytics`, `ui`, `consent`,
   `home`) can't be removed; `db`, `kv`, `auth`, `billing`, `workflows` and `uploads` can.
-- **Read `FEATURES.md` and the feature's `TIMELINE.md` first**, and add a Decisions or History line
-  to it with every change to the feature or module.
+- **Read `FEATURES.md` and the feature's `TIMELINE.md` first, and add no lines to it.** The template
+  is boilerplate: only a project made from it keeps a timeline, and the CLI starts each one's
+  History afresh. Here History stays empty, and a Decisions line that a change makes untrue is
+  fixed or deleted. This overrides the template's own `CLAUDE.md` and `FEATURES.md`, which tell the
+  projects made from it to add a line with every change.
 - **The template never depends on this repo's layout.** It imports `@tanstack-cf-saas/*` packages by
   name; the CLI's bundle step swaps `workspace:*` for published versions.
 - **A change to the template is proven by the feature matrix**, not only by the template's own
@@ -39,9 +41,7 @@ that builds projects from it, and the website that sells it.
 - **The template keeps one migration, `drizzle/0000_init.sql`.** After a schema change, delete
   `drizzle/*.sql` and `drizzle/meta/`, run `bun run db:generate`, and rename the file to
   `0000_init.sql` (and its tag in `meta/_journal.json`). New projects never see it: the CLI's bundle
-  leaves `drizzle/` out and `create` generates their own. Do the same in `apps/website` until its
-  first deploy (B-09); from then on it adds migrations like any live app, since D1 skips a
-  migration whose name it has already applied.
+  leaves `drizzle/` out and `create` generates their own.
 - Server code in the template is Effect; every flow and lifecycle is an XState machine. The rules and
   the gates that enforce them are in `templates/saas-starter/CLAUDE.md`.
 

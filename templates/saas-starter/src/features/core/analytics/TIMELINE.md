@@ -38,7 +38,3 @@ A typed event catalog, an Analytics service with console, PostHog and Analytics 
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-24 — Added `user_identified` to the catalog; `BrowserEvent` now lists the two browser events itself.
-- 2026-11-24 — Moved to `src/features/core/analytics/` from `src/features/analytics/`; `components/tracker.tsx` moved to `consent`. PostHog delivery runs through `outsideCall` and the Analytics Engine binding is read with `binding`, both from `core/lib`.
-- 2026-11-24 — Moved into `src/features/analytics/` from `src/core/analytics/` when the template switched from blocks to features.

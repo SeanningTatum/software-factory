@@ -24,7 +24,8 @@ const work: Record<string, (params: OnboardingParams) => Effect.Effect<void, nev
   welcome: (params) =>
     Effect.gen(function* () {
       yield* Effect.logInfo("onboarding: welcome", { userId: params.userId });
-      yield* (yield* Analytics).capture({ _tag: "onboarding_started" }, params.userId);
+      const analytics = yield* Analytics;
+      yield* analytics.capture({ _tag: "onboarding_started" }, params.userId);
     }),
   nudge: (params) => Effect.logInfo("onboarding: nudge", { userId: params.userId }),
 };
@@ -45,7 +46,8 @@ export const runOnboarding = async (
   await steps.run("complete", () =>
     runEffect(
       Effect.gen(function* () {
-        yield* (yield* Analytics).capture({ _tag: "onboarding_completed" }, params.userId);
+        const analytics = yield* Analytics;
+        yield* analytics.capture({ _tag: "onboarding_completed" }, params.userId);
       }),
     ),
   );

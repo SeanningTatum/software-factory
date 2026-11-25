@@ -54,9 +54,3 @@ stateDiagram-v2
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-25 — Dropped the stale decision that an HTTP trigger needs `WORKFLOWS_TRIGGER_TOKEN`; there is no HTTP trigger and no token. (https://github.com/SeanningTatum/tanstack-cf-saas-starter/pull/16)
-- 2026-11-24 — `metric` in `events.ts`: the share of started onboardings that finish.
-- 2026-11-24 — Each step disposes its runtime even when it fails, so queued analytics are still sent.
-- 2026-11-24 — Workflow calls run through `outsideCall` and the binding is read with `binding`, both from `core/lib`; imports analytics from `src/features/core/`.
-- 2026-11-24 — Moved into `src/features/workflows/` from `src/blocks/workflows/` when the template switched from blocks to features.

@@ -134,6 +134,24 @@ export const externalCallSpan: Rule = {
     ),
 };
 
+/** Whether a yield sits inside another yield's operand, in the same generator. */
+const insideYield = (node: ts.Node): boolean => {
+  for (let cur = node.parent; cur && !ts.isFunctionLike(cur); cur = cur.parent)
+    if (ts.isYieldExpression(cur)) return true;
+  return false;
+};
+
+export const noNestedYield: Rule = {
+  id: "no-nested-yield",
+  description: "One yield per expression: name the service, then call it.",
+  check: ({ source }) =>
+    collect(source, (n) =>
+      ts.isYieldExpression(n) && insideYield(n)
+        ? "name the inner yield first: `const x = yield* X;` then `yield* x.method()`"
+        : undefined,
+    ),
+};
+
 export const fileSize: Rule = {
   id: "file-size",
   description: "Keep files small enough to read in one go.",

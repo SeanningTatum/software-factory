@@ -13,8 +13,10 @@ export const Route = createFileRoute("/api/uploads/$id")({
         runResponse(
           context,
           Effect.gen(function* () {
-            const user = yield* (yield* Auth).requireUser;
-            return yield* (yield* Uploads).download(user.id, params.id);
+            const auth = yield* Auth;
+            const user = yield* auth.requireUser;
+            const uploads = yield* Uploads;
+            return yield* uploads.download(user.id, params.id);
           }),
           "uploads.download",
         ),
@@ -22,8 +24,10 @@ export const Route = createFileRoute("/api/uploads/$id")({
         runResponse(
           context,
           Effect.gen(function* () {
-            const user = yield* (yield* Auth).requireUser;
-            yield* (yield* Uploads).remove(user.id, params.id);
+            const auth = yield* Auth;
+            const user = yield* auth.requireUser;
+            const uploads = yield* Uploads;
+            yield* uploads.remove(user.id, params.id);
             return new Response(null, { status: NO_CONTENT });
           }),
           "uploads.remove",

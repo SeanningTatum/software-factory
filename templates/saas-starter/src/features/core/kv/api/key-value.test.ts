@@ -31,7 +31,8 @@ describe("KeyValue", () => {
     await kv.put("prefs:u1", '{"theme":"blue"}');
     const value = await run(
       Effect.gen(function* () {
-        return yield* (yield* KeyValue).get("prefs:u1", Prefs);
+        const keyValue = yield* KeyValue;
+        return yield* keyValue.get("prefs:u1", Prefs);
       }),
       kv,
     );
@@ -41,7 +42,8 @@ describe("KeyValue", () => {
   it("builds without a binding; each call then fails with NotConfigured", async () => {
     const exit = await Effect.runPromiseExit(
       Effect.gen(function* () {
-        return yield* (yield* KeyValue).get("k", Prefs);
+        const keyValue = yield* KeyValue;
+        return yield* keyValue.get("k", Prefs);
       }).pipe(
         Effect.provide(KeyValue.layer.pipe(Layer.provide(CloudflareEnv.layer({} as AppEnv)))),
       ),

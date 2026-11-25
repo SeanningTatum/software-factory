@@ -64,6 +64,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - No `throw`, `try/catch`, `process.env` or `Effect.run*` outside the edges listed in
   `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
   `runResponse` from `src/app/run-effect.ts`.
+- One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
   `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
 - Log with `Effect.log*`, never `console`. Every line already carries the request id and user.

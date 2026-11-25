@@ -19,12 +19,15 @@ export const Route = createFileRoute("/api/uploads/")({
         runResponse(
           context,
           Effect.gen(function* () {
-            const user = yield* (yield* Auth).requireUser;
+            const auth = yield* Auth;
+            const user = yield* auth.requireUser;
             const form = yield* readForm(request, MAX_BYTES + FORM_OVERHEAD);
             const file = form.get("file");
             if (!(file instanceof File)) return yield* new InvalidInput({ issues: "missing file" });
-            const stored = yield* (yield* Uploads).upload(user.id, file);
-            yield* (yield* Analytics).capture({
+            const uploads = yield* Uploads;
+            const stored = yield* uploads.upload(user.id, file);
+            const analytics = yield* Analytics;
+            yield* analytics.capture({
               _tag: "file_uploaded",
               contentType: stored.contentType,
               sizeBytes: stored.size,
@@ -37,9 +40,11 @@ export const Route = createFileRoute("/api/uploads/")({
         runResponse(
           context,
           Effect.gen(function* () {
-            const user = yield* (yield* Auth).requireUser;
+            const auth = yield* Auth;
+            const user = yield* auth.requireUser;
             const cursor = new URL(request.url).searchParams.get("cursor") ?? undefined;
-            return Response.json(yield* (yield* Uploads).list(user.id, cursor));
+            const uploads = yield* Uploads;
+            return Response.json(yield* uploads.list(user.id, cursor));
           }),
           "uploads.list",
         ),

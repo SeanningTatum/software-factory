@@ -71,12 +71,3 @@ stateDiagram-v2
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-24 — Every route has a spec: `e2e/<route>.route.spec.ts` for /login, /signup, /dashboard and /api/auth, each with a normal and an error case and (for pages) an axe scan.
-- 2026-11-24 — Added `audit_log` (in `0000_init`), indexed on time, actor and action; `Auth.layerWith(factories)` for tests; plugins pass a user id with `onEvent`.
-- 2026-11-24 — `metric` in `events.ts`: the share of sign-in attempts that succeed.
-- 2026-11-24 — Added the indexes Better Auth's own schema asks for (`session.user_id`, `account.user_id`, `verification.identifier`) and `user.stripe_customer_id`, in migration `0001_indexes`.
-- 2026-11-24 — Auth calls run through `outsideCall` and the rate limiter binding is read with `binding`, both from `core/lib`; imports db, analytics and ui from `src/features/core/`.
-- 2026-11-24 — The path specs wait for an enabled button, give each test its own visitor IP so the sign-up limiter does not trip on a second run, and wait for sign-out before signing up again; `reaches submitting` now signs up for real. Added an SSR test for the form.
-- 2026-11-24 — Moved into `src/features/auth/` from `src/blocks/auth/`, with pages from `src/routes/(auth)/` when the template switched from blocks to features.
-- 2026-11-25 — Auth hardening from an audit: a failed sign-up deletes the user row it left without a password; sign-in is also limited per account (`acct:<email>`) and IPv6 clients by their /64; the four Stripe subscription endpoints are rate limited; a Stripe webhook answered 5xx drops its queued analytics and audit events so the retry records them once. (https://github.com/SeanningTatum/tanstack-cf-saas-starter/pull/17)

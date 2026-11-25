@@ -1,8 +1,6 @@
 name: check
 on:
   pull_request:
-    # labeled/unlabeled re-run the timeline gate when someone adds or drops `no-timeline`.
-    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 permissions: {}
@@ -21,10 +19,8 @@ jobs:
       - run: bunx turbo run build --filter='./packages/*'
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - name: The template and website stay under their size budgets
-        run: |
-          bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"
-          bun run --cwd apps/website size --markdown="$RUNNER_TEMP/website.md"
+      - name: The template stays under its size budgets
+        run: bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"
       - name: Size table in the pull request's description
         # Production deploys from main, so each pull request into it shows what it will ship.
         if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
@@ -32,7 +28,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          for app in template website; do
+          for app in template; do
             if test -s "$RUNNER_TEMP/$app.md"; then printf '### %s\n\n%s\n\n' "$app" "$(cat "$RUNNER_TEMP/$app.md")"; fi
           done > "$RUNNER_TEMP/tables.md"
           test -s "$RUNNER_TEMP/tables.md" || exit 0
@@ -46,48 +42,21 @@ jobs:
       - name: Migrations match the schema
         # db:generate writes a file only when a schema.ts changed and its migration was not made.
         run: |
-          for app in templates/saas-starter apps/website; do bun run --cwd "$app" db:generate; done
+          bun run --cwd templates/saas-starter db:generate
           if [ -n "$(git status --porcelain -- '*/drizzle/*')" ]; then
             git status --porcelain -- '*/drizzle/*'
             echo "::error::A schema changed without a migration. See the migration rule in CLAUDE.md."
             exit 1
           fi
 
-  # Every feature a pull request changes needs a new line in its TIMELINE.md.
-  # Label the pull request `no-timeline` to skip this for a trivial change.
-  timeline:
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: bun install --frozen-lockfile
-      # As in the check job: the bin links only after the packages are built.
-      - run: bunx turbo run build --filter='./packages/*'
-      - run: bun install --frozen-lockfile
-      - name: Every changed feature has a TIMELINE.md line
-        env:
-          BASE: ${{ github.base_ref }}
-          TIMELINE_SKIP: ${{ contains(github.event.pull_request.labels.*.name, 'no-timeline') && '1' || '' }}
-        run: |
-          for app in templates/saas-starter apps/website; do (cd "$app" && bunx cf-saas-lint timeline --base "origin/$BASE"); done
-
-  # The Playwright specs of the template and the website, against `vite dev` with local D1, R2 and KV.
+  # The template's Playwright specs, against `vite dev` with local D1, R2 and KV.
   e2e:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [templates/saas-starter, apps/website]
     defaults:
       run:
-        working-directory: ${{ matrix.app }}
+        working-directory: templates/saas-starter
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -106,8 +75,8 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:
-          name: playwright-traces-${{ strategy.job-index }}
-          path: ${{ matrix.app }}/test-results/
+          name: playwright-traces
+          path: templates/saas-starter/test-results/
           retention-days: 7
 
   # The CLI tools run on users' machines, Windows included: their path handling is tested there.

@@ -146,6 +146,24 @@ describe("lint", () => {
     ]);
   });
 
+  test("reports a yield inside another yield, in source and in tests, but not across a function", () => {
+    const body = [
+      'import { Effect } from "effect";',
+      "export const a = Effect.gen(function* () {",
+      "  return yield* (yield* Service).get();",
+      "});",
+      "export const b = Effect.gen(function* () {",
+      "  const service = yield* Service;",
+      "  return yield* Effect.gen(function* () { return yield* service.get(); });",
+      "});",
+    ].join("\n");
+    const root = project({ "src/core/nested.ts": body, "src/core/nested.test.ts": body });
+    expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/nested.test.ts:no-nested-yield:3",
+      "src/core/nested.ts:no-nested-yield:3",
+    ]);
+  });
+
   test("requires the tests the test map lists", () => {
     const root = project({
       "src/app/thing.ts": "export const x = 1;",
