@@ -15,7 +15,7 @@ export const PLACEHOLDER_KV_ID = "00000000000000000000000000000000";
 const STAGING_NAMESPACE_OFFSET = 1000;
 
 /** The file's own indent: the first indented line's tab or spaces. */
-const formattingOf = (text: string): FormattingOptions => {
+export const formattingOf = (text: string): FormattingOptions => {
   const indent = /^([ \t]+)\S/m.exec(text)?.[1] ?? "\t";
   return indent.startsWith("\t")
     ? { insertSpaces: false, tabSize: 1, eol: "\n" }
@@ -88,7 +88,8 @@ const entryFor = (binding: Binding, project: string, env: EnvName, existing?: En
       const offset = env === "staging" ? STAGING_NAMESPACE_OFFSET : 0;
       return {
         name: binding.binding,
-        namespace_id: String(Number(binding.namespace_id) + offset),
+        // Ids are account-wide, so `create` gives each project its own and sync keeps it.
+        namespace_id: existing?.namespace_id ?? String(Number(binding.namespace_id) + offset),
         simple: { limit: binding.limit, period: binding.period },
       };
     }
@@ -154,6 +155,8 @@ const upsert = (
 ) => {
   const current = (at(parseWrangler(text), path) as Array<Entry> | undefined) ?? [];
   const index = current.findIndex((e) => keyOf(section, e) === binding.binding);
+  // shortcut: limit, period, bucket and database names belong to the manifests and are reset to
+  // them on every sync; the project name is the only knob. Upgrade by keeping existing fields.
   const entry = entryFor(binding, project, env, current[index]);
   if (index < 0) return write(text, [...path, -1], entry, true);
   let out = text;

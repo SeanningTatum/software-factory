@@ -1,8 +1,8 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import ts from "typescript";
 import { type LintConfig, loadConfig } from "./config.ts";
-import { toSlash } from "./files.ts";
+import { walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";
 import {
   externalCallSpan,
@@ -35,13 +35,6 @@ export const projectRules: ReadonlyArray<ProjectRule> = [featureLayout, rulesFil
 /** Rules that tests may break: they throw from mocks and run effects directly. */
 const SOURCE_ONLY = new Set(["no-throw", "no-try-catch", "no-run-effect", "external-call-span"]);
 const TEST_FILE = /\.(test|spec)\.tsx?$/;
-
-const walk = (root: string, dir: string): ReadonlyArray<string> =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) return [];
-    const path = join(dir, entry.name);
-    return entry.isDirectory() ? walk(root, path) : [toSlash(relative(root, path))];
-  });
 
 const fileFindings = (
   root: string,

@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { dependentsOf, withRequirements } from "./graph.ts";
-import { type Feature, loadManifests, ownedPaths } from "./manifest.ts";
+import { type Feature, loadManifests, ownedPaths, rejectClashes } from "./manifest.ts";
 import {
   type PackageJson,
   packageText,
@@ -113,10 +113,12 @@ export const addBlock = (
     return manifest;
   });
   plan(root); // fails on a broken project before anything is copied
-  for (const path of added.flatMap(ownedPaths)) {
-    const from = join(templateRoot, path);
-    if (existsSync(from)) cpSync(from, join(root, path), { recursive: true });
-  }
+  const paths = added.flatMap(ownedPaths).filter((p) => existsSync(join(templateRoot, p)));
+  const taken = paths.filter((p) => existsSync(join(root, p)));
+  if (taken.length)
+    throw new BlockError(`Can't add ${wanted.join(", ")}: already exist: ${taken.join(", ")}`);
+  rejectClashes(new Map([...enabled, ...added.map((m) => [m.name, m] as const)]));
+  for (const path of paths) cpSync(join(templateRoot, path), join(root, path), { recursive: true });
   writePackage(root, withBlockPackages(readPackage(root), added));
   sync(root);
   return wanted;

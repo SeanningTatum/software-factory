@@ -9,6 +9,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { addBlock, check, removeBlock } from "@tanstack-cf-saas/blocks";
 import { hasTables, scaffold } from "../src/scaffold.ts";
 import { linkLocal, packAll } from "./pack.ts";
 
@@ -34,6 +35,37 @@ const combos: Record<string, ReadonlyArray<string>> = {
   all: ["db", "auth", "billing", "kv", "workflows", "uploads"],
 };
 
+/** Optional features, dependents before what they require, so each can be removed in turn. */
+const REMOVAL_ORDER = ["uploads", "billing", "workflows", "kv", "auth", "db"];
+
+/** Fast, install-free: after every add or remove, `cf-saas-blocks check` must find nothing. */
+const walkFeatures = (name: string, kind: "remove" | "add", failures: Array<string>) => {
+  const dir = join(outDir, `${name}-${kind}`);
+  scaffold({
+    templateDir: template,
+    harnessDir: undefined,
+    targetDir: dir,
+    name: `matrix-${name}-${kind}`,
+    features: kind === "remove" ? (combos.all ?? []) : [],
+  });
+  console.log(`\n${name}: ${kind} each optional feature in turn`);
+  const order = kind === "remove" ? REMOVAL_ORDER : [...REMOVAL_ORDER].reverse();
+  for (const feature of order) {
+    try {
+      if (kind === "remove") removeBlock(dir, feature, { force: true });
+      else addBlock(dir, template, feature);
+      const problems = check(dir);
+      if (problems.length)
+        throw new Error(problems.map((p) => `${p.file}: ${p.message}`).join("; "));
+      console.log(`  ✓ ${kind} ${feature}`);
+    } catch (error) {
+      console.log(`  ✗ ${kind} ${feature}: ${error instanceof Error ? error.message : error}`);
+      failures.push(`${name}: ${kind} ${feature}`);
+      return;
+    }
+  }
+};
+
 const step = (dir: string, label: string, cmd: string, args: Array<string>) => {
   const started = Date.now();
   const result = spawnSync(cmd, args, {
@@ -51,6 +83,10 @@ const step = (dir: string, label: string, cmd: string, args: Array<string>) => {
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 const failures: Array<string> = [];
+if (only && !Object.keys(combos).some((name) => only.includes(name))) {
+  console.log(`--only selects nothing. Choose from: ${Object.keys(combos).join(", ")}`);
+  process.exit(1);
+}
 const tarballs = packAll(join(outDir, ".packs"));
 
 for (const [name, features] of Object.entries(combos)) {
@@ -85,6 +121,8 @@ for (const [name, features] of Object.entries(combos)) {
       break;
     }
   }
+  if (name === "all") walkFeatures(name, "remove", failures);
+  if (name === "required") walkFeatures(name, "add", failures);
 }
 
 console.log(

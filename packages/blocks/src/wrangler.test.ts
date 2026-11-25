@@ -26,6 +26,26 @@ const base = `{
 }`;
 const none = { bindings: [], vars: [] };
 
+const limiter: BlockManifest = {
+  name: "lim",
+  title: "Lim",
+  description: "lim",
+  requires: [],
+  bindings: [{ type: "ratelimit", binding: "L", namespace_id: "1001", limit: 10, period: 60 }],
+};
+
+describe("rate limits", () => {
+  test("a namespace_id already in wrangler.jsonc is kept, and sync is then stable", () => {
+    const manifests = new Map([["lim", limiter]]);
+    const patch = { project: "acme", manifests, previouslyManaged: none };
+    const first = patchWrangler("{}", patch).text;
+    expect(parse(first).ratelimits[0].namespace_id).toBe("1001");
+    expect(parse(first).env.staging.ratelimits[0].namespace_id).toBe("2001");
+    const own = first.replace('"1001"', '"777"').replace('"2001"', '"778"');
+    expect(patchWrangler(own, patch).text).toBe(own);
+  });
+});
+
 describe("patchWrangler", () => {
   test("adds bindings for production and staging and keeps hand-made ones", () => {
     const { text, managed } = patchWrangler(base, {

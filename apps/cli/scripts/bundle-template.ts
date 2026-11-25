@@ -20,7 +20,9 @@ import { dirname, join, relative } from "node:path";
 const repo = join(import.meta.dirname, "../../..");
 const source = join(repo, "templates/saas-starter");
 const target = join(import.meta.dirname, "../template");
-const harnessSource = join(repo, "claude");
+/** `claude/` is the claude-config submodule; its `.claude/` folder is what ships. */
+const harnessRepo = join(repo, "claude");
+const harnessSource = join(harnessRepo, ".claude");
 const harnessTarget = join(import.meta.dirname, "../harness");
 
 const SKIP = new Set([
@@ -102,12 +104,14 @@ if (local) throw new Error(`The template's package.json has a local dependency: 
 writeFileSync(pkgPath, pkgText);
 
 rmSync(harnessTarget, { recursive: true, force: true });
-if (existsSync(harnessSource)) {
-  copyTree(
-    harnessSource,
-    harnessTarget,
-    (rel) => rel.split("/").includes(".git") || rel === "README.md",
+if (!existsSync(harnessSource))
+  console.warn(
+    "No claude/.claude (run git submodule update --init claude): the CLI ships no harness.",
   );
+else {
+  copyTree(harnessSource, harnessTarget, (rel) => rel.split("/").includes(".git"));
+  // Every new project's Claude settings come from this file: refuse to ship it broken.
+  JSON.parse(readFileSync(join(harnessTarget, "settings.json"), "utf8"));
   const commit = (() => {
     const run = (cmd: string) =>
       execSync(cmd, {
@@ -115,12 +119,11 @@ if (existsSync(harnessSource)) {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
       }).trim();
-    const inRepo = existsSync(join(harnessSource, ".git"));
-    return inRepo ? run("git rev-parse HEAD") : "placeholder";
+    return existsSync(join(harnessRepo, ".git")) ? run("git rev-parse HEAD") : "unknown";
   })();
   writeFileSync(
     join(harnessTarget, ".source.json"),
-    `${JSON.stringify({ repo: "claude", commit }, null, 2)}\n`,
+    `${JSON.stringify({ repo: "SeanningTatum/claude-config", commit }, null, 2)}\n`,
   );
 }
 

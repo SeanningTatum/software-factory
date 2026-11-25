@@ -1,6 +1,8 @@
 name: check
 on:
   pull_request:
+    # labeled/unlabeled re-run the timeline gate when someone adds or drops `no-timeline`.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 permissions: {}
@@ -12,8 +14,6 @@ jobs:
       pull-requests: write # to write the size table into the pull request's description
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          submodules: recursive
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       # bun links a package's bin only if its file exists, and cf-saas-lint's bin is in dist/:
@@ -27,7 +27,7 @@ jobs:
           bun run --cwd apps/website size --markdown="$RUNNER_TEMP/website.md"
       - name: Size table in the pull request's description
         # Production deploys from main, so each pull request into it shows what it will ship.
-        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository }}
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
@@ -47,11 +47,34 @@ jobs:
         # db:generate writes a file only when a schema.ts changed and its migration was not made.
         run: |
           for app in templates/saas-starter apps/website; do bun run --cwd "$app" db:generate; done
-          if [ -n "$(git status --porcelain -- '*/drizzle')" ]; then
-            git status --porcelain -- '*/drizzle'
+          if [ -n "$(git status --porcelain -- '*/drizzle/*')" ]; then
+            git status --porcelain -- '*/drizzle/*'
             echo "::error::A schema changed without a migration. See the migration rule in CLAUDE.md."
             exit 1
           fi
+
+  # Every feature a pull request changes needs a new line in its TIMELINE.md.
+  # Label the pull request `no-timeline` to skip this for a trivial change.
+  timeline:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+      # As in the check job: the bin links only after the packages are built.
+      - run: bunx turbo run build --filter='./packages/*'
+      - run: bun install --frozen-lockfile
+      - name: Every changed feature has a TIMELINE.md line
+        env:
+          BASE: ${{ github.base_ref }}
+          TIMELINE_SKIP: ${{ contains(github.event.pull_request.labels.*.name, 'no-timeline') && '1' || '' }}
+        run: |
+          for app in templates/saas-starter apps/website; do (cd "$app" && bunx cf-saas-lint timeline --base "origin/$BASE"); done
 
   # The Playwright specs of the template and the website, against `vite dev` with local D1, R2 and KV.
   e2e:

@@ -6,6 +6,7 @@ import {
   type BlockManifest,
   type EnvName,
   envNames,
+  formattingOf,
   loadManifests,
   PLACEHOLDER_D1_ID,
   PLACEHOLDER_KV_ID,
@@ -34,8 +35,8 @@ export interface Item {
 }
 
 const SETUP = "bunx create-tanstack-cf-saas setup";
-const SECRET_BYTES = 36;
-const GENERATED_SECRETS = new Set(["BETTER_AUTH_SECRET"]);
+export const SECRET_BYTES = 36;
+export const GENERATED_SECRETS = new Set(["BETTER_AUTH_SECRET"]);
 
 /** Wrangler's flag for an environment: production is the top level, so it has none. */
 const envFlag = (env: EnvName) => (env === "production" ? [] : ["--env", env]);
@@ -251,10 +252,7 @@ const provisionBinding = (
 const withVars = (text: string, env: EnvName, vars: Readonly<Record<string, string>>) =>
   Object.entries(vars).reduce((acc, [key, value]) => {
     const path = env === "production" ? ["vars", key] : ["env", env, "vars", key];
-    return applyEdits(
-      acc,
-      modify(acc, path, value, { formattingOptions: { insertSpaces: false, tabSize: 1 } }),
-    );
+    return applyEdits(acc, modify(acc, path, value, { formattingOptions: formattingOf(acc) }));
   }, text);
 
 /** Sets one secret in `env`. The value goes to wrangler on stdin, never as an argument. */

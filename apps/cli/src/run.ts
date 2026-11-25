@@ -21,7 +21,9 @@ export const projectWrangler =
   (cwd: string): Wrangler =>
   (args, input) => {
     const local = join(cwd, "node_modules/.bin/wrangler");
-    const [cmd, prefix] = existsSync(local) ? [local, []] : ["npx", ["--yes", "wrangler"]];
+    // With a shell on Windows, a path with a space must be quoted.
+    const path = process.platform === "win32" ? JSON.stringify(local) : local;
+    const [cmd, prefix] = existsSync(local) ? [path, []] : ["npx", ["--yes", "wrangler"]];
     const result = spawnSync(cmd, [...prefix, ...args], {
       cwd,
       input,

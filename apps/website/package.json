@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite build && vite preview",
     "deploy": "vite build && wrangler deploy",
-    "deploy:staging": "vite build && wrangler deploy --env staging",
+    "deploy:staging": "CLOUDFLARE_ENV=staging vite build && wrangler deploy --env staging",
     "generate": "wrangler types --strict-vars=false && tsr generate",
     "postinstall": "wrangler types --strict-vars=false && tsr generate",
     "typecheck": "tsc -p .",

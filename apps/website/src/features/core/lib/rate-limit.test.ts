@@ -26,5 +26,14 @@ describe("checkLimit", () => {
 describe("clientAddress", () => {
   it("reads Cloudflare's client address", () =>
     expect(clientAddress(new Headers({ "cf-connecting-ip": "1.2.3.4" }))).toBe("1.2.3.4"));
+  it.each([
+    ["2001:db8:1:2:aaaa:bbbb:cccc:dddd", "2001:db8:1:2::/64"],
+    ["2001:DB8:1:2:ffff::1", "2001:db8:1:2::/64"],
+    ["2001:db8::1", "2001:db8:0:0::/64"],
+    ["::1", "0:0:0:0::/64"],
+    ["::ffff:1.2.3.4", "::ffff:1.2.3.4"],
+  ])("keys IPv6 %s by its first 64 bits", (ip, key) =>
+    expect(clientAddress(new Headers({ "cf-connecting-ip": ip }))).toBe(key),
+  );
   it("falls back outside Cloudflare", () => expect(clientAddress(new Headers())).toBe("unknown"));
 });

@@ -65,6 +65,13 @@ describe("Billing.stateFor", () => {
     expect(state).toMatchObject({ entitled: false, plan: "free", status: "past_due" });
   });
 
+  it("keeps an unpaid subscription manageable so the page does not offer a second checkout", async () => {
+    const state = await stateFor(KEYS, [
+      { id: "s1", plan: "pro", referenceId: "u1", status: "unpaid" },
+    ]);
+    expect(state).toMatchObject({ entitled: false, plan: "free", status: "unpaid" });
+  });
+
   it("prefers the entitled row when a user has several", async () => {
     const state = await stateFor(KEYS, [
       { id: "s1", plan: "pro", referenceId: "u1", status: "past_due" },
