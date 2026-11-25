@@ -8,6 +8,8 @@ const VarSpec = Schema.Struct({
   description: Schema.String,
   required: Schema.Boolean,
   default: Schema.optionalKey(Schema.String),
+  /** What `.dev.vars.example` shows when it should differ from the deployed default. */
+  example: Schema.optionalKey(Schema.String),
   help: Schema.optionalKey(Schema.String),
 });
 

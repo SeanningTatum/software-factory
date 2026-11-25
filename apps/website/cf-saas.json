@@ -19,7 +19,8 @@
       "LOG_LEVEL",
       "POSTHOG_HOST",
       "STRIPE_PRICE_PRO",
-      "TRUSTED_ORIGINS"
+      "TRUSTED_ORIGINS",
+      "TURNSTILE_SITE_KEY"
     ]
   }
 }

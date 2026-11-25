@@ -21,6 +21,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: ci,
   retries: 0,
+  // Turnstile's widget takes about two seconds to hand over a token, more with every worker busy.
+  expect: { timeout: 15_000 },
   use: { baseURL: url.origin, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {

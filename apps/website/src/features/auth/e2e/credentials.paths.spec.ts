@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { getShortestPaths } from "xstate/graph";
+import { asVisitor } from "#/app/testing/e2e.ts";
 import { credentialsMachine } from "../components/credentials.machine.ts";
 
 /**
@@ -17,10 +18,7 @@ const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(
  * request comes from one address, so without this a second run inside a minute trips it.
  * (On Cloudflare the edge sets this header, so a client can't choose it.)
  */
-test.beforeEach(async ({ page }) => {
-  const octet = () => Math.floor(Math.random() * 256);
-  await page.setExtraHTTPHeaders({ "cf-connecting-ip": `10.${octet()}.${octet()}.${octet()}` });
-});
+test.beforeEach(({ page }) => asVisitor(page));
 
 /** Waits until the form works (its button turns on once React hydrates), then fills it. */
 const fill = async (page: Page, email: string, password: string) => {

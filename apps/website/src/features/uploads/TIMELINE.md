@@ -65,6 +65,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The paths spec sets its made-up client address with `asVisitor(page)`, which leaves Turnstile's requests alone.
 - 2026-11-24 — Route specs for /uploads, /api/uploads and /api/uploads/:id: the normal case, 401 signed out, 400 with no file, 404 for a missing file.
 - 2026-11-24 — `metric` in `events.ts`: files uploaded per active user.
 - 2026-11-24 — R2 calls run through `outsideCall` and the bindings are read with `binding`, both from `core/lib`; imports analytics and ui from `src/features/core/`.

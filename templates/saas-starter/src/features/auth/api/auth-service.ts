@@ -12,6 +12,7 @@ import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
 import { authEvents, SIGN_OUT } from "../lib/auth-events.ts";
 import { auditLog } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
+import { captchaPlugin } from "./captcha.ts";
 import { AuthRateLimiter, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
 
 const IDENTIFIES = new Set(["sign_up_completed", "sign_in_succeeded"]);
@@ -86,7 +87,7 @@ export class Auth extends Context.Service<
             errors.push(message);
           } else if (level === "warn") warnings.push([message, {}]);
         };
-        const plugins = factories.flatMap((factory) => factory(deps));
+        const plugins = [captchaPlugin, ...factories].flatMap((factory) => factory(deps));
         const instance = makeAuth(config, database.db, plugins, log);
 
         /** Writes one audit row. A failed write is logged, never the user's problem. */
