@@ -1,4 +1,4 @@
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import type { Rule } from "./types.ts";
 
 const lineOf = (source: ts.SourceFile, node: ts.Node) =>

@@ -27,7 +27,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "typescript": "^7.0.2"
+    "@typescript/typescript6": "^6.0.2"
   },
   "devDependencies": {
     "@tanstack-cf-saas/tsconfig": "workspace:*",
