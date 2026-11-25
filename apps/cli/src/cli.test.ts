@@ -62,7 +62,7 @@ describe("create", () => {
     expect(result.status).toBe(1);
     expect(result.out).toContain(`The project is in ${join(dir, "app")}`);
     expect(result.out).toContain("npm install");
-    expect(result.out).toContain("npm run db:generate");
+    expect(result.out).toContain("npm run db:generate -- init");
   });
 
   test("commits with a stand-in author when git has no identity", () => {

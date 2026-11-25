@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Cli, setupGithub } from "./github.ts";
+import { type Cli, setDeploySettings, setupGithub } from "./github.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../../../templates/saas-starter");
 const ok = (stdout = "") => ({ ok: true, stdout, stderr: "" });
@@ -60,6 +60,25 @@ describe("setupGithub", () => {
     ]);
   });
 
+  test("sets the deploy settings before the first push, so that push can deploy", () => {
+    const fake = fakeGithub();
+    const missing = setupGithub(TEMPLATE, fake.gh, fake.git, {
+      ...options,
+      deploy: {
+        variables: {
+          CLOUDFLARE_ACCOUNT_ID: "abc123",
+          STAGING_URL: "https://staging.example.com",
+          PRODUCTION_URL: undefined,
+        },
+        token: "t",
+      },
+    });
+    expect(missing).toEqual(["PRODUCTION_URL"]);
+    const at = (text: string) => fake.calls.findIndex((c) => c.includes(text));
+    expect(at("repo create")).toBeLessThan(at("variable set CLOUDFLARE_ACCOUNT_ID"));
+    expect(at("secret set CLOUDFLARE_API_TOKEN")).toBeLessThan(at("git push"));
+  });
+
   test("stops with GitHub's own words when a call fails", () => {
     const fake = fakeGithub();
     const gh: Cli = (args, input) =>
@@ -94,5 +113,71 @@ describe("setupGithub", () => {
     fake.state.heads.add("main");
     expect(() => setupGithub(TEMPLATE, fake.gh, fake.git, options)).toThrow(/Rename its default/);
     expect(fake.calls.some((c) => /push|PATCH|POST/.test(c))).toBe(false);
+  });
+});
+
+describe("setDeploySettings", () => {
+  const recorder = (secrets: Array<string> = []) => {
+    const calls: Array<{ args: ReadonlyArray<string>; input?: string }> = [];
+    const gh: Cli = (args, input) => {
+      calls.push({ args, input });
+      return args[1] === "list" ? ok(JSON.stringify(secrets.map((name) => ({ name })))) : ok();
+    };
+    return { gh, calls };
+  };
+  const variables = {
+    CLOUDFLARE_ACCOUNT_ID: "abc123",
+    STAGING_URL: "https://staging.example.com",
+    PRODUCTION_URL: undefined,
+  };
+
+  test("sets what it knows, sends the token on stdin only, and names what is missing", () => {
+    const { gh, calls } = recorder();
+    const lines: Array<string> = [];
+    const missing = setDeploySettings(gh, variables, "cf-token-value", (l) => lines.push(l));
+    expect(missing).toEqual(["PRODUCTION_URL"]);
+    expect(calls.map((c) => c.args.join(" "))).toEqual([
+      "variable set CLOUDFLARE_ACCOUNT_ID --body abc123",
+      "variable set STAGING_URL --body https://staging.example.com",
+      "secret set CLOUDFLARE_API_TOKEN",
+    ]);
+    expect(calls.at(-1)?.input).toBe("cf-token-value");
+    expect(JSON.stringify([calls.map((c) => c.args), lines])).not.toContain("cf-token-value");
+  });
+
+  test("holds the switch back until staging has its URL and a token", () => {
+    const sets = (
+      v: Record<string, string | undefined>,
+      token?: string,
+      secrets?: Array<string>,
+    ) => {
+      const { gh, calls } = recorder(secrets);
+      const missing = setDeploySettings(gh, v, token, () => {});
+      const on = calls.some((c) =>
+        c.args.join(" ").startsWith("variable set CLOUDFLARE_ACCOUNT_ID"),
+      );
+      return { on, missing };
+    };
+    const ready = { CLOUDFLARE_ACCOUNT_ID: "abc123", STAGING_URL: "https://s.example.com" };
+    expect(sets(ready, "t").on).toBe(true);
+    expect(sets(ready, undefined, ["CLOUDFLARE_API_TOKEN"]).on).toBe(true);
+    // No token, or no URL: deploy.yml would run and could only fail.
+    expect(sets(ready)).toEqual({
+      on: false,
+      missing: ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+    });
+    expect(sets({ ...ready, STAGING_URL: undefined }, "t")).toEqual({
+      on: false,
+      missing: ["CLOUDFLARE_ACCOUNT_ID", "STAGING_URL"],
+    });
+  });
+
+  test("a missing token counts as missing only when the repository has none", () => {
+    expect(setDeploySettings(recorder().gh, {}, undefined, () => {})).toEqual([
+      "CLOUDFLARE_API_TOKEN",
+    ]);
+    const set = recorder(["CLOUDFLARE_API_TOKEN"]);
+    expect(setDeploySettings(set.gh, {}, undefined, () => {})).toEqual([]);
+    expect(set.calls.some((c) => c.args[1] === "set")).toBe(false);
   });
 });

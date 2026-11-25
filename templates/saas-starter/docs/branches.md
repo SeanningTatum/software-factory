@@ -34,6 +34,32 @@ A push to `staging` also runs `ci.yml` and `deploy.yml`.
 The short checks take a few minutes and catch most mistakes. The slow ones (a real browser, the
 size of every page) run once, on the change that will ship.
 
+## The first deploy
+
+The `create` wizard offers to do all of this when it makes the project: it sets up Cloudflare,
+asks for each environment's URL, creates the GitHub repository and hands it the deploy settings
+before the first push, so that push deploys staging. If you skipped a step, or need it again
+after adding a feature, these are the same steps as commands, in this order:
+
+```bash
+bunx create-tanstack-cf-saas setup                                        # D1, KV, R2 and secrets, for both environments
+bunx create-tanstack-cf-saas setup --env staging --var APP_URL=https://...   # then the same for production
+bunx create-tanstack-cf-saas github                                       # repository, branches, rules, deploy settings
+```
+
+The last one gives GitHub Actions what `deploy.yml` reads:
+
+| Setting                 | Kind     | Where the value comes from                                   |
+| ----------------------- | -------- | ------------------------------------------------------------ |
+| `CLOUDFLARE_ACCOUNT_ID` | variable | `wrangler login`, when you have one account; else your shell |
+| `STAGING_URL`           | variable | staging's `APP_URL` in `wrangler.jsonc`                      |
+| `PRODUCTION_URL`        | variable | production's `APP_URL`                                       |
+| `CLOUDFLARE_API_TOKEN`  | secret   | you type it once; it goes to GitHub and nowhere else         |
+
+Make the token in the Cloudflare dashboard (My Profile → API Tokens → the "Edit Cloudflare
+Workers" template, plus D1 edit if you use the database). The command names anything it could not
+work out and how to supply it. Until the account id is set, both deploy jobs skip and say nothing.
+
 ## Ship a release
 
 ```mermaid

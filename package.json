@@ -17,6 +17,7 @@
     "test": "turbo run test",
     "check": "bun run lint && turbo run typecheck test build",
     "try": "bun apps/cli/scripts/try.ts",
+    "teardown": "bun apps/cli/scripts/teardown.ts",
     "changeset": "changeset",
     "release": "turbo run build --filter=./packages/* --filter=create-tanstack-cf-saas && changeset publish"
   },

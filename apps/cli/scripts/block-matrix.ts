@@ -104,7 +104,9 @@ for (const [name, features] of Object.entries(combos)) {
   const steps: Array<[string, string, Array<string>]> = [
     ["install", "bun", ["install"]],
     ...(hasTables(dir)
-      ? ([["db:generate", "bun", ["run", "db:generate"]]] as Array<[string, string, Array<string>]>)
+      ? ([["db:generate", "bun", ["run", "db:generate", "init"]]] as Array<
+          [string, string, Array<string>]
+        >)
       : []),
     ["biome", "bunx", ["biome", "check", "."]],
     ["house rules", "bunx", ["cf-saas-lint"]],

@@ -15,6 +15,11 @@ export interface GithubOptions {
   /** The repository's name, read only when there is no `origin` yet and one is created. */
   readonly name: () => string;
   readonly visibility: "private" | "public";
+  /** What deploy.yml reads; set before the first push so that push can deploy staging. */
+  readonly deploy?: {
+    readonly variables: Readonly<Record<string, string | undefined>>;
+    readonly token: string | undefined;
+  };
   readonly log: (line: string) => void;
 }
 
@@ -64,19 +69,68 @@ const applyRulesets = (rulesets: ReadonlyArray<Ruleset>, gh: Cli, log: (line: st
   }
 };
 
-/**
- * Puts the project on GitHub with its branch model: `staging` is the default branch, `production`
- * starts as a copy of it, and each gets the ruleset in `.github/rulesets/`. Safe to run again: a
- * repository, branch or ruleset that exists is kept or updated, never made twice.
- */
-export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOptions) => {
-  const rulesets = readRulesets(root);
+/** Stops unless gh is installed and signed in. Call it before asking for anything gh will need. */
+export const requireGh = (gh: Cli) => {
   const auth = gh(["auth", "status"]);
   if (!auth.ok)
     throw new GithubError(
       // gh's own words follow: a stale login on another host fails this too.
       `The GitHub CLI is not ready. Install it (https://cli.github.com) and run \`gh auth login\`.\n${auth.stderr.trim()}`.trim(),
     );
+};
+
+/** The repository secret deploy.yml reads; the variables beside it are not secret. */
+export const DEPLOY_SECRET = "CLOUDFLARE_API_TOKEN";
+/** The variable that switches deploy.yml on: its jobs skip until it is set. */
+export const DEPLOY_SWITCH = "CLOUDFLARE_ACCOUNT_ID";
+
+/** Whether the repository has the secret. GitHub lists names only; a value can't be read back. */
+export const hasSecret = (gh: Cli, name: string) => {
+  const listed = gh(["secret", "list", "--json", "name"]);
+  return (
+    listed.ok && (JSON.parse(listed.stdout) as Array<{ name: string }>).some((s) => s.name === name)
+  );
+};
+
+/**
+ * Gives GitHub Actions what deploy.yml needs: each repository variable that has a value, and the
+ * Cloudflare token when one is given. The token goes to gh on stdin, never as an argument.
+ * The switch is held back until staging has its URL and the token, so the first deploy to run is
+ * one that can pass. Returns the names still missing, so the caller can say how to supply each.
+ */
+export const setDeploySettings = (
+  gh: Cli,
+  variables: Readonly<Record<string, string | undefined>>,
+  token: string | undefined,
+  log: (line: string) => void,
+): ReadonlyArray<string> => {
+  const missing: Array<string> = [];
+  const hasToken = Boolean(token) || hasSecret(gh, DEPLOY_SECRET);
+  const canDeploy = hasToken && Boolean(variables.STAGING_URL);
+  for (const [name, value] of Object.entries(variables)) {
+    if (!value || (name === DEPLOY_SWITCH && !canDeploy)) {
+      missing.push(name);
+      continue;
+    }
+    must(gh(["variable", "set", name, "--body", value]), `Variable ${name}`);
+    log(`variable ${name}: ${value}`);
+  }
+  if (token) {
+    must(gh(["secret", "set", DEPLOY_SECRET], token), `Secret ${DEPLOY_SECRET}`);
+    log(`secret ${DEPLOY_SECRET}: set`);
+  } else if (!hasToken) missing.push(DEPLOY_SECRET);
+  return missing;
+};
+
+/**
+ * Puts the project on GitHub with its branch model: `staging` is the default branch, `production`
+ * starts as a copy of it, and each gets the ruleset in `.github/rulesets/`. Safe to run again: a
+ * repository, branch or ruleset that exists is kept or updated, never made twice. Returns the names
+ * of the deploy settings it was not given.
+ */
+export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOptions) => {
+  const rulesets = readRulesets(root);
+  requireGh(gh);
   const needLocalStaging = () => {
     if (!git(["rev-parse", "--verify", "--quiet", "refs/heads/staging"]).ok)
       throw new GithubError(
@@ -101,6 +155,9 @@ export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOpti
     );
     options.log(`repository ${name}: created (${options.visibility})`);
   }
+  const missing = options.deploy
+    ? setDeploySettings(gh, options.deploy.variables, options.deploy.token, options.log)
+    : [];
   const heads = must(git(["ls-remote", "--heads", "origin"]), "git ls-remote");
   const onRemote = (branch: string) => new RegExp(`refs/heads/${branch}$`, "m").test(heads);
   if (!onRemote("staging")) {
@@ -124,4 +181,5 @@ export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOpti
   );
   options.log("default branch: staging");
   applyRulesets(rulesets, gh, options.log);
+  return missing;
 };

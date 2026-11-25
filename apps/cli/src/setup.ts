@@ -328,5 +328,45 @@ export const setupEnvs = (
   return envNames;
 };
 
+/**
+ * What the settings typed during `create` give one environment. They were typed for local use, so
+ * they are test data: staging gets them, production never does.
+ */
+export const typedSettings = (
+  blanks: ReadonlyArray<{ readonly key: string; readonly secret: boolean }>,
+  typed: Readonly<Record<string, string>> | undefined,
+  env: EnvName,
+) => {
+  const pick = (secret: boolean): Record<string, string> =>
+    Object.fromEntries(
+      blanks.flatMap((b) => {
+        const value = env === "staging" && b.secret === secret ? typed?.[b.key] : undefined;
+        return value ? [[b.key, value]] : [];
+      }),
+    );
+  return { vars: pick(false), secrets: pick(true) };
+};
+
+/** The deployed URL of `env`, once APP_URL holds one; undefined while it is blank or local. */
+export const appUrl = (root: string, env: EnvName): string | undefined => {
+  const value = varsFor(wranglerText(root), env).APP_URL;
+  // The smoke test appends /api/health, so no trailing slash.
+  return isBlank(value) || isLocalOnly("APP_URL", value)
+    ? undefined
+    : String(value).replace(/\/+$/, "");
+};
+
+/** The Cloudflare account wrangler is logged in to, when there is exactly one to choose. */
+export const accountId = (wrangler: Wrangler): string | undefined => {
+  const who = wrangler(["whoami", "--json"]);
+  if (!who.ok) return undefined;
+  try {
+    const { accounts = [] } = JSON.parse(who.stdout) as { accounts?: Array<{ id: string }> };
+    return accounts.length === 1 ? accounts[0]?.id : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 /** Whether wrangler is logged in. Plain `whoami` exits 0 even when it is not; `--json` does not. */
 export const isLoggedIn = (wrangler: Wrangler) => wrangler(["whoami", "--json"]).ok;

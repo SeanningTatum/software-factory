@@ -31,6 +31,14 @@ describe("runbook config", () => {
   });
 });
 
+describe("migrations", () => {
+  it("can't be generated without a name", () => {
+    // drizzle-kit stops on a `--name` with no value, so its random names never reach drizzle/.
+    const { scripts } = JSON.parse(read("package.json"));
+    if (scripts["db:generate"]) expect(scripts["db:generate"]).toMatch(/ --name$/);
+  });
+});
+
 /** The rulesets name workflow jobs as required checks; a renamed job would block every merge. */
 describe("branch rules", () => {
   const workflow = (name: string) => read(`.github/workflows/${name}.yml`);

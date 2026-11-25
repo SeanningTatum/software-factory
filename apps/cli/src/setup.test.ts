@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { prune } from "@tanstack-cf-saas/blocks";
 import { parse } from "jsonc-parser";
 import {
+  accountId,
+  appUrl,
   isLoggedIn,
   isReady,
   provision,
@@ -12,6 +14,7 @@ import {
   readiness,
   SetupError,
   setupEnvs,
+  typedSettings,
   type Wrangler,
 } from "./setup.ts";
 
@@ -206,5 +209,54 @@ describe("putSecret", () => {
   test("fails with wrangler's error", () => {
     const failing: Wrangler = () => ({ ok: false, stdout: "", stderr: "not authorized" });
     expect(() => putSecret(failing, "K", "staging", "v")).toThrow(/K \(staging\).*not authorized/s);
+  });
+});
+
+describe("what GitHub Actions needs from Cloudflare's side", () => {
+  test("an environment's URL is its APP_URL, once that is not local", async () => {
+    const dir = project([]);
+    expect(appUrl(dir, "staging")).toBeUndefined();
+    await provision(dir, fakeWrangler().wrangler, {
+      envs: ["staging"],
+      vars: { APP_URL: "https://staging.example.com/" },
+      secretValue: async () => undefined,
+      log: () => {},
+    });
+    expect(appUrl(dir, "staging")).toBe("https://staging.example.com");
+    expect(appUrl(dir, "production")).toBeUndefined();
+  });
+
+  test("the account is wrangler's, only when there is exactly one", () => {
+    const who =
+      (accounts: Array<{ id: string }>): Wrangler =>
+      () => ({
+        ok: true,
+        stdout: JSON.stringify({ loggedIn: true, accounts }),
+        stderr: "",
+      });
+    expect(accountId(who([{ id: "one" }]))).toBe("one");
+    expect(accountId(who([{ id: "one" }, { id: "two" }]))).toBeUndefined();
+    expect(accountId(() => ({ ok: false, stdout: "", stderr: "" }))).toBeUndefined();
+    expect(accountId(() => ({ ok: true, stdout: "not json", stderr: "" }))).toBeUndefined();
+  });
+});
+
+describe("settings typed during create", () => {
+  const blanks = [
+    { key: "STRIPE_SECRET_KEY", secret: true },
+    { key: "STRIPE_PRICE_PRO", secret: false },
+    { key: "LEFT_EMPTY", secret: true },
+  ];
+  const typed = { STRIPE_SECRET_KEY: "typed-test-key", STRIPE_PRICE_PRO: "price_123" };
+
+  test("go to staging, split into secrets and vars", () => {
+    expect(typedSettings(blanks, typed, "staging")).toEqual({
+      secrets: { STRIPE_SECRET_KEY: "typed-test-key" },
+      vars: { STRIPE_PRICE_PRO: "price_123" },
+    });
+  });
+
+  test("never go to production: they are test data", () => {
+    expect(typedSettings(blanks, typed, "production")).toEqual({ secrets: {}, vars: {} });
   });
 });

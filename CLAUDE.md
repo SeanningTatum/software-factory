@@ -39,9 +39,8 @@ that builds projects from it.
   alone, each optional one with what it requires, and everything together, then runs every gate on
   each.
 - **The template keeps one migration, `drizzle/0000_init.sql`.** After a schema change, delete
-  `drizzle/*.sql` and `drizzle/meta/`, run `bun run db:generate`, and rename the file to
-  `0000_init.sql` (and its tag in `meta/_journal.json`). New projects never see it: the CLI's bundle
-  leaves `drizzle/` out and `create` generates their own.
+  `drizzle/*.sql` and `drizzle/meta/`, and run `bun run db:generate init`. New projects never see
+  it: the CLI's bundle leaves `drizzle/` out and `create` generates their own `0000_init.sql`.
 - Server code in the template is Effect; every flow and lifecycle is an XState machine. The rules and
   the gates that enforce them are in `templates/saas-starter/CLAUDE.md`.
 

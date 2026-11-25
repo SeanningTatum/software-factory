@@ -11,14 +11,25 @@ bun run db:migrate:local   # when the db feature is on
 bun run dev
 ```
 
+After you change a `schema.ts`, name the migration for what it changes; the script fails without a
+name:
+
+```bash
+bun run db:generate add_invoices   # writes drizzle/0001_add_invoices.sql
+```
+
 `.dev.vars` holds local settings and secrets; `.dev.vars.example` lists every one with what it is for.
 
 ## Ship it
 
+The `create` wizard offers these steps when it makes the project. Run them again here after you
+add a feature, or if you skipped one:
+
 ```bash
 bunx create-tanstack-cf-saas setup          # create D1, KV and R2, set secrets, for production and staging
 bunx create-tanstack-cf-saas setup --check  # what is still missing, and the command that fixes each
-bunx create-tanstack-cf-saas github         # the GitHub repository, its two branches and their rules
+bunx create-tanstack-cf-saas setup --env staging --var APP_URL=https://...   # and the same for production
+bunx create-tanstack-cf-saas github         # the GitHub repository, its branches and rules, and what CI deploys with
 bun run deploy:staging                      # by hand; CI does both once the repository variables are set
 bun run deploy
 ```

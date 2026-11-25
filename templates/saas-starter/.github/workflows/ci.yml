@@ -52,16 +52,17 @@ jobs:
         # db:generate writes a file only when a schema.ts changed and its migration was not made.
         run: |
           if grep -q '"db:generate"' package.json; then
-            bun run db:generate
+            bun run db:generate unnamed
             if [ -n "$(git status --porcelain -- drizzle)" ]; then
               git status --porcelain -- drizzle
-              echo "::error::A schema changed without a migration. Run bun run db:generate and commit drizzle/."
+              echo "::error::A schema changed without a migration. Run bun run db:generate <what_changed> and commit drizzle/."
               exit 1
             fi
           fi
 
   # A pull request's own commits must hold no keys; a push to staging checks the files as they stand.
-  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  # Build a test value that looks like a key from parts, as redact.test.ts does. An allow comment
+  # quiets gitleaks but not GitHub, whose push protection refuses the whole push.
   secrets:
     runs-on: ubuntu-latest
     steps:

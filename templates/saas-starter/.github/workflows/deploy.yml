@@ -5,6 +5,8 @@
 # Needs the repository secret CLOUDFLARE_API_TOKEN and the repository variables CLOUDFLARE_ACCOUNT_ID,
 # STAGING_URL and PRODUCTION_URL (Settings → Variables, not Secrets). Optional secret
 # ALERT_WEBHOOK_URL: a failed production deploy posts there.
+# `bunx create-tanstack-cf-saas github` sets all four from wrangler's login and each environment's
+# APP_URL, and asks for the token.
 # Skipped until the variable CLOUDFLARE_ACCOUNT_ID is set, so a fresh fork stays green.
 #
 # The smoke test calls /api/health, which answers 503 unless every required setting is set, APP_URL

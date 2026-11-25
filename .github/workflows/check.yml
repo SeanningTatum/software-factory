@@ -53,7 +53,7 @@ jobs:
       - name: Migrations match the schema
         # db:generate writes a file only when a schema.ts changed and its migration was not made.
         run: |
-          bun run --cwd templates/saas-starter db:generate
+          bun run --cwd templates/saas-starter db:generate unnamed
           if [ -n "$(git status --porcelain -- '*/drizzle/*')" ]; then
             git status --porcelain -- '*/drizzle/*'
             echo "::error::A schema changed without a migration. See the migration rule in CLAUDE.md."
@@ -105,7 +105,8 @@ jobs:
       - run: bun run --cwd packages/blocks test
 
   # A pull request's own commits must hold no keys; a push to staging checks the files as they stand.
-  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  # Build a test value that looks like a key from parts, as redact.test.ts does. An allow comment
+  # quiets gitleaks but not GitHub, whose push protection refuses the whole push.
   secrets:
     runs-on: ubuntu-latest
     permissions:
@@ -114,6 +115,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: No allowed keys in the template
+        # A new project's first push goes through GitHub's push protection, which ignores this
+        # comment and refuses the push.
+        run: |
+          if git grep -n "gitleaks:allow" -- templates ':!*.md'; then
+            echo "::error::Build the value from parts instead of allowing it; see redact.test.ts."; exit 1
+          fi
       - name: No keys in the code
         env:
           BASE: ${{ github.base_ref }}

@@ -8,8 +8,15 @@ export const detectPackageManager = (
 
 export const installCommand = (pm: PackageManager): [string, Array<string>] => [pm, ["install"]];
 
-export const runCommand = (pm: PackageManager, script: string): [string, Array<string>] =>
-  pm === "npm" ? ["npm", ["run", script]] : [pm, ["run", script]];
+/** Runs a package script; `args` go to the script itself, which npm needs `--` for. */
+export const runCommand = (
+  pm: PackageManager,
+  script: string,
+  ...args: ReadonlyArray<string>
+): [string, Array<string>] => [
+  pm,
+  ["run", script, ...(pm === "npm" && args.length ? ["--"] : []), ...args],
+];
 
 export const execCommand = (pm: PackageManager): string =>
   ({ bun: "bunx", pnpm: "pnpm dlx", npm: "npx", yarn: "yarn dlx" })[pm];
