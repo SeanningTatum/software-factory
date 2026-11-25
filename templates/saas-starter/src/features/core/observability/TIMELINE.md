@@ -27,14 +27,14 @@ JSON logs stamped with the request id and user, redaction, error reports to the 
 - 2026-11-24 — The fake Stripe key in `lib/redact.test.ts` carries a `gitleaks:allow` comment. Why: CI's secret scan fails on anything shaped like a key, and this one is Stripe's public docs key.
 - 2026-11-24 — Browser reports never alert, a failed webhook post reopens the quiet window, a setting that is not a URL is ignored, and alert text is capped with mentions off. Why: `/api/browser-report` is public, so one fake report could otherwise silence real alerts for five minutes.
 - 2026-11-24 — Alerts go to an optional `ALERT_WEBHOOK_URL` (Slack or Discord), one per burst, then five quiet minutes per isolate. Why: the owner chose a webhook; it needs no paid product and can be tested here. A Durable Object can hold the window if bursts fan out.
-- 2026-11-24 — `/api/browser-report` is rate-limited per address by the new `REPORT_LIMITER` binding (10 a minute) and reads at most 8 KB as it arrives. Why: anyone could spend the error tracker's quota, after which real errors are dropped.
+- 2026-11-24 — `/api/browser-report` is rate-limited per address by the `REPORT_LIMITER` binding (10 a minute) and reads at most 8 KB as it arrives. Why: anyone could spend the error tracker's quota, after which real errors are dropped.
 - 2026-11-24 — Lives in `src/features/core/` as a services-only module; its only route is the server route `/api/browser-report`. Why: core holds shared modules of one kind, and this one is services and helpers.
 - 2026-11-24 — Every log line is one JSON object stamped with the request id, the user and the current span. Why: Workers Logs reads JSON, and one id ties a request's lines together.
-- 2026-11-24 — `lib/log-sink.ts` is the only file that writes to the console. Why: logs leave through one door, and Biome's `noConsole` stays on everywhere else.
+- 2026-11-24 — `lib/log-sink.ts` is the only file that writes to the console. Why: logs leave through one door.
 - 2026-11-24 — Redaction turns emails into a short stable hash and strips tokens, keys, cookies and Stripe keys before anything is logged or reported. Why: logs hold no secrets or personal data, yet one user's lines can still be followed.
 - 2026-11-24 — A missing or bad `ERROR_REPORTER` or `SENTRY_DSN` falls back to the console. Why: a wrong setting must never hide errors.
 - 2026-11-24 — Errors go through Effect's `ErrorReporter`; Sentry gets an envelope built by hand and sent with fetch. Why: Biome bans the Sentry packages, so no SDK joins the Worker.
-- 2026-11-24 — Browser errors post to `/api/browser-report` (8 KB cap, Schema-checked) and reach the same reporter as server errors. Why: one place to see every error.
+- 2026-11-24 — `/api/browser-report` takes browser error reports (8 KB cap, Schema-checked) and hands them to the same reporter as server errors; nothing in the template sends one yet. Why: one place to see every error.
 
 ## History
 

@@ -1,5 +1,22 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { loadManifests, timelinePath } from "@tanstack-cf-saas/blocks";
 import { freshHistory } from "./timeline.ts";
+
+const TEMPLATE = join(import.meta.dirname, "../template");
+const squash = (text: string) => text.replace(/\s+/g, " ").trim();
+
+describe("the template", () => {
+  // Only a project made from the template keeps a History; `create` and `add` start it.
+  test("ships every TIMELINE.md with an empty History", () => {
+    const withLines = [...loadManifests(TEMPLATE).values()].map(timelinePath).filter((path) => {
+      const text = readFileSync(join(TEMPLATE, path), "utf8");
+      return squash(freshHistory(text, "")) !== squash(text);
+    });
+    expect(withLines).toEqual([]);
+  });
+});
 
 const LINE = "- 2030-01-02 — Created from create-tanstack-cf-saas 1.0.0.";
 
