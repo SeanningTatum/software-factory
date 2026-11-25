@@ -85,14 +85,3 @@ stateDiagram-v2
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-25 — `Billing.stateFor` also reads `unpaid` rows, so the page shows "Manage" and the plan card says the payment failed, not a second Checkout. (https://github.com/SeanningTatum/tanstack-cf-saas-starter/pull/16)
-- 2026-11-24 — The paths spec sets its made-up client address with `asVisitor(page)`, which leaves Turnstile's requests alone.
-- 2026-11-24 — `e2e/billing.route.spec.ts` covers /billing: the plan page with an axe scan, and the redirect to /login when signed out.
-- 2026-11-24 — Checkout and subscription events carry the user's id (the subscription's `referenceId` on webhooks), so they reach the audit log and analytics under the right user.
-- 2026-11-24 — `metric` in `events.ts`: checkouts that become paid subscriptions, less cancellations.
-- 2026-11-24 — `Billing.stateFor` reads every live row and takes the first entitled one, else the first; it used to take an arbitrary row with `.limit(1)`, so `past_due` beside `active` could hide the paid plan.
-- 2026-11-24 — Indexed `subscription.reference_id`, `stripe_subscription_id` and `stripe_customer_id` in migration `0001_indexes`.
-- 2026-11-24 — Imports db and ui from `src/features/core/`.
-- 2026-11-24 — The checkout spec waits for an enabled button and the dashboard before it goes on, and the Stripe Checkout test skips, with the reason, when the page shows the setup hint.
-- 2026-11-24 — Moved into `src/features/billing/` from `src/blocks/billing/`, with pages from `src/routes/(billing)/` when the template switched from blocks to features.

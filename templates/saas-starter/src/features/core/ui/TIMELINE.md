@@ -32,6 +32,3 @@ shadcn/ui components, the cn helper, useHydrated, and the site header and footer
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-24 — Moved to `src/features/core/ui/` from `src/features/ui/`. `SiteFooter` takes children; the cookie settings button and its hydration test moved to `consent`.
-- 2026-11-24 — Moved into `src/features/ui/` from `src/components/` and `src/lib/cn.ts` when the template switched from blocks to features.

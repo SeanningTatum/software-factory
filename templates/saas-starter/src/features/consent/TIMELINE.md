@@ -59,7 +59,3 @@ stateDiagram-v2
 ## History
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
-
-- 2026-11-24 — Took `tracker.tsx` from analytics and the cookie settings button from the ui footer; imports core modules from `src/features/core/`.
-- 2026-11-24 — The banner's buttons stay disabled until hydration, through the shared `Button`; before, an early click on Allow or No thanks was lost and the banner stayed. Added an SSR test for it.
-- 2026-11-24 — Moved into `src/features/consent/` from `src/core/consent/` when the template switched from blocks to features.

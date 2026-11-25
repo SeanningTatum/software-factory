@@ -16,7 +16,6 @@
       "!**/worker-configuration.d.ts",
       "!**/drizzle/meta",
       "!templates",
-      "!apps/website",
       "!apps/cli/template",
       "!apps/cli/harness"
     ]

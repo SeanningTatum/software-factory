@@ -1,7 +1,6 @@
 # tanstack-cf-saas-starter
 
-A SaaS template on TanStack Start and Cloudflare Workers, the CLI that builds projects from it, and
-the website that documents it.
+A SaaS template on TanStack Start and Cloudflare Workers, and the CLI that builds projects from it.
 
 ## Run it locally
 
@@ -27,28 +26,6 @@ under `.wrangler/`.
 
 What you can try without any keys: sign-up and sign-in, the dashboard, file uploads, and the
 consent banner. Billing shows a setup hint until you add Stripe test keys to `.dev.vars`.
-
-### The website
-
-```bash
-cd apps/website
-cp .dev.vars.example .dev.vars
-echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> .dev.vars
-bun run db:migrate:local
-bun run dev
-```
-
-Open http://localhost:3001.
-
-### Both at once
-
-Once each has its `.dev.vars` and migrated database, from the repo root:
-
-```bash
-bun run dev
-```
-
-The template runs on http://localhost:3000 and the website on http://localhost:3001.
 
 ## Check your changes
 
@@ -106,7 +83,6 @@ project made this way is for trying things, not for shipping.
 | ------------------------- | -------------------------------------------------------------------------------- |
 | `templates/saas-starter/` | The template, with every feature on. Start with its `FEATURES.md`.               |
 | `apps/cli/`               | `create-tanstack-cf-saas`                                                        |
-| `apps/website/`           | The landing page and docs, built from the template                               |
 | `packages/`               | Shared lint rules, TypeScript presets, and the tool that wires features together |
 
 How the template scores against its goals is in [SCORECARD.md](SCORECARD.md). Open work is in
