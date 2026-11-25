@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import {
   cpSync,
   existsSync,
@@ -10,8 +10,9 @@ import {
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { loadManifests, prune, readProject, sync, writeProject } from "@tanstack-cf-saas/blocks";
-import { applyEdits, modify } from "jsonc-parser";
+import { applyEdits, modify, parse } from "jsonc-parser";
 import { installHarness } from "./harness.ts";
+import { GENERATED_SECRETS, SECRET_BYTES } from "./setup.ts";
 import { resetHistory, today } from "./timeline.ts";
 import { VERSION } from "./version.ts";
 
@@ -51,7 +52,7 @@ export const blankSettings = (
         ...Object.entries(m.vars ?? {}).map(([key, spec]) => ({ key, spec, secret: false })),
         ...Object.entries(m.secrets ?? {}).map(([key, spec]) => ({ key, spec, secret: true })),
       ]
-        .filter(({ key, spec }) => spec.required && !spec.default && !GENERATED.has(key))
+        .filter(({ key, spec }) => spec.required && !spec.default && !GENERATED_SECRETS.has(key))
         .map(({ key, spec, secret }) => ({
           key,
           feature: m.title,
@@ -91,8 +92,6 @@ export const parseFeatures = (list: string | ReadonlyArray<string>) => {
  */
 export const MAX_NAME = 63 - "-uploads-staging".length;
 const NAME = new RegExp(`^[a-z0-9](?:[a-z0-9-]{0,${MAX_NAME - 2}}[a-z0-9])?$`);
-const SECRET_BYTES = 36;
-const GENERATED = new Set(["BETTER_AUTH_SECRET"]);
 
 /** Cloudflare and npm both accept this: lowercase letters, digits and dashes. */
 export const validateName = (name: string): string | undefined =>
@@ -140,6 +139,35 @@ const rename = (dir: string, name: string) => {
     ),
   );
   edit(join(dir, "README.md"), (text) => text.replace(/^# .*$/m, `# ${titleCase(name)}`));
+};
+
+/**
+ * Rate-limit namespace ids are account-wide on Cloudflare, so two projects with the manifests'
+ * ids would share counters. Gives every limiter, in production and staging, its own random id.
+ */
+const uniqueNamespaceIds = (dir: string) =>
+  edit(join(dir, "wrangler.jsonc"), (text) => {
+    const used = new Set<number>();
+    let out = text;
+    for (const path of [[], ["env", "staging"]]) {
+      const limiters = at(parse(out), path)?.ratelimits ?? [];
+      for (let i = 0; i < limiters.length; i++) {
+        let id = randomInt(1_000_000, 2 ** 31);
+        while (used.has(id)) id = randomInt(1_000_000, 2 ** 31);
+        used.add(id);
+        out = applyEdits(
+          out,
+          modify(out, [...path, "ratelimits", i, "namespace_id"], String(id), {}),
+        );
+      }
+    }
+    return out;
+  });
+
+const at = (value: unknown, path: ReadonlyArray<string>): { ratelimits?: Array<unknown> } => {
+  let cursor = value as Record<string, unknown> | undefined;
+  for (const key of path) cursor = cursor?.[key] as Record<string, unknown> | undefined;
+  return (cursor ?? {}) as { ratelimits?: Array<unknown> };
 };
 
 /** A .dev.vars ready for `dev`: the example, with a fresh auth secret and the values given. */
@@ -190,6 +218,7 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
 
   const kept = prune(targetDir, features);
   rename(targetDir, name);
+  uniqueNamespaceIds(targetDir);
   sync(targetDir);
   resetHistory(
     targetDir,

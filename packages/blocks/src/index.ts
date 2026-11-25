@@ -13,6 +13,7 @@ export { readProject, writeProject } from "./project.ts";
 export { check, sync } from "./sync.ts";
 export { timelinePath } from "./timeline.ts";
 export {
+  formattingOf,
   PLACEHOLDER_D1_ID,
   PLACEHOLDER_KV_ID,
   readBinding,

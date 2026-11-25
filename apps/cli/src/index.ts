@@ -102,10 +102,12 @@ const main = defineCommand({
         const vars = rawArgs.flatMap((arg, i) =>
           arg === "--var" ? [rawArgs[i + 1] ?? ""] : arg.startsWith("--var=") ? [arg.slice(6)] : [],
         );
+        const bad = vars.find((v) => !v.includes("="));
+        if (bad !== undefined) throw new Error(`--var needs KEY=value, got "${bad}".`);
         return setup({
           check: args.check,
           env: args.env,
-          vars: vars.filter((v) => v.includes("=")),
+          vars,
           yes: args.yes,
         });
       }),

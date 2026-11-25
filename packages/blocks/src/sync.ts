@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, normalize, posix, relative } from "node:path";
-import { importSpecifiers, TIMELINE_FILE, toSlash } from "@tanstack-cf-saas/lint";
+import { importSpecifiers, TIMELINE_FILE, toSlash, walk } from "@tanstack-cf-saas/lint";
 import { FEATURES_INDEX, featuresIndex } from "./features-index.ts";
 import { devVarsExample, generateFiles } from "./generate.ts";
 import { withRequirements } from "./graph.ts";
@@ -22,6 +22,8 @@ import { patchWrangler, WRANGLER_FILE } from "./wrangler.ts";
 const DEV_VARS_EXAMPLE = ".dev.vars.example";
 
 const read = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : undefined);
+/** A Windows checkout (git autocrlf) has CRLF; the generated text has LF. */
+const lf = (text: string | undefined) => text?.replaceAll("\r\n", "\n");
 
 /** Each feature's TIMELINE.md with a fresh generated block, plus the FEATURES.md index. */
 const docs = (root: string, manifests: Features) => {
@@ -60,7 +62,7 @@ export const sync = (root: string): ReadonlyArray<string> => {
   const changed: Array<string> = [];
   for (const [path, text] of files) {
     const full = join(root, path);
-    if (read(full) === text) continue;
+    if (lf(read(full)) === lf(text)) continue;
     mkdirSync(dirname(full), { recursive: true });
     writeFileSync(full, text);
     changed.push(path);
@@ -70,16 +72,6 @@ export const sync = (root: string): ReadonlyArray<string> => {
 };
 
 const SOURCE = /\.(ts|tsx)$/;
-
-/** Every file under `dir`, skipping node_modules and dotfiles. */
-const walk = (dir: string): ReadonlyArray<string> => {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) return [];
-    const path = join(dir, entry.name);
-    return entry.isDirectory() ? walk(path) : [path];
-  });
-};
 
 /** The app's own folder: request context, runtime, errors, middleware. Not a feature. */
 export const APP_DIR = "src/app";
@@ -194,7 +186,8 @@ const placeProblem = (manifests: Features, file: string, owner: string | undefin
 export const boundaryProblems = (root: string): ReadonlyArray<Problem> => {
   const manifests = loadManifests(root);
   const problems: Array<Problem> = [];
-  for (const file of walk(join(root, "src")).map((f) => toSlash(relative(root, f)))) {
+  const src = join(root, "src");
+  for (const file of existsSync(src) ? walk(root, src) : []) {
     const owner = ownerOf(file);
     if (owner === "gen") continue;
     const message = placeProblem(manifests, file, owner);
@@ -221,7 +214,7 @@ export const check = (root: string): ReadonlyArray<Problem> => {
   const stale: Array<Problem> = [];
   for (const [path, text] of files) {
     const current = read(join(root, path));
-    if (current !== text)
+    if (lf(current) !== lf(text))
       stale.push({ file: path, message: staleMessage(path, current !== undefined) });
   }
   return [...stale, ...boundaryProblems(root)];

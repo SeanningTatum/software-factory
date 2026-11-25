@@ -42,7 +42,7 @@ const sourceMeta = (harness: string) =>
 
 const harnessFiles = (harness: string) =>
   walk(harness)
-    .map((f) => relative(harness, f))
+    .map((f) => relative(harness, f).replaceAll("\\", "/"))
     .filter((f) => f !== META);
 
 /** Copies the harness into `.claude/` and records what was copied, so later edits can be told apart. */
