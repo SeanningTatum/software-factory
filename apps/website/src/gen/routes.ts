@@ -10,5 +10,4 @@ export const routes = rootRoute("__root.tsx", [
   physical("../features/auth/routes"),
   physical("../features/billing/routes"),
   physical("../features/uploads/routes"),
-  physical("../features/workflows/routes"),
 ]);

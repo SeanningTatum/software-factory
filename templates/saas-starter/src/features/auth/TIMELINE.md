@@ -3,14 +3,14 @@
 
 # Auth (`auth`)
 
-Better Auth with email and password (GitHub when keys are set), sessions in D1, rate-limited sign-in and sign-up.
+Better Auth with email and password, sessions in D1, rate-limited sign-in and sign-up.
 
 - Kind: feature, optional; `cf-saas-blocks remove auth` takes it out
 - Depends on: [db](../core/db/TIMELINE.md)
 - Used by: [billing](../billing/TIMELINE.md), [uploads](../uploads/TIMELINE.md)
 - Bindings: `AUTH_LIMITER` (ratelimit)
-- Vars: `APP_URL` (required), `GITHUB_CLIENT_ID`, `TRUSTED_ORIGINS`
-- Secrets: `BETTER_AUTH_SECRET` (required), `GITHUB_CLIENT_SECRET`
+- Vars: `APP_URL` (required), `TRUSTED_ORIGINS`
+- Secrets: `BETTER_AUTH_SECRET` (required)
 - Also owns: none
 - Feeds: `src/gen/layers.ts`, `src/gen/errors.ts`, `src/gen/events.ts`, `src/gen/nav.ts`, `src/gen/viewer.ts`, `src/gen/routes.ts`
 - Routes: `/api/auth/$`, `/dashboard`, `/login`, `/signup`
@@ -47,6 +47,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — No GitHub sign-in: email and password only, so `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are gone. Why: a provider nobody set up was dead weight; add one to `socialProviders` in `api/auth.ts` when you need it.
 - 2026-11-24 — Better Auth's log lines go to the request's logger, and its errors to the error reporter, through the `logger.log` option; plugins get `loggedErrors()` to see them. Why: plugins such as Stripe's catch their own failures and only log them, so a console logger hid them from on-call.
 - 2026-11-24 — A GitHub callback counts as `sign_in_succeeded` only when the response sets a session cookie. Why: Better Auth answers every OAuth failure with a redirect too, so a redirect status proved nothing.
 - 2026-11-24 — After sign-in the page goes back with `navigate({ href })` and the `redirect` param must be a local path (`/` not followed by `/` or `\`). Why: as a `to`, a stored href with a search string became part of the path and showed Page not found.

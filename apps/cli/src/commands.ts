@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import {
   addBlock,
@@ -23,6 +24,8 @@ import {
 } from "./pm.ts";
 import { gitIdentity, projectWrangler, run } from "./run.ts";
 import {
+  type BlankSetting,
+  blankSettings,
   hasTables,
   isEmptyDir,
   nameFromDir,
@@ -30,7 +33,15 @@ import {
   scaffold,
   validateName,
 } from "./scaffold.ts";
-import { type Item, isLoggedIn, isReady, provision, readiness, setupEnvs } from "./setup.ts";
+import {
+  type Item,
+  isLoggedIn,
+  isReady,
+  provision,
+  putSecret,
+  readiness,
+  setupEnvs,
+} from "./setup.ts";
 import { resetHistory, today } from "./timeline.ts";
 import { VERSION } from "./version.ts";
 
@@ -125,7 +136,26 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
       : cancelled(
           await p.confirm({ message: "Add the Claude workflows (.claude/)?", initialValue: true }),
         );
-  return { name, targetDir, features, claude, install: args.install, git: args.git };
+  const devVars = args.yes ? {} : await askBlankSettings(blankSettings(templateDir(), features));
+  return { name, targetDir, features, claude, install: args.install, git: args.git, devVars };
+};
+
+/** Asks for each setting a chosen feature needs; an empty answer leaves it for .dev.vars later. */
+const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
+  if (!blanks.length) return {};
+  const features = [...new Set(blanks.map((b) => b.feature))].join(", ");
+  p.log.info(
+    `${features} won't work until these are set. Leave one empty to fill it in .dev.vars later.`,
+  );
+  const values: Record<string, string> = {};
+  for (const blank of blanks) {
+    const message = `${blank.key}: ${blank.description}${blank.help ? ` (${blank.help})` : ""}`;
+    const value = cancelled(
+      await (blank.secret ? p.password({ message }) : p.text({ message, defaultValue: "" })),
+    ).trim();
+    if (value) values[blank.key] = value;
+  }
+  return values;
 };
 
 type Step = "scaffold" | "install" | "migrate" | "git";
@@ -172,6 +202,7 @@ export const create = async (args: CreateArgs) => {
               targetDir: input.targetDir,
               name: input.name,
               features: input.features,
+              devVars: input.devVars,
             });
             spinner.stop(
               `Created ${input.name} with ${result.features.length ? result.features.join(", ") : "the required features only"}`,
@@ -231,10 +262,66 @@ export const create = async (args: CreateArgs) => {
       : []),
     runCommand(pm, "dev").flat().join(" "),
   ];
+  const unset = blankSettings(plan.targetDir, context.features).filter(
+    (b) => !plan.devVars?.[b.key],
+  );
+  for (const feature of new Set(unset.map((b) => b.feature)))
+    p.log.warn(
+      `${feature} is off until you set ${unset
+        .filter((b) => b.feature === feature)
+        .map((b) => b.key)
+        .join(", ")} in .dev.vars.`,
+    );
+  if (!args.yes) await saveSecretsToCloudflare(plan, context.features);
   p.note(steps.join("\n"), "Next");
   p.outro(
     `When you're ready to deploy: ${pc.cyan(`${execCommand(pm)} create-tanstack-cf-saas setup`)}`,
   );
+};
+
+/** Offers to put the secrets typed during `create` into Cloudflare too, so a deploy has them. */
+const saveSecretsToCloudflare = async (plan: CreatePlan, features: ReadonlyArray<string>) => {
+  const secrets = blankSettings(plan.targetDir, features).flatMap((b) => {
+    const value = b.secret ? plan.devVars?.[b.key] : undefined;
+    return value ? [{ key: b.key, value }] : [];
+  });
+  if (!secrets.length) return;
+  const env = cancelled(
+    await p.select({
+      message: `Also save ${secrets.map((s) => s.key).join(", ")} to Cloudflare (wrangler secret put)?`,
+      options: [
+        { value: "staging", label: "Yes, to staging", hint: "where test keys belong" },
+        { value: "production", label: "Yes, to production" },
+        { value: "skip", label: "Not now", hint: "setup asks again before you deploy" },
+      ],
+    }),
+  );
+  if (env === "skip") return;
+  // Only the project's pinned wrangler gets the keys, never whatever `npx` downloads today.
+  if (!existsSync(join(plan.targetDir, "node_modules/.bin/wrangler"))) {
+    p.log.warn(`Packages aren't installed. Install them, then run \`setup --env ${env}\`.`);
+    return;
+  }
+  const wrangler = projectWrangler(plan.targetDir);
+  if (!isLoggedIn(wrangler)) {
+    p.log.warn(`Not logged in to Cloudflare. Run \`wrangler login\`, then \`setup --env ${env}\`.`);
+    return;
+  }
+  try {
+    for (const { key, value } of secrets) {
+      putSecret(wrangler, key, env, value);
+      p.log.step(`secret ${key} (${env}): set`);
+    }
+    const vars = blankSettings(plan.targetDir, features).flatMap((b) => {
+      const value = b.secret ? undefined : plan.devVars?.[b.key];
+      return value ? [`--var ${b.key}=${value}`] : [];
+    });
+    if (vars.length)
+      p.log.info(`Save the other settings with \`setup --env ${env} ${vars.join(" ")}\`.`);
+  } catch (error) {
+    // The project is already made; a failed put is something setup can finish later.
+    p.log.warn(`${(error as Error).message}\nRun \`setup --env ${env}\` to try again.`);
+  }
 };
 
 /** One feature name from the command line, with old block names mapped and noted. */

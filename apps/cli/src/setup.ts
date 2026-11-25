@@ -257,6 +257,12 @@ const withVars = (text: string, env: EnvName, vars: Readonly<Record<string, stri
     );
   }, text);
 
+/** Sets one secret in `env`. The value goes to wrangler on stdin, never as an argument. */
+export const putSecret = (wrangler: Wrangler, key: string, env: EnvName, value: string) => {
+  const put = wrangler(["secret", "put", key, ...envFlag(env)], value);
+  if (!put.ok) throw new SetupError(`Setting ${key} (${env}) failed:\n${put.stderr}`);
+};
+
 const putSecrets = async (
   manifests: ReadonlyArray<BlockManifest>,
   env: EnvName,
@@ -276,8 +282,7 @@ const putSecrets = async (
       if (isSet) options.log(`secret ${key} (${env}): already set`);
       continue;
     }
-    const put = wrangler(["secret", "put", key, ...envFlag(env)], value);
-    if (!put.ok) throw new SetupError(`Setting ${key} (${env}) failed:\n${put.stderr}`);
+    putSecret(wrangler, key, env, value);
     options.log(`secret ${key} (${env}): set`);
   }
 };

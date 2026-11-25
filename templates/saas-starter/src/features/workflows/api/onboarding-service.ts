@@ -19,6 +19,10 @@ export class WorkflowError extends Schema.TaggedError<WorkflowError>()("Workflow
   cause: Schema.Defect(),
 }) {}
 
+/**
+ * Starts and reads onboarding runs. Nothing starts one for you: call it from your own server code,
+ * for example after sign-up: `yield* (yield* Onboarding).start({ userId: user.id })`.
+ */
 export class Onboarding extends Context.Service<
   Onboarding,
   {

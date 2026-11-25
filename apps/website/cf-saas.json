@@ -16,7 +16,6 @@
       "ANALYTICS_PROVIDER",
       "APP_URL",
       "ERROR_REPORTER",
-      "GITHUB_CLIENT_ID",
       "LOG_LEVEL",
       "POSTHOG_HOST",
       "STRIPE_PRICE_PRO",

@@ -10,11 +10,5 @@
       "name": "{project}-onboarding{suffix}",
       "class_name": "OnboardingWorkflow"
     }
-  ],
-  "secrets": {
-    "WORKFLOWS_TRIGGER_TOKEN": {
-      "description": "Bearer token that may start workflows through /api/workflows/onboarding",
-      "required": false
-    }
-  }
+  ]
 }

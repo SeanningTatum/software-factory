@@ -29,7 +29,6 @@ export interface AuthConfig {
   readonly secret: string;
   readonly baseURL: string;
   readonly trustedOrigins: ReadonlyArray<string>;
-  readonly github: { clientId: string; clientSecret: string } | undefined;
 }
 
 /** Checks the settings auth needs. Returns the name of the first bad one, or the config. */
@@ -43,13 +42,10 @@ export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string
     .split(",")
     .map((origin) => origin.trim())
     .filter((origin) => origin && origin !== "*");
-  const clientId = setting(env, "GITHUB_CLIENT_ID");
-  const clientSecret = setting(env, "GITHUB_CLIENT_SECRET");
   return {
     secret,
     baseURL,
     trustedOrigins: [new URL(baseURL).origin, ...extra],
-    github: clientId && clientSecret ? { clientId, clientSecret } : undefined,
   };
 };
 
@@ -66,7 +62,6 @@ export const makeAuth = (
     trustedOrigins: [...config.trustedOrigins],
     database: drizzleAdapter(db, { provider: "sqlite", schema: authSchema }),
     emailAndPassword: { enabled: true, minPasswordLength: 10 },
-    socialProviders: config.github ? { github: config.github } : {},
     session: {
       expiresIn: SESSION_DAYS * DAY_SECONDS,
       cookieCache: { enabled: true, maxAge: 5 * 60 },

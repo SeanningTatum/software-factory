@@ -24,7 +24,42 @@ export interface ScaffoldOptions {
   readonly features: ReadonlyArray<string>;
   /** The date on each TIMELINE.md's History line; today by default. */
   readonly date?: string;
+  /** Values written into .dev.vars, such as the Stripe keys asked for during `create`. */
+  readonly devVars?: Readonly<Record<string, string>>;
 }
+
+export interface BlankSetting {
+  readonly key: string;
+  readonly feature: string;
+  readonly description: string;
+  readonly help: string | undefined;
+  readonly secret: boolean;
+}
+
+/**
+ * Required vars and secrets of these features (and the required ones) that have no default, so the
+ * feature stays off until someone fills them in. BETTER_AUTH_SECRET is left out: it is generated.
+ */
+export const blankSettings = (
+  templateDir: string,
+  features: ReadonlyArray<string>,
+): ReadonlyArray<BlankSetting> =>
+  [...loadManifests(templateDir).values()]
+    .filter((m) => m.required || features.includes(m.name))
+    .flatMap((m) =>
+      [
+        ...Object.entries(m.vars ?? {}).map(([key, spec]) => ({ key, spec, secret: false })),
+        ...Object.entries(m.secrets ?? {}).map(([key, spec]) => ({ key, spec, secret: true })),
+      ]
+        .filter(({ key, spec }) => spec.required && !spec.default && !GENERATED.has(key))
+        .map(({ key, spec, secret }) => ({
+          key,
+          feature: m.title,
+          description: spec.description,
+          help: spec.help,
+          secret,
+        })),
+    );
 
 export interface ScaffoldResult {
   /** The optional features kept, with what they require. */
@@ -57,6 +92,7 @@ export const parseFeatures = (list: string | ReadonlyArray<string>) => {
 export const MAX_NAME = 63 - "-uploads-staging".length;
 const NAME = new RegExp(`^[a-z0-9](?:[a-z0-9-]{0,${MAX_NAME - 2}}[a-z0-9])?$`);
 const SECRET_BYTES = 36;
+const GENERATED = new Set(["BETTER_AUTH_SECRET"]);
 
 /** Cloudflare and npm both accept this: lowercase letters, digits and dashes. */
 export const validateName = (name: string): string | undefined =>
@@ -106,14 +142,21 @@ const rename = (dir: string, name: string) => {
   edit(join(dir, "README.md"), (text) => text.replace(/^# .*$/m, `# ${titleCase(name)}`));
 };
 
-/** A .dev.vars ready for `dev`: the example, with a fresh auth secret when auth is enabled. */
-const writeDevVars = (dir: string) => {
+/** A .dev.vars ready for `dev`: the example, with a fresh auth secret and the values given. */
+const writeDevVars = (dir: string, values: Readonly<Record<string, string>>) => {
   const example = join(dir, ".dev.vars.example");
   if (!existsSync(example)) return;
-  const secret = randomBytes(SECRET_BYTES).toString("base64url");
+  const filled: Readonly<Record<string, string>> = {
+    BETTER_AUTH_SECRET: randomBytes(SECRET_BYTES).toString("base64url"),
+    ...values,
+  };
   writeFileSync(
     join(dir, ".dev.vars"),
-    readFileSync(example, "utf8").replace(/^BETTER_AUTH_SECRET=$/m, `BETTER_AUTH_SECRET=${secret}`),
+    readFileSync(example, "utf8").replace(/^([A-Z0-9_]+)=$/gm, (line, key: string) => {
+      const value = filled[key];
+      // One line per value: a newline would start a new variable.
+      return value && !/[\r\n]/.test(value) ? `${key}=${value}` : line;
+    }),
   );
 };
 
@@ -153,7 +196,7 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
     [...loadManifests(targetDir).values()],
     `- ${options.date ?? today()} — Created from create-tanstack-cf-saas ${VERSION}.`,
   );
-  writeDevVars(targetDir);
+  writeDevVars(targetDir, options.devVars ?? {});
 
   if (harnessDir && existsSync(harnessDir)) installHarness(harnessDir, targetDir);
   return { features: kept };

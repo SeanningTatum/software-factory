@@ -10,10 +10,10 @@ A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a
 - Used by: none
 - Bindings: `ONBOARDING_WORKFLOW` (workflow)
 - Vars: none
-- Secrets: `WORKFLOWS_TRIGGER_TOKEN`
+- Secrets: none
 - Also owns: none
-- Feeds: `src/gen/layers.ts`, `src/gen/errors.ts`, `src/gen/events.ts`, `src/gen/workflows.ts`, `src/gen/routes.ts`
-- Routes: `/api/workflows/onboarding`
+- Feeds: `src/gen/layers.ts`, `src/gen/errors.ts`, `src/gen/events.ts`, `src/gen/workflows.ts`
+- Routes: none
 - Services: `Onboarding`
 - Errors: `WorkflowError`
 - Events: `onboarding_completed`, `onboarding_started`
@@ -45,6 +45,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — No HTTP trigger and no `WORKFLOWS_TRIGGER_TOKEN`: server code starts and reads runs through the `Onboarding` service, which takes the `ONBOARDING_WORKFLOW` binding from the Worker's env. Why: the binding is already typed in the env, so a public endpoint behind a token was needless. Nothing calls `Onboarding.start` out of the box; call it from your own server code, for example after sign-up.
 - 2026-11-24 — Onboarding runs have the id `onboarding-<userId>`, and starting one that exists returns it; user ids are letters, digits, `-` and `_`, up to 64. Why: a retried trigger started a second run with duplicate steps and events.
 - 2026-11-24 — The onboarding step order comes from `machines/onboarding.machine.ts`, and a test checks that `runOnboarding` follows it. Why: the diagram is always what production runs.
 - 2026-11-24 — Each step runs in a fresh runtime whose request id is the workflow instance id. Why: every log line from one run shares an id.
