@@ -1,5 +1,5 @@
 import { stripe } from "@better-auth/stripe";
-import type { BetterAuthPlugin } from "better-auth";
+import type { AuthContext, BetterAuthPlugin } from "better-auth";
 import Stripe from "stripe";
 import { setting } from "#/app/env.ts";
 import type { AuthPluginFactory } from "#/features/auth/api/auth.ts";
@@ -37,11 +37,22 @@ export const webhookRetry = (loggedErrors: () => number): BetterAuthPlugin => {
  * Adds Stripe to Better Auth. Without STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET billing stays off
  * and the rest of the app works; /billing explains what is missing.
  */
-export const authPlugins: AuthPluginFactory = ({ env, onEvent, onWarning, loggedErrors }) => {
-  const secretKey = setting(env, "STRIPE_SECRET_KEY");
-  const webhookSecret = setting(env, "STRIPE_WEBHOOK_SECRET");
+export const authPlugins: AuthPluginFactory = (deps) => {
+  const secretKey = setting(deps.env, "STRIPE_SECRET_KEY");
+  const webhookSecret = setting(deps.env, "STRIPE_WEBHOOK_SECRET");
   if (!secretKey || !webhookSecret) return [];
   const stripeClient = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
+  return billingPlugins(stripeClient, webhookSecret, deps);
+};
+
+/** The plugins `authPlugins` adds once Stripe is set up; split out so tests can pass a Stripe client. */
+export const billingPlugins = (
+  stripeClient: Stripe,
+  webhookSecret: string,
+  { env, onEvent, onWarning, loggedErrors }: Parameters<AuthPluginFactory>[0],
+): ReadonlyArray<BetterAuthPlugin> => {
+  // The Stripe plugin's update hook gets no context, so the database adapter is caught at init.
+  let adapter: AuthContext["adapter"] | undefined;
   return [
     stripe({
       stripeClient,
@@ -60,7 +71,7 @@ export const authPlugins: AuthPluginFactory = ({ env, onEvent, onWarning, logged
         onSubscriptionCancel: async ({ subscription }) => {
           onEvent({ _tag: "subscription_canceled", plan: subscription.plan });
         },
-        onSubscriptionUpdate: async ({ event, subscription }) => {
+        onSubscriptionUpdate: async ({ event, subscription, stripeSubscription }) => {
           const change = unexpectedChange(event, subscription.status);
           // Stripe stays the source of truth; an unexpected change is worth a look, not a refusal.
           if (change)
@@ -68,9 +79,24 @@ export const authPlugins: AuthPluginFactory = ({ env, onEvent, onWarning, logged
               ...change,
               subscriptionId: subscription.id,
             });
+          // The plugin copies each event's status without comparing times, so a late or retried
+          // event can undo a newer one (bring a canceled subscription back). Stripe's status wins.
+          const current = await stripeClient.subscriptions.retrieve(stripeSubscription.id);
+          if (current.status !== subscription.status)
+            await adapter?.update({
+              model: "subscription",
+              where: [{ field: "id", value: subscription.id }],
+              update: { status: current.status },
+            });
         },
       },
     }),
     webhookRetry(loggedErrors),
+    {
+      id: "stripe-status-check",
+      init: (context) => {
+        adapter = context.adapter;
+      },
+    },
   ];
 };

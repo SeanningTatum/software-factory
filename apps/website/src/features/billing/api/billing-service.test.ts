@@ -64,4 +64,12 @@ describe("Billing.stateFor", () => {
     ]);
     expect(state).toMatchObject({ entitled: false, plan: "free", status: "past_due" });
   });
+
+  it("prefers the entitled row when a user has several", async () => {
+    const state = await stateFor(KEYS, [
+      { id: "s1", plan: "pro", referenceId: "u1", status: "past_due" },
+      { id: "s2", plan: "pro", referenceId: "u1", status: "active" },
+    ]);
+    expect(state).toMatchObject({ entitled: true, plan: "pro", status: "active" });
+  });
 });
