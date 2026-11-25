@@ -36,14 +36,15 @@ size of every page) run once, on the change that will ship.
 
 ## The first deploy
 
-The `create` wizard offers to do all of this when it makes the project: it sets up Cloudflare,
-asks for each environment's URL, creates the GitHub repository and hands it the deploy settings
-before the first push, so that push deploys staging. If you skipped a step, or need it again
-after adding a feature, these are the same steps as commands, in this order:
+The `create` wizard offers to do all of this when it makes the project. It sets up Cloudflare,
+migrates each environment's database, and deploys staging and production once, so each Worker exists
+with its bindings and its address is known. Then it creates the GitHub repository and hands it the
+deploy settings before the first push, so that push deploys staging again through CI. If you skipped
+a step, or need it again after adding a feature, these are the same steps as commands, in this
+order:
 
 ```bash
-bunx create-tanstack-cf-saas setup                                        # D1, KV, R2 and secrets, for both environments
-bunx create-tanstack-cf-saas setup --env staging --var APP_URL=https://...   # then the same for production
+bunx create-tanstack-cf-saas setup    # D1, KV, R2, migrations, secrets and a first deploy, for both environments
 bunx create-tanstack-cf-saas github                                       # repository, branches, rules, deploy settings
 ```
 
@@ -52,7 +53,7 @@ The last one gives GitHub Actions what `deploy.yml` reads:
 | Setting                 | Kind     | Where the value comes from                                   |
 | ----------------------- | -------- | ------------------------------------------------------------ |
 | `CLOUDFLARE_ACCOUNT_ID` | variable | `wrangler login`, when you have one account; else your shell |
-| `STAGING_URL`           | variable | staging's `APP_URL` in `wrangler.jsonc`                      |
+| `STAGING_URL`           | variable | staging's `APP_URL`, which `setup` writes after it deploys   |
 | `PRODUCTION_URL`        | variable | production's `APP_URL`                                       |
 | `CLOUDFLARE_API_TOKEN`  | secret   | you type it once; it goes to GitHub and nowhere else         |
 
@@ -135,7 +136,8 @@ merge is a push) or close and reopen it, and the full checks run.
   into `staging`, tag, promote.
 - **Rules on a private repository need a paid GitHub plan.** On a free plan the `github` command
   creates the repository and both branches, then stops at the rules with GitHub's own message.
-- **Creating the `production` branch deploys nothing.** The first deploy is the first promotion.
+- **Production is deployed once by hand, at setup.** That first deploy gives it an address. After
+  it, production moves only by a promotion; creating the `production` branch deploys nothing.
 - **A failed production smoke test rolls back the code, not the database.** Keep migrations
   additive; `docs/runbook.md` says what to do next.
 

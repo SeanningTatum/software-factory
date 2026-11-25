@@ -44,10 +44,13 @@ import {
 import {
   accountId,
   appUrl,
+  firstDeploy,
   type Item,
   isLoggedIn,
   isReady,
+  migrate,
   provision,
+  type RunScript,
   readiness,
   setupEnvs,
   typedSettings,
@@ -181,7 +184,10 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
     `cd ${shellPath(plan.targetDir)}`,
     ...(pending.includes("install") && plan.install ? [installCommand(pm).flat().join(" ")] : []),
     ...(pending.includes("migrate") && hasDb
-      ? [runCommand(pm, "db:generate", "init").flat().join(" ")]
+      ? [
+          runCommand(pm, "db:generate", "init").flat().join(" "),
+          runCommand(pm, "db:migrate:local").flat().join(" "),
+        ]
       : []),
     ...(pending.includes("git") && plan.git
       ? [`git init -b staging && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
@@ -230,9 +236,11 @@ export const create = async (args: CreateArgs) => {
         }),
         migrate: fromPromise(async ({ input }) => {
           step = "migrate";
-          if (hasTables(input.targetDir))
-            // db:generate needs a name; a project's first migration is 0000_init.
-            await run(...runCommand(pm, "db:generate", "init"), input.targetDir);
+          if (!hasTables(input.targetDir)) return;
+          // db:generate needs a name; a project's first migration is 0000_init.
+          await run(...runCommand(pm, "db:generate", "init"), input.targetDir);
+          // The local database gets its tables now, so `dev` works straight away.
+          migrate(input.targetDir, projectWrangler(input.targetDir), "local", () => {});
         }),
         git: fromPromise(async ({ input }) => {
           step = "git";
@@ -269,7 +277,8 @@ export const create = async (args: CreateArgs) => {
   const steps = [
     `cd ${shellPath(plan.targetDir)}`,
     ...(plan.install ? [] : [installCommand(pm).flat().join(" ")]),
-    ...(context.features.includes("db")
+    // With packages installed, create has already migrated the local database.
+    ...(context.features.includes("db") && !plan.install
       ? [runCommand(pm, "db:migrate:local").flat().join(" ")]
       : []),
     runCommand(pm, "dev").flat().join(" "),
@@ -284,13 +293,27 @@ export const create = async (args: CreateArgs) => {
         .map((b) => b.key)
         .join(", ")} in .dev.vars.`,
     );
-  if (!args.yes) await offerCloudflare(plan, context.features);
+  const cloudflare = args.yes ? undefined : await offerCloudflare(plan, context.features, pm);
   if (!args.yes && plan.git) await offerGithub(plan);
   p.note(steps.join("\n"), "Next");
-  p.outro(
-    `When you're ready to deploy: ${pc.cyan(`${execCommand(pm)} create-tanstack-cf-saas setup`)}`,
-  );
+  p.outro(closingLine(cloudflare, pm));
 };
+
+/** The last line of create: what setup is still for, or that nothing is left. */
+const closingLine = (cloudflare: ReadonlyArray<Item> | undefined, pm: PackageManager) => {
+  const setup = pc.cyan(`${execCommand(pm)} create-tanstack-cf-saas setup`);
+  if (!cloudflare) return `When you're ready to deploy: ${setup}`;
+  if (isReady(cloudflare)) return "Staging and production are live.";
+  return `Both are deployed. To fill what the table marks missing: ${setup}`;
+};
+
+/** Runs a package script in the project with its output captured, for steps that read it. */
+const runScript =
+  (pm: PackageManager, cwd: string): RunScript =>
+  (script) => {
+    const [cmd, args] = runCommand(pm, script);
+    return capture(cmd, cwd)(args);
+  };
 
 const SETUP_LATER = "Run `create-tanstack-cf-saas setup` in the project when you are ready.";
 
@@ -298,33 +321,37 @@ const SETUP_LATER = "Run `create-tanstack-cf-saas setup` in the project when you
  * Offers to create the Cloudflare side now, for staging and production: the resources, the secrets
  * and each environment's URL. What was typed for local use is test data, so it goes to staging and
  * never to production; production's own keys show as missing until `setup --env production`.
+ * Returns where things stand once both are deployed, and nothing when setup did not finish.
  */
-const offerCloudflare = async (plan: CreatePlan, features: ReadonlyArray<string>) => {
+const offerCloudflare = async (
+  plan: CreatePlan,
+  features: ReadonlyArray<string>,
+  pm: PackageManager,
+) => {
   const go = cancelled(
     await p.confirm({
       message:
-        "Set up Cloudflare now? Creates the database and storage for staging and production and saves your secrets.",
+        "Set up Cloudflare now? Creates the database and storage for staging and production, migrates them, saves your secrets and deploys both (a few minutes).",
       initialValue: true,
     }),
   );
-  if (!go) return;
+  if (!go) return undefined;
   // Only the project's pinned wrangler gets the keys, never whatever `npx` downloads today.
   if (!existsSync(join(plan.targetDir, "node_modules/.bin/wrangler"))) {
     p.log.warn(`Packages aren't installed. ${SETUP_LATER}`);
-    return;
+    return undefined;
   }
   const wrangler = projectWrangler(plan.targetDir);
   if (!isLoggedIn(wrangler)) {
     p.log.warn(`Not logged in to Cloudflare: run \`wrangler login\`. ${SETUP_LATER}`);
-    return;
+    return undefined;
   }
   const blanks = blankSettings(plan.targetDir, features);
   try {
     for (const env of ["staging", "production"] as const) {
-      const worker = env === "staging" ? `${plan.name}-staging` : plan.name;
       const url = cancelled(
         await p.text({
-          message: `URL of ${env}, such as https://${worker}.<your-subdomain>.workers.dev (leave empty to set later)`,
+          message: `URL of ${env}, if it has its own domain (leave empty to use its workers.dev address)`,
           defaultValue: "",
           validate: (v) => (!v || /^https:\/\/\S+$/.test(v) ? undefined : "Start with https://"),
         }),
@@ -337,18 +364,24 @@ const offerCloudflare = async (plan: CreatePlan, features: ReadonlyArray<string>
         log: (line) => p.log.step(line),
       });
     }
-    // The ids are in wrangler.jsonc now; CI deploys from what is committed.
+    firstDeploy(plan.targetDir, ["staging", "production"], runScript(pm, plan.targetDir), (line) =>
+      p.log.step(line),
+    );
+    // The ids and URLs are in wrangler.jsonc now; CI deploys from what is committed.
     const git = capture("git", plan.targetDir);
     if (plan.git && git(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) {
       await run("git", ["add", WRANGLER_FILE], plan.targetDir);
-      const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids"];
+      const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
       await run("git", [...gitIdentity(plan.targetDir), ...commit], plan.targetDir);
     }
     p.log.info("Where things stand:");
-    printTable(readiness(plan.targetDir, wrangler));
+    const items = readiness(plan.targetDir, wrangler);
+    printTable(items);
+    return items;
   } catch (error) {
     // The project is already made; setup finishes what is left when run again.
     p.log.warn(`${(error as Error).message}\n${SETUP_LATER}`);
+    return undefined;
   }
 };
 
@@ -461,6 +494,7 @@ export const setup = async (args: SetupArgs) => {
   const envs = setupEnvs(args.env, [...Object.keys(vars).map((k) => `--var ${k}`), ...fromEnv]);
   if (!loggedIn) throw new Error("Log in first: npx wrangler login");
   p.intro(pc.inverse(" setup "));
+  migrate(root, wrangler, "local", (line) => p.log.step(line));
   await provision(root, wrangler, {
     envs,
     vars,
@@ -475,6 +509,7 @@ export const setup = async (args: SetupArgs) => {
     },
     log: (line) => p.log.step(line),
   });
+  firstDeploy(root, envs, runScript(detectPackageManager(), root), (line) => p.log.step(line));
   p.log.info("Where things stand:");
   printTable(readiness(root, wrangler));
   p.outro("Run setup again any time; it only adds what is missing.");

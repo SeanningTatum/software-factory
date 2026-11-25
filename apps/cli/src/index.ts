@@ -86,7 +86,8 @@ const main = defineCommand({
     }),
     setup: defineCommand({
       meta: {
-        description: "Create Cloudflare resources and set secrets; --check lists what is missing",
+        description:
+          "Create Cloudflare resources, apply migrations, set secrets and make the first deploy; --check lists what is missing",
       },
       args: {
         check: { type: "boolean", default: false, description: "Only report; change nothing" },

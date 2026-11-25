@@ -26,9 +26,8 @@ The `create` wizard offers these steps when it makes the project. Run them again
 add a feature, or if you skipped one:
 
 ```bash
-bunx create-tanstack-cf-saas setup          # create D1, KV and R2, set secrets, for production and staging
+bunx create-tanstack-cf-saas setup          # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
 bunx create-tanstack-cf-saas setup --check  # what is still missing, and the command that fixes each
-bunx create-tanstack-cf-saas setup --env staging --var APP_URL=https://...   # and the same for production
 bunx create-tanstack-cf-saas github         # the GitHub repository, its branches and rules, and what CI deploys with
 bun run deploy:staging                      # by hand; CI does both once the repository variables are set
 bun run deploy

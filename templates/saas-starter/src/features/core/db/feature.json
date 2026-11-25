@@ -27,11 +27,5 @@
       "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
       "db:studio": "drizzle-kit studio"
     }
-  },
-  "setup": [
-    {
-      "id": "d1-migrate",
-      "description": "Apply migrations to each environment after creating the databases: bun run db:migrate:remote"
-    }
-  ]
+  }
 }

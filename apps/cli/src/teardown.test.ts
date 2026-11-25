@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { envNames, setBindingField, WRANGLER_FILE } from "@tanstack-cf-saas/blocks";
-import { ownRepository, teardownPlan } from "../scripts/teardown.ts";
+import { isGone, lastWords, ownRepository, teardownPlan } from "../scripts/teardown.ts";
 import type { Cli } from "./github.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../../../templates/saas-starter");
@@ -73,5 +73,21 @@ describe("teardown", () => {
     expect(ownRepository(TEMPLATE, git(`${TEMPLATE}\n`))).toBe("someone/my-app");
     // A folder inside another checkout sees that checkout's origin: deleting it would be a disaster.
     expect(ownRepository(TEMPLATE, git(join(TEMPLATE, "../..")))).toBeUndefined();
+  });
+
+  test("reads Cloudflare's own words: a thing never made is gone, and a banner is not the error", () => {
+    // What wrangler printed when a Workflow that was never deployed was deleted.
+    const said = [
+      "✘ [ERROR] A request to the Cloudflare API (/accounts/abc/workflows/my-app-onboarding) failed.",
+      "  workflows.api.error.workflow.not_found [code: 10200]",
+      '🪵  Logs were written to "/tmp/wrangler.log"',
+      " ⛅️ wrangler 4.168.0",
+      "────────────────────",
+    ].join("\n");
+    expect(isGone(said)).toBe(true);
+    expect(isGone("Authentication error [code: 10000]")).toBe(false);
+    expect(lastWords(said)).toBe(
+      "✘ [ERROR] A request to the Cloudflare API (/accounts/abc/workflows/my-app-onboarding) failed. | workflows.api.error.workflow.not_found [code: 10200]",
+    );
   });
 });

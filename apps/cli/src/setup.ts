@@ -286,8 +286,32 @@ const putSecrets = async (
 };
 
 /**
- * Creates what is missing and records ids in wrangler.jsonc. Safe to run again: existing resources
- * are found, not duplicated, and vars or ids already set are left alone unless passed explicitly.
+ * Applies the migrations in `drizzle/` to each D1 database, on this machine or in `where`. Safe to
+ * run again: wrangler applies only what a database has not seen. Without a terminal it asks
+ * nothing, and every caller here runs it without one.
+ */
+export const migrate = (
+  root: string,
+  wrangler: Wrangler,
+  where: EnvName | "local",
+  log: (line: string) => void,
+) => {
+  const target = where === "local" ? ["--local"] : ["--remote", ...envFlag(where)];
+  for (const b of enabled(root).flatMap((m) => m.bindings ?? [])) {
+    if (b.type !== "d1") continue;
+    const applied = wrangler(["d1", "migrations", "apply", b.binding, ...target]);
+    if (!applied.ok)
+      throw new SetupError(
+        `Applying migrations to ${b.binding} (${where}) failed:\n${(applied.stderr || applied.stdout).trim()}`,
+      );
+    log(`migrations ${b.binding} (${where}): applied`);
+  }
+};
+
+/**
+ * Creates what is missing, records ids in wrangler.jsonc and applies the migrations. Safe to run
+ * again: existing resources are found, not duplicated, and vars or ids already set are left alone
+ * unless passed explicitly.
  */
 export const provision = async (root: string, wrangler: Wrangler, options: ProvisionOptions) => {
   for (const env of options.envs) {
@@ -303,7 +327,55 @@ export const provision = async (root: string, wrangler: Wrangler, options: Provi
     }
     text = withVars(text, env, options.vars);
     writeFileSync(join(root, WRANGLER_FILE), text);
+    // After the write: wrangler finds the database through the id in wrangler.jsonc.
+    migrate(root, wrangler, env, options.log);
     await putSecrets(manifests, env, wrangler, options);
+  }
+};
+
+/** Runs one of the project's package scripts and captures what it printed. */
+export type RunScript = (script: string) => { ok: boolean; stdout: string; stderr: string };
+
+const WORKERS_DEV = /https:\/\/[a-z0-9-]+\.([a-z0-9-]+)\.workers\.dev/i;
+
+/**
+ * Deploys each of `envs` that has no URL yet, so its Worker exists with its bindings, and records
+ * where it lives as APP_URL. Nothing but a deploy says what an account's workers.dev subdomain is,
+ * so the first one runs before its URL is known; wrangler prints the address, the URL is written,
+ * and that environment deploys once more under the URL it now knows. The subdomain then gives every
+ * other environment's address up front. An environment that has a URL is left alone, so this
+ * happens once.
+ */
+export const firstDeploy = (
+  root: string,
+  envs: ReadonlyArray<EnvName>,
+  script: RunScript,
+  log: (line: string) => void,
+) => {
+  const worker = (parse(wranglerText(root)) as { name: string }).name;
+  const deploy = (env: EnvName) => {
+    log(`${env}: building and deploying`);
+    const ran = script(env === "production" ? "deploy" : `deploy:${env}`);
+    const said = ran.stdout + ran.stderr;
+    if (!ran.ok)
+      throw new SetupError(
+        `Deploying ${env} failed:\n${said.trim().split("\n").slice(-12).join("\n")}`,
+      );
+    return WORKERS_DEV.exec(said)?.[1];
+  };
+  let subdomain: string | undefined;
+  // Staging first: if a first deploy goes wrong, it goes wrong there.
+  for (const env of (["staging", "production"] as const).filter((e) => envs.includes(e))) {
+    if (appUrl(root, env)) continue;
+    subdomain ??= deploy(env);
+    if (!subdomain)
+      throw new SetupError(
+        `${env} is deployed, but wrangler printed no workers.dev address. Set its URL: setup --env ${env} --var APP_URL=https://...`,
+      );
+    const url = `https://${env === "production" ? worker : `${worker}-${env}`}.${subdomain}.workers.dev`;
+    writeFileSync(join(root, WRANGLER_FILE), withVars(wranglerText(root), env, { APP_URL: url }));
+    deploy(env);
+    log(`${env}: live at ${url}`);
   }
 };
 

@@ -116,7 +116,20 @@ export const teardownPlan = (root: string, repository: string | undefined): Arra
   return [...workers, ...resources, ...github];
 };
 
-const GONE = /not found|does not exist|doesn't exist|couldn't find|could not find|\b404\b/i;
+/** Whether a failed delete says the thing was never there. Cloudflare writes `not_found` too. */
+export const isGone = (said: string) =>
+  /not[ _](be )?found|does not exist|doesn't exist|couldn't find|could not find|\b404\b/i.test(
+    said,
+  );
+
+/** What a failed command said, without wrangler's banner and log-file lines, which come last. */
+export const lastWords = (said: string) =>
+  said
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !/Logs were written to|⛅️|^[─-]+$/.test(line))
+    .slice(-3)
+    .join(" | ");
 
 /** The Cloudflare accounts wrangler will delete from, by name, so the wrong one is seen in time. */
 const cloudflareAccounts = (root: string): string => {
@@ -147,10 +160,9 @@ const runSteps = (root: string, steps: ReadonlyArray<Step>): boolean => {
       const result = tools[step.tool](step.args);
       const said = (result.stderr + result.stdout).trim();
       if (result.ok) console.log(`✓ ${step.label}: deleted`);
-      else if (GONE.test(said)) console.log(`– ${step.label}: not there`);
-      else
-        console.log(`✗ ${step.label}: ${said.split("\n").filter(Boolean).slice(-3).join(" | ")}`);
-      return result.ok || GONE.test(said);
+      else if (isGone(said)) console.log(`– ${step.label}: not there`);
+      else console.log(`✗ ${step.label}: ${lastWords(said)}`);
+      return result.ok || isGone(said);
     })
     .every(Boolean);
 };
