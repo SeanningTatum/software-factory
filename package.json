@@ -25,6 +25,6 @@
     "@changesets/cli": "^3.0.3",
     "@tanstack-cf-saas/biome-config": "workspace:*",
     "turbo": "^2.11.13",
-    "typescript": "^6.0.2"
+    "typescript": "^7.0.2"
   }
 }
