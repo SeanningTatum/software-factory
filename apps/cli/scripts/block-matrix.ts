@@ -77,6 +77,7 @@ for (const [name, features] of Object.entries(combos)) {
     ["unit tests", "bunx", ["vitest", "run"]],
     ["knip", "bunx", ["knip"]],
     ["build", "bunx", ["vite", "build"]],
+    ["size", "bun", ["run", "size"]],
   ];
   for (const [label, cmd, args] of steps) {
     if (!step(dir, label, cmd, args)) {

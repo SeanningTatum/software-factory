@@ -16,3 +16,35 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - run: bun run check
+      - name: The template and website stay under their size budgets
+        run: |
+          bun run --cwd templates/saas-starter size
+          bun run --cwd apps/website size
+      - name: No package with a known high or critical hole
+        run: bun audit --audit-level=high
+      - name: Migrations match the schema
+        # db:generate writes a file only when a schema.ts changed and its migration was not made.
+        run: |
+          for app in templates/saas-starter apps/website; do bun run --cwd "$app" db:generate; done
+          if [ -n "$(git status --porcelain -- '*/drizzle')" ]; then
+            git status --porcelain -- '*/drizzle'
+            echo "::error::A schema changed without a migration. See the migration rule in CLAUDE.md."
+            exit 1
+          fi
+
+  # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
+  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - name: No keys in the code
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE" ]; then scan=(git /repo "--log-opts=origin/$BASE..HEAD"); else scan=(dir /repo); fi
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 "${scan[@]}" --redact --no-banner

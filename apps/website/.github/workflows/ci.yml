@@ -16,6 +16,36 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run build
+      - name: Pages and the Worker stay under size-budgets.json
+        run: bun run size
+      - name: No package with a known high or critical hole
+        run: bun audit --audit-level=high
+      - name: Migrations match the schema
+        # db:generate writes a file only when a schema.ts changed and its migration was not made.
+        run: |
+          if grep -q '"db:generate"' package.json; then
+            bun run db:generate
+            if [ -n "$(git status --porcelain -- drizzle)" ]; then
+              git status --porcelain -- drizzle
+              echo "::error::A schema changed without a migration. Run bun run db:generate and commit drizzle/."
+              exit 1
+            fi
+          fi
+
+  # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
+  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: No keys in the code
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE" ]; then scan=(git /repo "--log-opts=origin/$BASE..HEAD"); else scan=(dir /repo); fi
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 "${scan[@]}" --redact --no-banner
 
   # The Playwright specs in each feature's e2e folder, against `vite dev` with local D1, R2 and KV.
   e2e:

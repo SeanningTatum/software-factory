@@ -19,6 +19,7 @@
     "blocks:sync": "cf-saas-blocks sync",
     "blocks:check": "cf-saas-blocks check",
     "machines:print": "PRINT_MACHINES=1 vitest run src/app/machines.test.ts",
+    "size": "bun size.ts",
     "knip": "knip",
     "check": "bun run lint && bun run typecheck && bun run test && bun run knip",
     "db:generate": "drizzle-kit generate",

@@ -32,25 +32,21 @@ Rules for a good item:
 
 ## At a glance
 
-| Id   | Title                                               | Area              | Size | Needs you             |
-| ---- | --------------------------------------------------- | ----------------- | ---- | --------------------- |
-| B-01 | CI runs on GitHub                                   | Repo              | S    | Fix Actions billing   |
-| B-02 | Server functions refuse cross-site calls            | Security          | S    | no                    |
-| B-03 | The health check and Stripe keys agree              | Deployment        | S    | A decision            |
-| B-05 | Pages have a size budget in CI                      | Bundle size       | M    | no                    |
-| B-06 | Every route has a working and a failing spec        | Testing           | M    | no                    |
-| B-07 | Billing works with real Stripe test keys            | Features          | M    | Stripe test keys      |
-| B-08 | The Claude workflows are the real repo              | Agentic workflows | S    | The repo URL          |
-| B-09 | A first deploy to staging succeeds                  | Deployment        | M    | A Cloudflare token    |
-| B-10 | The packages are on npm                             | Repo              | S    | Claim the npm scope   |
-| B-11 | CI scans for leaked secrets and vulnerable packages | Quality checks    | S    | no                    |
-| B-13 | The website's browser specs run                     | Testing           | S    | no                    |
-| B-14 | The tools are proven on Windows                     | Quality checks    | S    | no                    |
-| B-15 | Tests have coverage floors                          | Testing           | S    | no                    |
-| B-16 | Pages are checked for accessibility                 | Quality checks    | M    | no                    |
-| B-17 | A migration that drifts from the schema fails CI    | Quality checks    | S    | no                    |
-| B-18 | Sign-up is protected from bots                      | Security          | M    | Turnstile keys        |
-| B-19 | Users can verify their email and reset a password   | Features          | L    | Pick an email service |
+| Id   | Title                                             | Area              | Size | Needs you             |
+| ---- | ------------------------------------------------- | ----------------- | ---- | --------------------- |
+| B-01 | CI runs on GitHub                                 | Repo              | S    | Fix Actions billing   |
+| B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
+| B-06 | Every route has a working and a failing spec      | Testing           | M    | no                    |
+| B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
+| B-08 | The Claude workflows are the real repo            | Agentic workflows | S    | The repo URL          |
+| B-09 | A first deploy to staging succeeds                | Deployment        | M    | A Cloudflare token    |
+| B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
+| B-13 | The website's browser specs run                   | Testing           | S    | no                    |
+| B-14 | The tools are proven on Windows                   | Quality checks    | S    | no                    |
+| B-15 | Tests have coverage floors                        | Testing           | S    | no                    |
+| B-16 | Pages are checked for accessibility               | Quality checks    | M    | no                    |
+| B-18 | Sign-up is protected from bots                    | Security          | M    | Turnstile keys        |
+| B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 
 ## Now
 
@@ -69,21 +65,6 @@ Rules for a good item:
 
 **Where:** `.github/workflows/`, and the Actions tab of the repo.
 
-### B-02 · Server functions refuse cross-site calls
-
-- **Area:** Security
-- **Size:** S
-- **Needs you:** no
-
-**Why:** TanStack Start warns on every dev start that server functions have no CSRF check. Another site could make a signed-in user's browser call them.
-
-**Done when:**
-
-- [ ] The warning is gone from `bun run dev`.
-- [ ] A test shows a call from another origin is refused and a same-origin call works.
-
-**Where:** `templates/saas-starter/src/start.ts`, `src/app/middleware.ts`. Start ships `createCsrfMiddleware`.
-
 ### B-03 · The health check and Stripe keys agree
 
 - **Area:** Deployment
@@ -100,21 +81,6 @@ Rules for a good item:
 **Where:** `templates/saas-starter/src/features/billing/feature.json`, `src/features/home/routes/api/health.ts`.
 
 ## Next
-
-### B-05 · Pages have a size budget in CI
-
-- **Area:** Bundle size
-- **Size:** M
-- **Needs you:** no
-
-**Why:** Nothing measures how much JavaScript a page ships, so it can double without anyone seeing.
-
-**Done when:**
-
-- [ ] CI fails when `/`, `/login` or the Worker goes over a set size.
-- [ ] The budgets are written in one file with today's sizes beside them.
-
-**Where:** `templates/saas-starter/vite.config.ts`, `.github/workflows/ci.yml`.
 
 ### B-06 · Every route has a working and a failing spec
 
@@ -192,21 +158,6 @@ Rules for a good item:
 
 **Where:** `.github/workflows/release.yml`, `.changeset/`.
 
-### B-11 · CI scans for leaked secrets and vulnerable packages
-
-- **Area:** Quality checks
-- **Size:** S
-- **Needs you:** no
-
-**Why:** Nothing would catch a committed key or a dependency with a known hole.
-
-**Done when:**
-
-- [ ] A pull request that adds a fake key fails.
-- [ ] Dependency updates arrive as pull requests on a schedule.
-
-**Where:** `templates/saas-starter/.github/`, `.github/`.
-
 ### B-13 · The website's browser specs run
 
 - **Area:** Testing
@@ -265,20 +216,6 @@ Rules for a good item:
 - [ ] Each page spec runs an accessibility scan and fails on a serious problem.
 
 **Where:** `templates/saas-starter/src/features/*/e2e/`.
-
-### B-17 · A migration that drifts from the schema fails CI
-
-- **Area:** Quality checks
-- **Size:** S
-- **Needs you:** no
-
-**Why:** Someone can change a table in code and forget to generate the migration.
-
-**Done when:**
-
-- [ ] CI runs `db:generate` and fails when it would write a new file.
-
-**Where:** `templates/saas-starter/.github/workflows/ci.yml`.
 
 ### B-18 · Sign-up is protected from bots
 

@@ -24,6 +24,7 @@ JSON logs stamped with the request id and user, redaction, error reports to the 
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The fake Stripe key in `lib/redact.test.ts` carries a `gitleaks:allow` comment. Why: CI's secret scan fails on anything shaped like a key, and this one is Stripe's public docs key.
 - 2026-11-24 — Browser reports never alert, a failed webhook post reopens the quiet window, a setting that is not a URL is ignored, and alert text is capped with mentions off. Why: `/api/browser-report` is public, so one fake report could otherwise silence real alerts for five minutes.
 - 2026-11-24 — Alerts go to an optional `ALERT_WEBHOOK_URL` (Slack or Discord), one per burst, then five quiet minutes per isolate. Why: the owner chose a webhook; it needs no paid product and can be tested here. A Durable Object can hold the window if bursts fan out.
 - 2026-11-24 — `/api/browser-report` is rate-limited per address by the new `REPORT_LIMITER` binding (10 a minute) and reads at most 8 KB as it arrives. Why: anyone could spend the error tracker's quota, after which real errors are dropped.

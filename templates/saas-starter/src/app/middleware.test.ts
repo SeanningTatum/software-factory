@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { nonceFor, requestRuntime } from "./middleware.ts";
+import { csrf, nonceFor, requestRuntime } from "./middleware.ts";
 
 type Server = (options: {
   request: Request;
@@ -36,5 +36,49 @@ describe("requestRuntime", () => {
       next,
     });
     expect(response.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+  });
+});
+
+type Csrf = (options: {
+  request: Request;
+  handlerType: string;
+  next: () => unknown;
+}) => Promise<unknown> | unknown;
+
+const guard = (csrf as unknown as { options: { server: Csrf } }).options.server;
+const call = (url: string, headers: Record<string, string>, handlerType = "serverFn") => {
+  const next = vi.fn(() => "passed");
+  const out = guard({ request: new Request(url, { method: "POST", headers }), handlerType, next });
+  return Promise.resolve(out).then((result) => ({ result, passed: next.mock.calls.length === 1 }));
+};
+
+describe("csrf", () => {
+  const url = "https://x.dev/_serverFn/abc";
+
+  it("lets a same-origin server function call through", async () => {
+    expect((await call(url, { "sec-fetch-site": "same-origin" })).passed).toBe(true);
+    expect((await call(url, { origin: "https://x.dev" })).passed).toBe(true);
+  });
+
+  it("refuses a server function call from another origin", async () => {
+    const cases: Record<string, string>[] = [
+      { "sec-fetch-site": "cross-site" },
+      { origin: "https://evil.dev" },
+      { referer: "https://evil.dev/page" },
+    ];
+    for (const headers of cases) {
+      const { result, passed } = await call(url, headers);
+      expect(passed).toBe(false);
+      expect((result as Response).status).toBe(403);
+    }
+  });
+
+  it("leaves API routes such as webhooks and auth alone", async () => {
+    const { passed } = await call(
+      "https://x.dev/api/auth/sign-in",
+      { "sec-fetch-site": "cross-site" },
+      "router",
+    );
+    expect(passed).toBe(true);
   });
 });
