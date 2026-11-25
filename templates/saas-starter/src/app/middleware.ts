@@ -1,6 +1,7 @@
 import { env, waitUntil } from "cloudflare:workers";
 import { createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 import { Effect } from "effect";
+import { bodyTooLarge } from "./body.ts";
 import type { AppEnv } from "./env.ts";
 import { parentSpanFor, requestInfoFrom } from "./request.ts";
 import { makeRuntime } from "./runtime.ts";
@@ -25,6 +26,8 @@ export const csrf = createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === 
  * and `x-request-id`, logs the outcome, then disposes the runtime (which flushes analytics).
  */
 export const requestRuntime = createMiddleware().server(async ({ next, request }) => {
+  const refused = bodyTooLarge(request);
+  if (refused) return refused;
   const info = requestInfoFrom(request);
   const nonce = makeNonce();
   nonces.set(request, nonce);
