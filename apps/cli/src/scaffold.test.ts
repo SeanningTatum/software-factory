@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadManifests } from "@tanstack-cf-saas/blocks";
@@ -16,11 +16,7 @@ import {
 } from "./scaffold.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../template");
-/** A stand-in harness: the real one is a private submodule that CI does not check out. */
-const HARNESS = mkdtempSync(join(tmpdir(), "harness-"));
-mkdirSync(join(HARNESS, "agents"));
-writeFileSync(join(HARNESS, "settings.json"), "{}\n");
-writeFileSync(join(HARNESS, "agents/reviewer.md"), "---\nname: reviewer\n---\n");
+const HARNESS = join(import.meta.dirname, "../harness");
 
 const target = () => {
   const dir = mkdtempSync(join(tmpdir(), "scaffold-"));
