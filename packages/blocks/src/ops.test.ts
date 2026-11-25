@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -50,8 +51,8 @@ describe("removeBlock", () => {
 
   test("deletes the feature's or core module's folder and its files", () => {
     const root = project();
-    removeBlock(root, "auth");
-    removeBlock(root, "db");
+    removeBlock(root, "auth", { force: true });
+    removeBlock(root, "db", { force: true });
     expect(existsSync(join(root, "src/features/auth"))).toBe(false);
     expect(existsSync(join(root, "src/features/core/db"))).toBe(false);
     expect(existsSync(join(root, "drizzle.config.ts"))).toBe(false);
@@ -68,7 +69,7 @@ describe("removeBlock safety", () => {
         join(root, "src/features/core/kv/feature.json"),
         manifest("kv", { files: [bad] }),
       );
-      expect(() => removeBlock(root, "kv")).toThrow(/"files" entry/);
+      expect(() => removeBlock(root, "kv", { force: true })).toThrow(/"files" entry/);
       expect(existsSync(join(root, "src/features/core/kv/layer.ts"))).toBe(true);
     }
   });
@@ -77,7 +78,7 @@ describe("removeBlock safety", () => {
     const root = project();
     const files = ["drizzle.config.ts"];
     writeFileSync(join(root, "src/features/core/kv/feature.json"), manifest("kv", { files }));
-    removeBlock(root, "kv");
+    removeBlock(root, "kv", { force: true });
     expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
     expect(existsSync(join(root, "drizzle.config.ts"))).toBe(true);
   });
@@ -85,18 +86,51 @@ describe("removeBlock safety", () => {
   test("deletes nothing when the project cannot be synced afterwards", () => {
     const root = project();
     writeFileSync(join(root, "wrangler.jsonc"), '{ "name": "app" ');
-    expect(() => removeBlock(root, "kv")).toThrow(/wrangler.jsonc/);
+    expect(() => removeBlock(root, "kv", { force: true })).toThrow(/wrangler.jsonc/);
     expect(existsSync(join(root, "src/features/core/kv/layer.ts"))).toBe(true);
   });
 });
 
+describe("removeBlock without force", () => {
+  const git = (root: string, ...args: Array<string>) =>
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: root });
+
+  test("refuses outside a git repository and deletes nothing", () => {
+    const root = project();
+    expect(() => removeBlock(root, "kv")).toThrow(/not a git repository/);
+    expect(existsSync(join(root, "src/features/core/kv/layer.ts"))).toBe(true);
+  });
+
+  test("refuses uncommitted work in the feature, then removes it once committed", () => {
+    const root = project();
+    git(root, "init", "-q");
+    git(root, "add", "-A");
+    git(root, "commit", "-qm", "init");
+    writeFileSync(join(root, "src/features/core/kv/layer.ts"), "export const layer = 2;\n");
+    expect(() => removeBlock(root, "kv")).toThrow(/kv has uncommitted changes/);
+    expect(existsSync(join(root, "src/features/core/kv/layer.ts"))).toBe(true);
+    git(root, "commit", "-qam", "edit");
+    removeBlock(root, "kv");
+    expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
+  });
+});
+
 describe("addBlock", () => {
+  test("copies nothing when the project cannot be synced", () => {
+    const template = project();
+    const root = project();
+    removeBlock(root, "kv", { force: true });
+    writeFileSync(join(root, "wrangler.jsonc"), '{ "name": "app" ');
+    expect(() => addBlock(root, template, "kv")).toThrow(/wrangler.jsonc/);
+    expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
+  });
+
   test("puts a core module back in core, with what it requires", () => {
     const template = project();
     const root = project();
-    removeBlock(root, "auth");
-    removeBlock(root, "db");
-    removeBlock(root, "kv");
+    removeBlock(root, "auth", { force: true });
+    removeBlock(root, "db", { force: true });
+    removeBlock(root, "kv", { force: true });
     expect(addBlock(root, template, "auth")).toEqual(["db", "auth"]);
     expect(existsSync(join(root, "src/features/core/db/layer.ts"))).toBe(true);
     expect(existsSync(join(root, "src/features/db"))).toBe(false);

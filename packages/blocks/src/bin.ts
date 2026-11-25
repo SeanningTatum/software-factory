@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import { check, loadManifests, removeBlock, sync } from "./index.ts";
 
-const [command, arg] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const force = args.includes("--force");
+const [command, arg] = args.filter((a) => a !== "--force");
 const root = process.cwd();
 
 const usage = `cf-saas-blocks <command>
@@ -11,7 +13,8 @@ const usage = `cf-saas-blocks <command>
   check             fail when generated files are stale, a file has no owner, or an import
                     crosses a feature boundary
   list              list what can be removed: optional features and core modules
-  remove <feature>  delete a feature or core module and everything it owns
+  remove <feature>  delete a feature or core module and everything it owns; refuses when its
+                    files have uncommitted changes, unless --force
 
 Add features with: bunx create-tanstack-cf-saas add <feature>`;
 
@@ -35,7 +38,7 @@ const commands: Record<string, () => number | undefined> = {
   },
   remove: () => {
     if (!arg) return undefined;
-    removeBlock(root, arg);
+    removeBlock(root, arg, { force });
     console.log(`Removed ${arg}. Run your package manager's install to drop unused packages.`);
     return 0;
   },

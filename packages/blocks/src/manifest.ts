@@ -36,7 +36,7 @@ const WorkflowBinding = Schema.Struct({
 const RateLimitBinding = Schema.Struct({
   type: Schema.Literal("ratelimit"),
   binding: Schema.String,
-  namespace_id: Schema.String,
+  namespace_id: Schema.String.check(Schema.isPattern(/^\d+$/)),
   limit: Schema.Number,
   period: Schema.Literals([10, 60]),
 });
@@ -150,6 +150,30 @@ export const featureDir = (root: string, name: string): string | undefined =>
     existsSync(join(root, dir, MANIFEST_FILE)),
   );
 
+/**
+ * Throws when two features declare the same env name (var, secret or binding: all keys of `Env`)
+ * or the same workflow class, which would generate duplicate code.
+ */
+const rejectClashes = (manifests: ReadonlyMap<string, BlockManifest>) => {
+  const owners = new Map<string, string>();
+  const claim = (key: string, label: string, name: string) => {
+    const owner = owners.get(key);
+    if (owner && owner !== name)
+      throw new Error(`"${label}" is declared by both ${owner} and ${name}`);
+    owners.set(key, name);
+  };
+  for (const m of manifests.values()) {
+    const envNames = [
+      ...Object.keys(m.vars ?? {}),
+      ...Object.keys(m.secrets ?? {}),
+      ...(m.bindings ?? []).map((b) => b.binding),
+    ];
+    for (const key of envNames) claim(`env:${key}`, key, m.name);
+    for (const b of m.bindings ?? [])
+      if (b.type === "workflow") claim(`class:${b.class_name}`, b.class_name, m.name);
+  }
+};
+
 /** Reads every feature.json under src/features and src/features/core, required ones included. */
 export const loadManifests = (root: string): Map<string, Feature> => {
   const manifests = new Map<string, Feature>();
@@ -177,6 +201,7 @@ export const loadManifests = (root: string): Map<string, Feature> => {
     }
     manifests.set(manifest.name, { ...manifest, dir });
   }
+  rejectClashes(manifests);
   return manifests;
 };
 
