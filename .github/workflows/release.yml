@@ -12,12 +12,12 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: harness
         run: echo "sha=$(git rev-parse HEAD:claude)" >> "$GITHUB_OUTPUT"
       # claude/ is the private claude-config repo, and the CLI must not ship without it. Its own
       # checkout keeps the token to this one read; with no token, this step fails the release.
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: SeanningTatum/claude-config
           ref: ${{ steps.harness.outputs.sha }}
