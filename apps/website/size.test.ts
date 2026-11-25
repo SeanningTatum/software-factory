@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstLoadBytes, routePreloads } from "./size";
+import { firstLoadBytes, routePreloads, unbudgeted } from "./size";
 
 const manifest = `routes: {
 	__root__: {
@@ -33,5 +33,13 @@ describe("size", () => {
     const size = (path: string) => path.length;
     expect(firstLoadBytes(manifest, "/", size)).toBe(3 * "/assets/a.js".length);
     expect(firstLoadBytes(manifest, "/login", size)).toBeUndefined();
+  });
+
+  it("names each route the budgets file leaves out", () => {
+    const budget = { budget: 1, now: 1 };
+    expect(unbudgeted(manifest, { routes: { "/": budget }, worker: budget })).toEqual([
+      "/bare",
+      "/last",
+    ]);
   });
 });

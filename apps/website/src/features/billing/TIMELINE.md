@@ -86,6 +86,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `e2e/billing.route.spec.ts` covers /billing: the plan page with an axe scan, and the redirect to /login when signed out.
 - 2026-11-24 — Checkout and subscription events carry the user's id (the subscription's `referenceId` on webhooks), so they reach the audit log and analytics under the right user.
 - 2026-11-24 — `metric` in `events.ts`: checkouts that become paid subscriptions, less cancellations.
 - 2026-11-24 — `Billing.stateFor` reads every live row and takes the first entitled one, else the first; it used to take an arbitrary row with `.limit(1)`, so `past_due` beside `active` could hide the paid plan.

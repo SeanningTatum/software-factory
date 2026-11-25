@@ -33,5 +33,6 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Route specs for /api/health and, for core modules that have no `e2e/`, /api/events and /api/browser-report; also / in the template. Why: the test map now needs `e2e/<route>.route.spec.ts` for every route file, and a core module's routes take theirs here.
 - 2026-11-24 — Imports ui from `src/features/core/ui/`.
 - 2026-11-24 — Moved into `src/features/home/` from `src/routes/index.tsx` and `src/routes/api/health.ts` when the template switched from blocks to features.

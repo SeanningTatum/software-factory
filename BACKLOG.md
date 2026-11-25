@@ -36,15 +36,10 @@ Rules for a good item:
 | ---- | ------------------------------------------------- | ----------------- | ---- | --------------------- |
 | B-01 | CI runs on GitHub                                 | Repo              | S    | Fix Actions billing   |
 | B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
-| B-06 | Every route has a working and a failing spec      | Testing           | M    | no                    |
 | B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
 | B-08 | The Claude workflows are the real repo            | Agentic workflows | S    | The repo URL          |
 | B-09 | A first deploy to staging succeeds                | Deployment        | M    | A Cloudflare token    |
 | B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
-| B-13 | The website's browser specs run                   | Testing           | S    | no                    |
-| B-14 | The tools are proven on Windows                   | Quality checks    | S    | no                    |
-| B-15 | Tests have coverage floors                        | Testing           | S    | no                    |
-| B-16 | Pages are checked for accessibility               | Quality checks    | M    | no                    |
 | B-18 | Sign-up is protected from bots                    | Security          | M    | Turnstile keys        |
 | B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 
@@ -81,21 +76,6 @@ Rules for a good item:
 **Where:** `templates/saas-starter/src/features/billing/feature.json`, `src/features/home/routes/api/health.ts`.
 
 ## Next
-
-### B-06 · Every route has a working and a failing spec
-
-- **Area:** Testing
-- **Size:** M
-- **Needs you:** no
-
-**Why:** Only flows with a state machine have browser specs. The dashboard, the health check and the API routes can break without a failing test.
-
-**Done when:**
-
-- [ ] Each page and API route has one spec for the normal case and one for an error.
-- [ ] The test map fails when a new route has neither.
-
-**Where:** `templates/saas-starter/src/features/*/e2e/`, `cf-saas-lint.json`.
 
 ### B-07 · Billing works with real Stripe test keys
 
@@ -158,64 +138,7 @@ Rules for a good item:
 
 **Where:** `.github/workflows/release.yml`, `.changeset/`.
 
-### B-13 · The website's browser specs run
-
-- **Area:** Testing
-- **Size:** S
-- **Needs you:** no
-
-**Why:** The website shares the template's specs but they have never been run there, and its landing page has none.
-
-**Done when:**
-
-- [ ] `bun run test:e2e` passes in `apps/website`.
-- [ ] One spec loads `/` and `/docs`.
-
-**Where:** `apps/website/`.
-
-### B-14 · The tools are proven on Windows
-
-- **Area:** Quality checks
-- **Size:** S
-- **Needs you:** no
-
-**Why:** The path fixes for Windows have a unit test, but the tools have never run there.
-
-**Done when:**
-
-- [ ] `check.yml` runs the two packages' tests on `windows-latest`.
-
-**Where:** `.github/workflows/check.yml`, `packages/`.
-
 ## Later
-
-### B-15 · Tests have coverage floors
-
-- **Area:** Testing
-- **Size:** S
-- **Needs you:** no
-
-**Why:** A file can have a test that checks almost nothing.
-
-**Done when:**
-
-- [ ] `bun run test` fails when coverage of `src/app` or `src/features` falls under a set floor.
-
-**Where:** `templates/saas-starter/vitest.config.ts`.
-
-### B-16 · Pages are checked for accessibility
-
-- **Area:** Quality checks
-- **Size:** M
-- **Needs you:** no
-
-**Why:** Nothing tells us when a page cannot be used with a keyboard or a screen reader.
-
-**Done when:**
-
-- [ ] Each page spec runs an accessibility scan and fails on a serious problem.
-
-**Where:** `templates/saas-starter/src/features/*/e2e/`.
 
 ### B-18 · Sign-up is protected from bots
 

@@ -7,13 +7,24 @@ import type { Rule } from "./types.ts";
 const fileStem = (file: string) => basename(file).replace(/\.tsx?$/, "");
 const nameStem = (file: string) => fileStem(file).replace(/\.machine$/, "");
 
+/**
+ * `{route}`: the path under `routes/`, no extension, `/` as `.`, and `$` dropped from param
+ * segments (a bare `$` is `splat`). Empty for a file outside one.
+ */
+const routeStem = (file: string) =>
+  (file.split("/routes/")[1] ?? "")
+    .replace(/\.tsx?$/, "")
+    .split("/")
+    .map((segment) => segment.replace(/^\$/, "") || "splat")
+    .join(".");
+
 export const testMap: Rule = {
   id: "test-map",
   description: "Every source file has its proof: the tests the test map requires for it.",
   check: ({ file, config, allFiles }) => {
-    if (matchesAny(file, config.testExempt)) return [];
+    const exempt = matchesAny(file, config.testExempt);
     const required = config.testMap
-      .filter((e) => globToRegExp(e.files).test(file))
+      .filter((e) => globToRegExp(e.files).test(file) && (!exempt || e.always))
       .flatMap((e) => e.requires);
     const missing = [...new Set(required)]
       .map((pattern) =>
@@ -21,6 +32,7 @@ export const testMap: Rule = {
           .replaceAll("{dir}", dirname(file))
           .replaceAll("{file}", fileStem(file))
           .replaceAll("{name}", nameStem(file))
+          .replaceAll("{route}", () => routeStem(file))
           .replaceAll("{feature}", placeOf(config.featureLayout, file)?.folder ?? ""),
       )
       .filter((pattern) => {

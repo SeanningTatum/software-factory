@@ -74,7 +74,7 @@ for (const [name, features] of Object.entries(combos)) {
     ["house rules", "bunx", ["cf-saas-lint"]],
     ["feature check", "bunx", ["cf-saas-blocks", "check"]],
     ["typecheck", "bunx", ["tsc", "-p", "."]],
-    ["unit tests", "bunx", ["vitest", "run"]],
+    ["unit tests", "bun", ["run", "test"]],
     ["knip", "bunx", ["knip"]],
     ["build", "bunx", ["vite", "build"]],
     ["size", "bun", ["run", "size"]],

@@ -1,7 +1,11 @@
 {
   "routes": {
     "/": { "budget": 180, "now": 161.7 },
-    "/login": { "budget": 195, "now": 175.5 }
+    "/billing": { "budget": 195, "now": 175.7 },
+    "/dashboard": { "budget": 195, "now": 173.6 },
+    "/login": { "budget": 195, "now": 175.5 },
+    "/signup": { "budget": 195, "now": 175.5 },
+    "/uploads": { "budget": 185, "now": 164.0 }
   },
   "worker": { "budget": 1010, "now": 914.8 }
 }

@@ -1,8 +1,17 @@
 {
   "routes": {
     "/": { "budget": 185, "now": 164.8 },
+    "/billing": { "budget": 195, "now": 177.0 },
+    "/dashboard": { "budget": 195, "now": 174.9 },
+    "/docs": { "budget": 180, "now": 163.1 },
+    "/docs/": { "budget": 180, "now": 163.7 },
+    "/docs/claude": { "budget": 180, "now": 163.4 },
+    "/docs/features": { "budget": 185, "now": 165.5 },
+    "/docs/rules": { "budget": 185, "now": 163.9 },
+    "/docs/setup": { "budget": 185, "now": 163.7 },
     "/login": { "budget": 195, "now": 176.8 },
-    "/docs/": { "budget": 180, "now": 163.7 }
+    "/signup": { "budget": 195, "now": 176.8 },
+    "/uploads": { "budget": 185, "now": 165.3 }
   },
   "worker": { "budget": 1020, "now": 926.1 }
 }

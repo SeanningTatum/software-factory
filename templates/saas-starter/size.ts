@@ -20,6 +20,14 @@ export const routePreloads = (manifest: string, key: string): string[] | undefin
   return [...list.matchAll(/"([^"]+\.js)"/g)].map((m) => m[1] as string);
 };
 
+/** Every page route the manifest lists, root left out. */
+export const manifestRoutes = (manifest: string): string[] =>
+  [...manifest.matchAll(/^\t"([^"]+)": \{/gm)].map((m) => m[1] as string);
+
+/** Routes the build has that the budgets file does not name. */
+export const unbudgeted = (manifest: string, budgets: Budgets): string[] =>
+  manifestRoutes(manifest).filter((route) => !(route in budgets.routes));
+
 const gzipped = (file: string) => gzipSync(readFileSync(file)).length;
 
 /** Gzipped bytes of every distinct file a first load of the route fetches (root files too). */
@@ -55,8 +63,8 @@ const main = () => {
   }
   const manifest = readFileSync(join(assets, manifestName), "utf8");
   // Without this, a change in the manifest's format would skip every route and pass.
-  if (!routePreloads(manifest, "__root__")?.length) {
-    process.stderr.write(`size: found no root preloads in ${manifestName}; update size.ts.\n`);
+  if (!routePreloads(manifest, "__root__")?.length || manifestRoutes(manifest).length === 0) {
+    process.stderr.write(`size: cannot read the routes in ${manifestName}; update size.ts.\n`);
     process.exitCode = 1;
     return;
   }
@@ -66,6 +74,13 @@ const main = () => {
     if (bytes === undefined) process.stdout.write(`size: ${route} is not in this build, skipped\n`);
     else rows.push([`${route} (client JS)`, bytes, budget * 1024]);
   }
+  const missing = unbudgeted(manifest, budgets);
+  for (const route of missing) {
+    const bytes =
+      firstLoadBytes(manifest, route, (path) => gzipped(join("dist/client", path))) ?? 0;
+    process.stderr.write(`size: ${route} (${kb(bytes)}) has no budget in size-budgets.json\n`);
+  }
+  if (missing.length > 0) process.exitCode = 1;
   const worker = jsFiles("dist/server").reduce((sum, file) => sum + gzipped(file), 0);
   rows.push(["Worker (gzip)", worker, budgets.worker.budget * 1024]);
 
