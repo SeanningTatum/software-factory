@@ -5,6 +5,8 @@ export interface Credentials {
   readonly password: string;
   /** Only sign-up sends a name. */
   readonly name?: string;
+  /** The Turnstile token, when sign-up is guarded. Single-use, so each submit needs a fresh one. */
+  readonly captcha?: string;
 }
 
 /**

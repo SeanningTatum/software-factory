@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { asVisitor } from "#/app/testing/e2e.ts";
 
 const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
@@ -7,10 +8,7 @@ const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(
  * request comes from one address, so without this a second run inside a minute trips it.
  * (On Cloudflare the edge sets this header, so a client can't choose it.)
  */
-test.beforeEach(async ({ page }) => {
-  const octet = () => Math.floor(Math.random() * 256);
-  await page.setExtraHTTPHeaders({ "cf-connecting-ip": `10.${octet()}.${octet()}.${octet()}` });
-});
+test.beforeEach(({ page }) => asVisitor(page));
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/signup");

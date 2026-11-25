@@ -11,6 +11,12 @@ describe("securityHeaders", () => {
     expect(headers["strict-transport-security"]).toBeDefined();
   });
 
+  it("lets the Turnstile frame in and nothing else", () => {
+    const csp = securityHeaders("abc", true)["content-security-policy"] ?? "";
+    expect(csp).toContain("frame-src https://challenges.cloudflare.com;");
+    expect(csp).toContain("connect-src 'self';");
+  });
+
   it("leaves the CSP out in development, where Vite injects inline scripts", () => {
     expect(securityHeaders("abc", false)["content-security-policy"]).toBeUndefined();
   });

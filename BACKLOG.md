@@ -40,7 +40,6 @@ Rules for a good item:
 | B-08 | The Claude workflows are the real repo            | Agentic workflows | S    | The repo URL          |
 | B-09 | A first deploy to staging succeeds                | Deployment        | M    | A Cloudflare token    |
 | B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
-| B-18 | Sign-up is protected from bots                    | Security          | M    | Turnstile keys        |
 | B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 
 ## Now
@@ -139,20 +138,6 @@ Rules for a good item:
 **Where:** `.github/workflows/release.yml`, `.changeset/`.
 
 ## Later
-
-### B-18 · Sign-up is protected from bots
-
-- **Area:** Security
-- **Size:** M
-- **Needs you:** Cloudflare Turnstile keys
-
-**Why:** The rate limit slows one address down. It does not stop a bot farm making accounts.
-
-**Done when:**
-
-- [ ] With keys set, sign-up needs a Turnstile token; without them, it works as today.
-
-**Where:** `templates/saas-starter/src/features/auth/`.
 
 ### B-19 · Users can verify their email and reset a password
 

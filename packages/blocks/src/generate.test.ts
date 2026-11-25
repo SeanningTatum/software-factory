@@ -101,4 +101,15 @@ describe("generateFiles", () => {
     expect(env).toContain('export const requiredSettings = ["APP_URL"] as const;');
     expect(devVarsExample(manifests)).toContain("# --- home ---\n# url (required).\nAPP_URL=");
   });
+
+  test("shows a var's example in .dev.vars.example, not its deployed default", () => {
+    const withExample = new Map(manifests).set(
+      "home",
+      feature("home", {
+        required: true,
+        vars: { KEY: { description: "key", required: false, default: "", example: "test-key" } },
+      }),
+    );
+    expect(devVarsExample(withExample)).toContain("KEY=test-key");
+  });
 });

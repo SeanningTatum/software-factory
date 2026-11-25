@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Effect, ErrorReporter, Layer } from "effect";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { type AppEnv, CloudflareEnv } from "#/app/env.ts";
 import { CurrentRequest, requestInfoFrom } from "#/app/request.ts";
 import type { Captured } from "#/features/core/analytics/api/adapter.ts";
@@ -22,12 +22,13 @@ const request = async (
   incoming: Request,
   allow = true,
   plugins = featureAuthPlugins as ReadonlyArray<AuthPluginFactory>,
+  appEnv = env,
 ) => {
   const sent: Array<Captured> = [];
   const reported: Array<string> = [];
   const info = requestInfoFrom(incoming);
   const base = Layer.mergeAll(
-    CloudflareEnv.layer(env),
+    CloudflareEnv.layer(appEnv),
     CurrentRequest.layer(info),
     testDatabaseLayer(db),
     ErrorReporter.layer([ErrorReporter.make(({ error }) => void reported.push(error.message))]),
@@ -77,6 +78,65 @@ describe("Auth", () => {
     expect(signIn.response.status).toBe(200);
     expect(signIn.events).toEqual(["sign_in_succeeded"]);
     expect(signIn.response.headers.get("set-cookie")).toContain("better-auth.session_token");
+  });
+
+  describe("with Turnstile keys", () => {
+    const guarded = {
+      ...env,
+      TURNSTILE_SITE_KEY: "site",
+      TURNSTILE_SECRET_KEY: "secret",
+    } as unknown as AppEnv;
+    const credentials = { email: "bot@example.com", password: "correct horse battery", name: "B" };
+    const siteverify = (success: boolean) =>
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ success }));
+    afterEach(() => vi.restoreAllMocks());
+
+    it("refuses a sign-up with no token, before it reaches Cloudflare or the database", async () => {
+      const fetched = siteverify(true);
+      const { response, events } = await request(
+        db,
+        post("/api/auth/sign-up/email", credentials),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(response.status).toBe(400);
+      expect(events).toEqual([]);
+      expect(fetched).not.toHaveBeenCalled();
+    });
+
+    it("refuses a token Cloudflare rejects", async () => {
+      siteverify(false);
+      const { response } = await request(
+        db,
+        post("/api/auth/sign-up/email", credentials, { "x-captcha-response": "bad" }),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(response.status).toBe(403);
+    });
+
+    it("signs up with a token Cloudflare accepts, and leaves sign-in alone", async () => {
+      const fetched = siteverify(true);
+      const signUp = await request(
+        db,
+        post("/api/auth/sign-up/email", credentials, { "x-captcha-response": "good" }),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(signUp.response.status).toBe(200);
+      expect(String(fetched.mock.calls[0]?.[0])).toContain("/turnstile/v0/siteverify");
+      const signIn = await request(
+        db,
+        post("/api/auth/sign-in/email", credentials),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(signIn.response.status).toBe(200);
+    });
   });
 
   it("reads the session from the cookie and tags the request with the user", async () => {
