@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   type Binding,
@@ -34,7 +34,7 @@ export interface Item {
   readonly fix: string;
 }
 
-const SETUP = "bunx create-tanstack-cf-saas setup";
+const SETUP = "bun run setup";
 export const SECRET_BYTES = 36;
 export const GENERATED_SECRETS = new Set(["BETTER_AUTH_SECRET"]);
 
@@ -297,6 +297,9 @@ export const migrate = (
   log: (line: string) => void,
 ) => {
   const target = where === "local" ? ["--local"] : ["--remote", ...envFlag(where)];
+  // A project that has not run db:generate yet has nothing to apply, and wrangler would refuse.
+  const dir = join(root, "drizzle");
+  if (!existsSync(dir) || !readdirSync(dir).some((file) => file.endsWith(".sql"))) return;
   for (const b of enabled(root).flatMap((m) => m.bindings ?? [])) {
     if (b.type !== "d1") continue;
     const applied = wrangler(["d1", "migrations", "apply", b.binding, ...target]);
@@ -333,6 +336,19 @@ export const provision = async (root: string, wrangler: Wrangler, options: Provi
   }
 };
 
+/** Records `url` as the environment's APP_URL and deploys; a failed deploy takes the URL back. */
+const deployUnder = (file: string, env: EnvName, url: string, deploy: () => void) => {
+  const before = readFileSync(file, "utf8");
+  writeFileSync(file, withVars(before, env, { APP_URL: url }));
+  try {
+    deploy();
+  } catch (error) {
+    // Without its URL the environment counts as not deployed, so the next run tries again.
+    writeFileSync(file, before);
+    throw error;
+  }
+};
+
 /** Runs one of the project's package scripts and captures what it printed. */
 export type RunScript = (script: string) => { ok: boolean; stdout: string; stderr: string };
 
@@ -340,18 +356,23 @@ const WORKERS_DEV = /https:\/\/[a-z0-9-]+\.([a-z0-9-]+)\.workers\.dev/i;
 
 /**
  * Deploys each of `envs` that has no URL yet, so its Worker exists with its bindings, and records
- * where it lives as APP_URL. Nothing but a deploy says what an account's workers.dev subdomain is,
- * so the first one runs before its URL is known; wrangler prints the address, the URL is written,
- * and that environment deploys once more under the URL it now knows. The subdomain then gives every
- * other environment's address up front. An environment that has a URL is left alone, so this
- * happens once.
+ * where it lives as APP_URL. `urls` holds an address the user gave, for an environment with its own
+ * domain. Without one the address is on workers.dev, and nothing but a deploy says what an
+ * account's subdomain there is: the first deploy runs before its URL is known, wrangler prints the
+ * address, the URL is written, and that environment deploys once more under it. The subdomain then
+ * gives every other environment's address up front.
+ *
+ * An environment that has a URL is never deployed from here, so this happens once. A new URL given
+ * for it is only recorded: the next deploy carries it.
  */
 export const firstDeploy = (
   root: string,
   envs: ReadonlyArray<EnvName>,
   script: RunScript,
   log: (line: string) => void,
+  urls: Readonly<Partial<Record<EnvName, string>>> = {},
 ) => {
+  const file = join(root, WRANGLER_FILE);
   const worker = (parse(wranglerText(root)) as { name: string }).name;
   const deploy = (env: EnvName) => {
     log(`${env}: building and deploying`);
@@ -366,15 +387,24 @@ export const firstDeploy = (
   let subdomain: string | undefined;
   // Staging first: if a first deploy goes wrong, it goes wrong there.
   for (const env of (["staging", "production"] as const).filter((e) => envs.includes(e))) {
-    if (appUrl(root, env)) continue;
-    subdomain ??= deploy(env);
-    if (!subdomain)
+    const recorded = appUrl(root, env);
+    const given = urls[env];
+    if (recorded) {
+      if (given && given !== recorded) {
+        writeFileSync(file, withVars(wranglerText(root), env, { APP_URL: given }));
+        log(`${env}: URL is now ${given}; its next deploy carries it`);
+      }
+      continue;
+    }
+    if (!given) subdomain ??= deploy(env);
+    if (!given && !subdomain)
       throw new SetupError(
-        `${env} is deployed, but wrangler printed no workers.dev address. Set its URL: setup --env ${env} --var APP_URL=https://...`,
+        `${env} is deployed, but wrangler printed no workers.dev address. Give its URL: ${SETUP} --env ${env} --var APP_URL=https://...`,
       );
-    const url = `https://${env === "production" ? worker : `${worker}-${env}`}.${subdomain}.workers.dev`;
-    writeFileSync(join(root, WRANGLER_FILE), withVars(wranglerText(root), env, { APP_URL: url }));
-    deploy(env);
+    const url =
+      given ??
+      `https://${env === "production" ? worker : `${worker}-${env}`}.${subdomain}.workers.dev`;
+    deployUnder(file, env, url, () => deploy(env));
     log(`${env}: live at ${url}`);
   }
 };

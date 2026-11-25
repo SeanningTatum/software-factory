@@ -75,8 +75,7 @@ export function PlanCard({ state }: { state: BillingState }) {
       {!state.configured && (
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Billing isn't set up yet. Run <code>bunx create-tanstack-cf-saas setup</code> to add
-            your Stripe keys.
+            Billing isn't set up yet. Run <code>bun run setup</code> to add your Stripe keys.
           </p>
         </CardContent>
       )}

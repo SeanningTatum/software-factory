@@ -23,13 +23,14 @@ bun run db:generate add_invoices   # writes drizzle/0001_add_invoices.sql
 ## Ship it
 
 The `create` wizard offers these steps when it makes the project. Run them again here after you
-add a feature, or if you skipped one:
+add a feature, or if you skipped one. The project holds the CLI that made it as a dev dependency,
+so after `bun install` these run that copy and fetch nothing:
 
 ```bash
-bunx create-tanstack-cf-saas setup          # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
-bunx create-tanstack-cf-saas setup --check  # what is still missing, and the command that fixes each
-bunx create-tanstack-cf-saas github         # the GitHub repository, its branches and rules, and what CI deploys with
-bun run deploy:staging                      # by hand; CI does both once the repository variables are set
+bun run setup                        # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
+bun run setup --check                # what is still missing, and the command that fixes each
+bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, and what CI deploys with
+bun run deploy:staging               # by hand; CI does both once the repository variables are set
 bun run deploy
 ```
 

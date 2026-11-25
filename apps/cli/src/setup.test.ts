@@ -291,6 +291,14 @@ describe("migrate", () => {
     migrate(project([]), wrangler, "local", () => {});
     expect(calls).toEqual([]);
   });
+
+  test("does nothing before the first migration is generated", () => {
+    const dir = project(["auth"]);
+    rmSync(join(dir, "drizzle"), { recursive: true });
+    const { wrangler, calls } = fakeWrangler();
+    migrate(dir, wrangler, "staging", () => {});
+    expect(calls).toEqual([]);
+  });
 });
 
 describe("firstDeploy", () => {
@@ -320,6 +328,31 @@ describe("firstDeploy", () => {
     ran.length = 0;
     firstDeploy(dir, ["production", "staging"], script, () => {});
     expect(ran).toEqual([]);
+  });
+
+  test("a deploy that fails under the new URL leaves no URL, so the next run tries again", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    const failsSecond = (name: string) =>
+      ran.length === 1 ? { ok: false, stdout: "network down", stderr: "" } : script(name);
+    expect(() => firstDeploy(dir, ["staging"], failsSecond, () => {})).toThrow(/network down/);
+    expect(appUrl(dir, "staging")).toBeUndefined();
+
+    firstDeploy(dir, ["staging"], script, () => {});
+    expect(appUrl(dir, "staging")).toBe("https://saas-starter-staging.acme.workers.dev");
+  });
+
+  test("an environment with its own domain deploys once under it; a later URL is only recorded", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    const urls = { production: "https://app.example.com" };
+    firstDeploy(dir, ["production"], script, () => {}, urls);
+    expect(ran).toEqual(["deploy"]);
+    expect(appUrl(dir, "production")).toBe("https://app.example.com");
+
+    firstDeploy(dir, ["production"], script, () => {}, { production: "https://new.example.com" });
+    expect(ran).toEqual(["deploy"]);
+    expect(appUrl(dir, "production")).toBe("https://new.example.com");
   });
 
   test("touches only the environments asked for", () => {

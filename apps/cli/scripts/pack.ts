@@ -10,6 +10,8 @@ const localPackages: Record<string, string> = {
   "@tanstack-cf-saas/blocks": "packages/blocks",
   "@tanstack-cf-saas/lint": "packages/lint",
   "@tanstack-cf-saas/tsconfig": "packages/tsconfig",
+  // Projects run `setup` from their own copy of the CLI. Build it before packing: it ships dist/.
+  "create-tanstack-cf-saas": "apps/cli",
 };
 
 /**

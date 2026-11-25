@@ -26,7 +26,8 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "setup": "create-tanstack-cf-saas setup"
   },
   "dependencies": {
     "@better-auth/stripe": "^1.7.27",
@@ -63,6 +64,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.3.0",
     "@vitest/coverage-v8": "5.1.1",
+    "create-tanstack-cf-saas": "workspace:*",
     "drizzle-kit": "^0.31.11",
     "knip": "^6.48.0",
     "tailwindcss": "^4.3.5",

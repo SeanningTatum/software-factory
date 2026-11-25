@@ -44,8 +44,8 @@ a step, or need it again after adding a feature, these are the same steps as com
 order:
 
 ```bash
-bunx create-tanstack-cf-saas setup    # D1, KV, R2, migrations, secrets and a first deploy, for both environments
-bunx create-tanstack-cf-saas github                                       # repository, branches, rules, deploy settings
+bun run setup                         # D1, KV, R2, migrations, secrets and a first deploy, for both environments
+bunx create-tanstack-cf-saas github   # repository, branches, rules, deploy settings
 ```
 
 The last one gives GitHub Actions what `deploy.yml` reads:

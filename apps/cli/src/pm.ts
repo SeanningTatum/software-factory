@@ -17,6 +17,3 @@ export const runCommand = (
   pm,
   ["run", script, ...(pm === "npm" && args.length ? ["--"] : []), ...args],
 ];
-
-export const execCommand = (pm: PackageManager): string =>
-  ({ bun: "bunx", pnpm: "pnpm dlx", npm: "npx", yarn: "yarn dlx" })[pm];

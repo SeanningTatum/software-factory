@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import {
   addBlock,
+  type EnvName,
   loadManifests,
   readProject,
   removeBlock,
@@ -24,7 +25,6 @@ import { harnessStatus, syncHarness } from "./harness.ts";
 import { harnessDir, templateDir } from "./paths.ts";
 import {
   detectPackageManager,
-  execCommand,
   installCommand,
   type PackageManager,
   packageManagers,
@@ -301,7 +301,7 @@ export const create = async (args: CreateArgs) => {
 
 /** The last line of create: what setup is still for, or that nothing is left. */
 const closingLine = (cloudflare: ReadonlyArray<Item> | undefined, pm: PackageManager) => {
-  const setup = pc.cyan(`${execCommand(pm)} create-tanstack-cf-saas setup`);
+  const setup = pc.cyan(runCommand(pm, "setup").flat().join(" "));
   if (!cloudflare) return `When you're ready to deploy: ${setup}`;
   if (isReady(cloudflare)) return "Staging and production are live.";
   return `Both are deployed. To fill what the table marks missing: ${setup}`;
@@ -315,7 +315,7 @@ const runScript =
     return capture(cmd, cwd)(args);
   };
 
-const SETUP_LATER = "Run `create-tanstack-cf-saas setup` in the project when you are ready.";
+const SETUP_LATER = "Run the project's `setup` script when you are ready.";
 
 /**
  * Offers to create the Cloudflare side now, for staging and production: the resources, the secrets
@@ -347,6 +347,7 @@ const offerCloudflare = async (
     return undefined;
   }
   const blanks = blankSettings(plan.targetDir, features);
+  const urls: Partial<Record<EnvName, string>> = {};
   try {
     for (const env of ["staging", "production"] as const) {
       const url = cancelled(
@@ -356,24 +357,22 @@ const offerCloudflare = async (
           validate: (v) => (!v || /^https:\/\/\S+$/.test(v) ? undefined : "Start with https://"),
         }),
       ).trim();
+      if (url) urls[env] = url;
       const typed = typedSettings(blanks, plan.devVars, env);
       await provision(plan.targetDir, wrangler, {
         envs: [env],
-        vars: { ...(url ? { APP_URL: url } : {}), ...typed.vars },
+        vars: typed.vars,
         secretValue: async (key) => typed.secrets[key],
         log: (line) => p.log.step(line),
       });
     }
-    firstDeploy(plan.targetDir, ["staging", "production"], runScript(pm, plan.targetDir), (line) =>
-      p.log.step(line),
+    firstDeploy(
+      plan.targetDir,
+      ["staging", "production"],
+      runScript(pm, plan.targetDir),
+      (line) => p.log.step(line),
+      urls,
     );
-    // The ids and URLs are in wrangler.jsonc now; CI deploys from what is committed.
-    const git = capture("git", plan.targetDir);
-    if (plan.git && git(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) {
-      await run("git", ["add", WRANGLER_FILE], plan.targetDir);
-      const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
-      await run("git", [...gitIdentity(plan.targetDir), ...commit], plan.targetDir);
-    }
     p.log.info("Where things stand:");
     const items = readiness(plan.targetDir, wrangler);
     printTable(items);
@@ -382,7 +381,18 @@ const offerCloudflare = async (
     // The project is already made; setup finishes what is left when run again.
     p.log.warn(`${(error as Error).message}\n${SETUP_LATER}`);
     return undefined;
+  } finally {
+    // Also after a failure: the ids of what was made must reach the first push, not placeholders.
+    if (plan.git) await commitWrangler(plan.targetDir);
   }
+};
+
+/** Commits wrangler.jsonc when setup changed it; CI deploys from what is committed. */
+const commitWrangler = async (dir: string) => {
+  if (!capture("git", dir)(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) return;
+  await run("git", ["add", WRANGLER_FILE], dir);
+  const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
+  await run("git", [...gitIdentity(dir), ...commit], dir);
 };
 
 const GITHUB = "create-tanstack-cf-saas github";
@@ -495,9 +505,11 @@ export const setup = async (args: SetupArgs) => {
   if (!loggedIn) throw new Error("Log in first: npx wrangler login");
   p.intro(pc.inverse(" setup "));
   migrate(root, wrangler, "local", (line) => p.log.step(line));
+  // A URL is given with --env, so it belongs to the one environment named.
+  const { APP_URL: url, ...rest } = vars;
   await provision(root, wrangler, {
     envs,
-    vars,
+    vars: rest,
     secretValue: async (key, env, isSet) => {
       const value = process.env[key];
       if (value) return value;
@@ -509,7 +521,13 @@ export const setup = async (args: SetupArgs) => {
     },
     log: (line) => p.log.step(line),
   });
-  firstDeploy(root, envs, runScript(detectPackageManager(), root), (line) => p.log.step(line));
+  firstDeploy(
+    root,
+    envs,
+    runScript(detectPackageManager(), root),
+    (line) => p.log.step(line),
+    url && envs[0] ? { [envs[0]]: url } : {},
+  );
   p.log.info("Where things stand:");
   printTable(readiness(root, wrangler));
   p.outro("Run setup again any time; it only adds what is missing.");
