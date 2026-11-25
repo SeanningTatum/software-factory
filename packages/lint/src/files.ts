@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, relative, sep } from "node:path";
-import type TS from "typescript";
+import type TS from "@typescript/typescript6";
 
 /** A path from `path.relative` with `/` between segments, as globs and folder names expect. */
 export const toSlash = (path: string, separator: string = sep) => path.split(separator).join("/");
@@ -24,6 +24,6 @@ let ts: typeof TS | undefined;
  * that only look like imports are not imports.
  */
 export const importSpecifiers = (text: string): ReadonlyArray<string> => {
-  ts ??= createRequire(import.meta.url)("typescript") as typeof TS;
+  ts ??= createRequire(import.meta.url)("@typescript/typescript6") as typeof TS;
   return ts.preProcessFile(text, true, true).importedFiles.map((f) => f.fileName);
 };
