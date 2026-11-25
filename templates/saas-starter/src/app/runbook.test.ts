@@ -30,3 +30,41 @@ describe("runbook config", () => {
     }
   });
 });
+
+/** The rulesets name workflow jobs as required checks; a renamed job would block every merge. */
+describe("branch rules", () => {
+  const workflow = (name: string) => read(`.github/workflows/${name}.yml`);
+  const job = (name: string) => new RegExp(`^  ${name}:$`, "m");
+  const required = (branch: string): Array<string> =>
+    JSON.parse(read(`.github/rulesets/${branch}.json`))
+      .rules.find((r: { type: string }) => r.type === "required_status_checks")
+      .parameters.required_status_checks.map((c: { context: string }) => c.context);
+
+  it("requires only checks a workflow runs, and the short checks share none of their names", () => {
+    const sources = ["ci", "promote", "deploy"].map(workflow).join("\n");
+    for (const context of [...required("staging"), ...required("production")]) {
+      expect(sources).toMatch(job(context));
+      expect(workflow("pr")).not.toMatch(job(context));
+    }
+  });
+
+  it("lets production move only by a tagged pull request from staging", () => {
+    const promote = workflow("promote");
+    expect(required("production")).toContain("promote");
+    expect(promote).toMatch(/"\$HEAD" != staging/);
+    expect(promote).toMatch(/git tag --points-at HEAD --list 'v\*'/);
+    // GitHub counts a skipped job as passed, and a push to staging runs ci.yml on the commit a
+    // promotion starts from: the gate must run on nothing else and never skip.
+    expect(promote).toMatch(/pull_request:\n\s+branches: \[production\]/);
+    expect(promote).not.toMatch(/^\s+if:/m);
+    expect(workflow("ci")).not.toMatch(job("promote"));
+    expect(required("production")).not.toContain("timeline");
+  });
+
+  it("deploys production only from its branch, after the same commit's staging deploy", () => {
+    expect(required("production")).toContain("staging");
+    expect(workflow("deploy")).toMatch(
+      /production:\n(\s+#.*\n)*\s+if: \$\{\{ github\.ref_name == 'production' && !github\.event\.created/,
+    );
+  });
+});

@@ -11,6 +11,7 @@ import {
 import pc from "picocolors";
 import { createActor, fromPromise, toPromise } from "xstate";
 import { type CreatePlan, createMachine } from "./create.machine.ts";
+import { setupGithub } from "./github.ts";
 import { harnessStatus, syncHarness } from "./harness.ts";
 import { harnessDir, templateDir } from "./paths.ts";
 import {
@@ -21,7 +22,7 @@ import {
   packageManagers,
   runCommand,
 } from "./pm.ts";
-import { gitIdentity, projectWrangler, run } from "./run.ts";
+import { capture, gitIdentity, projectWrangler, run } from "./run.ts";
 import {
   type BlankSetting,
   blankSettings,
@@ -173,7 +174,7 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
       ? [runCommand(pm, "db:generate").flat().join(" ")]
       : []),
     ...(pending.includes("git") && plan.git
-      ? [`git init && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
+      ? [`git init -b staging && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
       : []),
   ];
 };
@@ -224,7 +225,8 @@ export const create = async (args: CreateArgs) => {
         }),
         git: fromPromise(async ({ input }) => {
           step = "git";
-          await run("git", ["init", "--quiet"], input.targetDir);
+          // The shipped workflows deploy staging from `staging` and production from `production`.
+          await run("git", ["init", "--quiet", "--initial-branch=staging"], input.targetDir);
           await run("git", ["add", "-A"], input.targetDir);
           await run(
             "git",
@@ -272,6 +274,7 @@ export const create = async (args: CreateArgs) => {
         .join(", ")} in .dev.vars.`,
     );
   if (!args.yes) await saveSecretsToCloudflare(plan, context.features);
+  if (!args.yes && plan.git) await offerGithub(plan);
   p.note(steps.join("\n"), "Next");
   p.outro(
     `When you're ready to deploy: ${pc.cyan(`${execCommand(pm)} create-tanstack-cf-saas setup`)}`,
@@ -320,6 +323,38 @@ const saveSecretsToCloudflare = async (plan: CreatePlan, features: ReadonlyArray
   } catch (error) {
     // The project is already made; a failed put is something setup can finish later.
     p.log.warn(`${(error as Error).message}\nRun \`setup --env ${env}\` to try again.`);
+  }
+};
+
+const GITHUB = "create-tanstack-cf-saas github";
+
+/** Offers to create the GitHub repository and its branch rules, so the first push is protected. */
+const offerGithub = async (plan: CreatePlan) => {
+  const visibility = cancelled(
+    await p.select({
+      message:
+        "Create a GitHub repository with branch rules? staging is the default branch; production takes only a tagged pull request from staging.",
+      options: [
+        {
+          value: "private" as const,
+          label: "Yes, private",
+          hint: "rules on a private repository need a paid GitHub plan",
+        },
+        { value: "public" as const, label: "Yes, public" },
+        { value: "skip" as const, label: "Not now", hint: `run \`${GITHUB}\` later` },
+      ],
+    }),
+  );
+  if (visibility === "skip") return;
+  try {
+    setupGithub(plan.targetDir, capture("gh", plan.targetDir), capture("git", plan.targetDir), {
+      name: () => plan.name,
+      visibility,
+      log: (line) => p.log.step(line),
+    });
+  } catch (error) {
+    // The project is already made; the command finishes what is left when run again.
+    p.log.warn(`${(error as Error).message}\nRun \`${GITHUB}\` in the project to try again.`);
   }
 };
 
@@ -413,6 +448,18 @@ export const setup = async (args: SetupArgs) => {
   p.log.info("Where things stand:");
   printTable(readiness(root, wrangler));
   p.outro("Run setup again any time; it only adds what is missing.");
+};
+
+export const github = (isPublic: boolean) => {
+  const root = process.cwd();
+  setupGithub(root, capture("gh", root), capture("git", root), {
+    name: () => readProject(root).name,
+    visibility: isPublic ? "public" : "private",
+    log: console.log,
+  });
+  console.log(
+    "To ship: git tag v0.1.0 origin/staging && git push origin v0.1.0, then open a pull request from staging into production.",
+  );
 };
 
 export const harness = (action: string, force: boolean) => {

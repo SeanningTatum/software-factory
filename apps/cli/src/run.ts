@@ -34,6 +34,14 @@ export const projectWrangler =
     return { ok: result.status === 0, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   };
 
+/** Runs `cmd` (gh, git) in `cwd` and captures its output; `input` goes to stdin. */
+export const capture =
+  (cmd: string, cwd: string): Wrangler =>
+  (args, input) => {
+    const result = spawnSync(cmd, [...args], { cwd, input, encoding: "utf8" });
+    return { ok: result.status === 0, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+  };
+
 /** `-c` flags with a stand-in author when git has no user.name or user.email (as in CI). */
 export const gitIdentity = (cwd: string): Array<string> => {
   const has = (key: string) =>

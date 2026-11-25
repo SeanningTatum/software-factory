@@ -75,6 +75,12 @@ describe("create", () => {
       encoding: "utf8",
     });
     expect(log.stdout.trim()).toBe("noreply@example.com");
+    // The shipped workflows deploy from `staging` and `production`, so the first branch is staging.
+    const branch = spawnSync("git", ["branch", "--show-current"], {
+      cwd: join(dir, "app"),
+      encoding: "utf8",
+    });
+    expect(branch.stdout.trim()).toBe("staging");
   });
 
   test("warns about an unknown --pm", () => {

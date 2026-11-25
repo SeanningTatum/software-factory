@@ -2,7 +2,7 @@
 import { defineCommand, runMain } from "citty";
 import pc from "picocolors";
 import { legacyArgs } from "./args.ts";
-import { add, create, harness, remove, setup } from "./commands.ts";
+import { add, create, github, harness, remove, setup } from "./commands.ts";
 import { VERSION } from "./version.ts";
 
 /** Runs a command and prints what went wrong as one line, without a stack: these are user errors. */
@@ -112,6 +112,20 @@ const main = defineCommand({
         });
       }),
     }),
+    github: defineCommand({
+      meta: {
+        description:
+          "Put the project on GitHub: staging as the default branch, production protected, the rulesets in .github/rulesets/",
+      },
+      args: {
+        public: {
+          type: "boolean",
+          default: false,
+          description: "Make a new repository public (private is the default)",
+        },
+      },
+      run: guarded(({ args }) => github(args.public)),
+    }),
     harness: defineCommand({
       meta: {
         description: "check: show local edits to .claude/; sync: update it from this CLI's copy",
@@ -129,7 +143,7 @@ const main = defineCommand({
   },
 });
 
-const SUBCOMMANDS = new Set(["create", "add", "remove", "setup", "harness"]);
+const SUBCOMMANDS = new Set(["create", "add", "remove", "setup", "github", "harness"]);
 const MAIN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 const rawArgs = legacyArgs(process.argv.slice(2));
 const first = rawArgs[0];

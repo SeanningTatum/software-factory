@@ -38,7 +38,7 @@ describe("runTimeline", () => {
     const result = runTimeline(repo());
     expect(result).toEqual({
       code: 0,
-      lines: ["timeline: no base ref (origin/main, HEAD~1); skipped."],
+      lines: ["timeline: no base ref (origin/staging, origin/main, HEAD~1); skipped."],
     });
   });
 

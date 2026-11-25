@@ -104,8 +104,9 @@ Rules for a good item:
 
 - [ ] `create-tanstack-cf-saas setup --env staging` creates the resources and a second run changes nothing.
 - [ ] `deploy.yml` deploys to staging and its smoke test passes.
+- [ ] `create-tanstack-cf-saas github` applies both rulesets to a real repository, a pull request into `production` without a tag is refused, and one with a tag deploys.
 
-**Where:** `apps/cli/src/setup.ts`, `templates/saas-starter/.github/workflows/deploy.yml`.
+**Where:** `apps/cli/src/setup.ts`, `apps/cli/src/github.ts`, `templates/saas-starter/.github/`.
 
 ### B-10 · The packages are on npm
 
