@@ -22,9 +22,10 @@ export const reportBrowserError = Effect.fn("Observability.browserReport")(funct
 ) {
   const env = yield* CloudflareEnv;
   yield* checkLimit(binding<Limiter>(env, "REPORT_LIMITER"), clientAddress(request.headers));
-  const report = yield* Schema.decodeUnknownEffect(Report)(
-    yield* readBody(request, MAX_BYTES),
-  ).pipe(Effect.mapError((issue) => new InvalidInput({ issues: String(issue) })));
+  const body = yield* readBody(request, MAX_BYTES);
+  const report = yield* Schema.decodeUnknownEffect(Report)(body).pipe(
+    Effect.mapError((issue) => new InvalidInput({ issues: String(issue) })),
+  );
   const error = Object.assign(new Error(report.message), {
     name: "BrowserError",
     stack: report.stack,

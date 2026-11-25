@@ -19,8 +19,10 @@ const listFiles = createServerFn({ method: "GET" })
     runEffect(
       context,
       Effect.gen(function* () {
-        const user = yield* (yield* Auth).requireUser;
-        return yield* (yield* Uploads).list(user.id, data.cursor);
+        const auth = yield* Auth;
+        const user = yield* auth.requireUser;
+        const uploads = yield* Uploads;
+        return yield* uploads.list(user.id, data.cursor);
       }),
       "uploads.page",
     ),

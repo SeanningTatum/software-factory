@@ -21,7 +21,8 @@ export class WorkflowError extends Schema.TaggedError<WorkflowError>()("Workflow
 
 /**
  * Starts and reads onboarding runs. Nothing starts one for you: call it from your own server code,
- * for example after sign-up: `yield* (yield* Onboarding).start({ userId: user.id })`.
+ * for example after sign-up: `const onboarding = yield* Onboarding;` then
+ * `yield* onboarding.start({ userId: user.id })`.
  */
 export class Onboarding extends Context.Service<
   Onboarding,

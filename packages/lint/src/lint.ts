@@ -7,6 +7,7 @@ import { matchesAny } from "./glob.ts";
 import {
   externalCallSpan,
   fileSize,
+  noNestedYield,
   noProcessEnv,
   noRunEffect,
   noThrow,
@@ -24,6 +25,7 @@ export const rules: ReadonlyArray<Rule> = [
   noRunEffect,
   noProcessEnv,
   externalCallSpan,
+  noNestedYield,
   fileSize,
   testMap,
   sharedLib,

@@ -11,8 +11,10 @@ const getBilling = createServerFn({ method: "GET" }).handler(({ context }) =>
   runEffect(
     context,
     Effect.gen(function* () {
-      const user = yield* (yield* Auth).requireUser;
-      return yield* (yield* Billing).stateFor(user.id);
+      const auth = yield* Auth;
+      const user = yield* auth.requireUser;
+      const billing = yield* Billing;
+      return yield* billing.stateFor(user.id);
     }),
     "billing.state",
   ),

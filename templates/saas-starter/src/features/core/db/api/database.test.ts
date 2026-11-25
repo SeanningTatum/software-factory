@@ -32,7 +32,8 @@ describe("Database", () => {
   it("builds without a binding; each query then fails with NotConfigured", async () => {
     const exit = await Effect.runPromiseExit(
       Effect.gen(function* () {
-        return yield* (yield* Database).query("anything", async () => 1);
+        const database = yield* Database;
+        return yield* database.query("anything", async () => 1);
       }).pipe(
         Effect.provide(Database.layer.pipe(Layer.provide(CloudflareEnv.layer({} as AppEnv)))),
       ),
