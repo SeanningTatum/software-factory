@@ -335,7 +335,7 @@ describe("Auth", () => {
         id: "test-webhook",
         onRequest: async (incoming) => {
           if (!incoming.url.endsWith("/stripe/webhook")) return undefined;
-          onEvent({ _tag: "checkout_started", plan: "pro" }, "u1");
+          onEvent({ _tag: "signed_out" }, "u1");
           return { response: new Response("retry", { status: 500 }) };
         },
       },
