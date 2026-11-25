@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
+import { MAX_FILES_PER_USER, PAGE_SIZE } from "../constants.ts";
 import { memoryBucket } from "./memory-bucket.ts";
 import { Uploads } from "./uploads.ts";
 
@@ -14,8 +15,8 @@ describe("Uploads", () => {
     expect(stored.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(stored.name).toBe("my cat_.png");
     const listed = await Effect.runPromise(uploads.list("u1"));
-    expect(listed.map((f) => f.id)).toEqual([stored.id]);
-    expect(await Effect.runPromise(uploads.list("u2"))).toEqual([]);
+    expect(listed.files.map((f) => f.id)).toEqual([stored.id]);
+    expect((await Effect.runPromise(uploads.list("u2"))).files).toEqual([]);
   });
 
   it("rejects a file whose bytes don't match its type", async () => {
@@ -48,9 +49,8 @@ describe("Uploads", () => {
     );
   });
 
-  it("lists every file past one R2 page, newest first", async () => {
-    const { bucket, store } = memoryBucket();
-    for (let i = 0; i < 1005; i++) {
+  const seed = (store: ReturnType<typeof memoryBucket>["store"], count: number) => {
+    for (let i = 0; i < count; i++) {
       store.set(`users/u1/${String(i).padStart(5, "0")}`, {
         bytes: new ArrayBuffer(1),
         contentType: "image/png",
@@ -60,9 +60,29 @@ describe("Uploads", () => {
         },
       });
     }
-    const listed = await Effect.runPromise(Uploads.make(bucket, undefined).list("u1"));
-    expect(listed).toHaveLength(1005);
-    expect(listed[0]?.name).toBe("f1004.png");
+  };
+
+  it("lists one page at a time and hands back a cursor for the next", async () => {
+    const { bucket, store } = memoryBucket();
+    seed(store, PAGE_SIZE + 5);
+    const uploads = Uploads.make(bucket, undefined);
+    const first = await Effect.runPromise(uploads.list("u1"));
+    expect(first.files).toHaveLength(PAGE_SIZE);
+    expect(first.files[0]?.name).toBe(`f${PAGE_SIZE - 1}.png`);
+    expect(first.cursor).toBeDefined();
+    const second = await Effect.runPromise(uploads.list("u1", first.cursor));
+    expect(second.files).toHaveLength(5);
+    expect(second.cursor).toBeUndefined();
+  });
+
+  it("refuses an upload once the user holds the most files", async () => {
+    const { bucket, store } = memoryBucket();
+    seed(store, MAX_FILES_PER_USER);
+    const uploads = Uploads.make(bucket, undefined);
+    expect(JSON.stringify(await Effect.runPromiseExit(uploads.upload("u1", png())))).toContain(
+      "FileLimitReached",
+    );
+    expect((await Effect.runPromise(uploads.upload("u2", png()))).name).toBe("cat.png");
   });
 
   it("still uploads when the rate limiter itself is down", async () => {

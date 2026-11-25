@@ -33,12 +33,13 @@ export const Route = createFileRoute("/api/uploads/")({
           }),
           "uploads.create",
         ),
-      GET: ({ context }) =>
+      GET: ({ request, context }) =>
         runResponse(
           context,
           Effect.gen(function* () {
             const user = yield* (yield* Auth).requireUser;
-            return Response.json(yield* (yield* Uploads).list(user.id));
+            const cursor = new URL(request.url).searchParams.get("cursor") ?? undefined;
+            return Response.json(yield* (yield* Uploads).list(user.id, cursor));
           }),
           "uploads.list",
         ),

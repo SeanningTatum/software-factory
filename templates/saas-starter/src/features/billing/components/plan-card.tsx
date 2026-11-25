@@ -28,7 +28,7 @@ const redirect = async (action: CheckoutAction) => {
 };
 
 const summary = (state: BillingState) => {
-  if (state.status === "past_due")
+  if (state.status === "past_due" || state.status === "unpaid")
     return "Your last payment failed. Update your card to keep access.";
   if (state.cancelAtPeriodEnd) return "Your subscription ends at the close of this period.";
   return state.entitled ? "Thanks for subscribing." : "Upgrade when you're ready.";
