@@ -5,7 +5,7 @@ import { runEffect } from "#/app/run-effect.ts";
 import { Auth } from "#/features/auth/api/auth-service.ts";
 import { ensureSignedIn } from "#/features/auth/api/guard.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "#/features/core/ui/components/card.tsx";
-import { Uploads } from "#/features/uploads/api/uploads.ts";
+import { type FilePage, Uploads } from "#/features/uploads/api/uploads.ts";
 import { UploadPanel } from "#/features/uploads/components/upload-panel.tsx";
 
 /** The `?cursor=` of the next page: R2's opaque token, passed back as it came. */
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/uploads")({
 const KB = 1024;
 
 function UploadsPage() {
-  const { files, cursor } = Route.useLoaderData();
+  const { files, cursor }: FilePage = Route.useLoaderData();
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12">
       <Card>
