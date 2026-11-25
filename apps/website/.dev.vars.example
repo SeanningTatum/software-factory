@@ -23,8 +23,12 @@ ALERT_WEBHOOK_URL=
 APP_URL=http://localhost:3001
 # Extra origins allowed to call the auth API, comma-separated (optional).
 TRUSTED_ORIGINS=
+# Turnstile site key (public). With TURNSTILE_SECRET_KEY, sign-up needs a Turnstile token; the example is Cloudflare's always-pass test key (optional). See https://dash.cloudflare.com/?to=/:account/turnstile
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
 # Signs sessions; at least 32 random characters (required).
 BETTER_AUTH_SECRET=
+# Turnstile secret key; the example is Cloudflare's always-pass test secret, never use it in production (optional).
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
 # --- Billing ---
 # Stripe price id for the Pro plan (price_...) (required). See https://dashboard.stripe.com/products

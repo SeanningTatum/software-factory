@@ -73,6 +73,26 @@ describe("harness", () => {
     );
   });
 
+  test("check exits non-zero when a file changed or is missing", () => {
+    const { harness, project } = setup();
+    installHarness(harness, project);
+    const cwd = process.cwd();
+    const log = console.log;
+    console.log = () => {};
+    try {
+      process.chdir(project);
+      harnessCommand("check", false);
+      expect(process.exitCode).toBeUndefined();
+      writeFileSync(join(project, ".claude/commands/check.md"), "mine");
+      harnessCommand("check", false);
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = 0;
+      process.chdir(cwd);
+      console.log = log;
+    }
+  });
+
   test("an unknown action is refused, not run as sync", () => {
     expect(() => harnessCommand("chek", false)).toThrow(
       'Unknown action "chek". Use check or sync.',

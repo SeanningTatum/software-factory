@@ -1,9 +1,18 @@
+import { readdirSync } from "node:fs";
 import { createRequire } from "node:module";
-import { sep } from "node:path";
+import { join, relative, sep } from "node:path";
 import type TS from "typescript";
 
 /** A path from `path.relative` with `/` between segments, as globs and folder names expect. */
 export const toSlash = (path: string, separator: string = sep) => path.split(separator).join("/");
+
+/** Every file under `dir` as a `/` path from `root`, skipping node_modules and dotfiles. */
+export const walk = (root: string, dir: string): ReadonlyArray<string> =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) return [];
+    const path = join(dir, entry.name);
+    return entry.isDirectory() ? walk(root, path) : [toSlash(relative(root, path))];
+  });
 
 // Loaded on first use, so a tool that bundles this package but never scans (the CLI) does not
 // bundle TypeScript too.

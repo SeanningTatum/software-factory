@@ -1,3 +1,3 @@
 // biome-ignore-all lint/performance/noBarrelFile: this is the package entry cf-saas-blocks imports.
-export { importSpecifiers, toSlash } from "./files.ts";
+export { importSpecifiers, toSlash, walk } from "./files.ts";
 export { GENERATED_END, GENERATED_START, TIMELINE_FILE } from "./timeline-doc.ts";

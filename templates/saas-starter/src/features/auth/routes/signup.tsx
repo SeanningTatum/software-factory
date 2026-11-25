@@ -1,4 +1,9 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { Effect } from "effect";
+import { CloudflareEnv } from "#/app/env.ts";
+import { runEffect } from "#/app/run-effect.ts";
+import { turnstileKeys } from "#/features/auth/api/captcha.ts";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
 import {
@@ -9,12 +14,26 @@ import {
   CardTitle,
 } from "#/features/core/ui/components/card.tsx";
 
+/** The public Turnstile site key, or undefined when sign-up is not guarded. */
+const getSiteKey = createServerFn({ method: "GET" }).handler(({ context }) =>
+  runEffect(
+    context,
+    Effect.gen(function* () {
+      const env = yield* CloudflareEnv;
+      return turnstileKeys(env)?.siteKey ?? null;
+    }),
+    "auth.siteKey",
+  ),
+);
+
 export const Route = createFileRoute("/signup")({
+  loader: () => getSiteKey(),
   component: SignUp,
 });
 
 function SignUp() {
   const router = useRouter();
+  const siteKey = Route.useLoaderData();
   return (
     <main className="mx-auto flex max-w-sm flex-col px-4 py-16">
       <Card>
@@ -30,12 +49,12 @@ function SignUp() {
         <CardContent>
           <CredentialsForm
             mode="sign-up"
-            submit={async ({ email, password, name }) => {
-              const { error } = await authClient.signUp.email({
-                email,
-                password,
-                name: name ?? "",
-              });
+            siteKey={siteKey ?? undefined}
+            submit={async ({ email, password, name, captcha }) => {
+              const { error } = await authClient.signUp.email(
+                { email, password, name: name ?? "" },
+                captcha ? { headers: { "x-captcha-response": captcha } } : undefined,
+              );
               if (error) return Promise.reject(new Error(error.message ?? "Sign-up failed"));
             }}
             onDone={() =>

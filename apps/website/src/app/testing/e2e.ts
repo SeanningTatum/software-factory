@@ -20,10 +20,22 @@ export const visitor = () => {
   return { "cf-connecting-ip": `10.${octet()}.${octet()}.${octet()}` };
 };
 
+/**
+ * Makes every request the page sends to this app come from a new visitor. Not `setExtraHTTPHeaders`:
+ * that would add the header to Turnstile's cross-origin requests too, which fails their CORS check.
+ */
+export const asVisitor = (page: Page) =>
+  page.route(
+    (url) => url.hostname !== "challenges.cloudflare.com",
+    (route) => route.continue({ headers: { ...route.request().headers(), ...visitor() } }),
+  );
+
 /** Signs a new visitor up through the /signup page (needs the `auth` feature) and waits for the dashboard. */
 export const signUp = async (page: Page, name = "E2E User") => {
-  await page.setExtraHTTPHeaders(visitor());
+  await asVisitor(page);
   await page.goto("/signup");
+  // With Turnstile keys set the button stays off until the check hands over its token, so this
+  // also waits for the token (Cloudflare's test keys solve it on their own).
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await page.getByLabel("Name").fill(name);
   await page

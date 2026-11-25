@@ -64,3 +64,24 @@ export const readForm = Effect.fn("readForm")(function* (request: Request, maxBy
     catch: () => new InvalidInput({ issues: "expected form data" }),
   });
 });
+
+const REQUEST_CAP = 1024 * 1024;
+// A 5 MB file plus form overhead; the upload route cuts the exact limit itself.
+const UPLOAD_CAP = 6 * 1024 * 1024;
+
+/**
+ * A 413 (over the cap) or 411 (no content-length) for a request with a body, else undefined. Runs
+ * before any route reads the body, so auth routes and the Stripe webhook cannot be made to buffer
+ * a huge one. Stripe, browsers and fetch all send a content-length.
+ * shortcut: a chunked body with no content-length is refused; count its bytes as they arrive
+ * instead if a client must be allowed to send one.
+ */
+export const bodyTooLarge = (request: Request): Response | undefined => {
+  if (!request.body) return undefined;
+  const cap = new URL(request.url).pathname.startsWith("/api/uploads") ? UPLOAD_CAP : REQUEST_CAP;
+  const length = request.headers.get("content-length");
+  if (length === null) return Response.json({ message: "Length required" }, { status: 411 });
+  return Number(length) > cap
+    ? Response.json({ message: "Request body too large" }, { status: 413 })
+    : undefined;
+};

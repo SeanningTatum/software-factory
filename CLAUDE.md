@@ -14,7 +14,7 @@ that builds projects from it, and the website that sells it.
 | `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                        |
 | `packages/lint/`          | `cf-saas-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |
 | `packages/blocks/`        | `cf-saas-blocks`: feature manifests, the generators for `src/gen`, `FEATURES.md` and timelines, add/remove/prune (published). |
-| `claude/`                 | The shared Claude workflows. A placeholder until the real repo is added as a git submodule.                                   |
+| `claude/`                 | The shared Claude harness: the private `claude-config` repo as a git submodule. Its `.claude/` ships to new projects.         |
 
 ## Rules
 
@@ -60,17 +60,19 @@ bun run --filter create-tanstack-cf-saas test:matrix       # prove every feature
 node apps/cli/dist/index.js my-app --features db,auth      # try the CLI (after bun run build)
 ```
 
-## Claude workflows submodule
+## Claude harness submodule
 
-`claude/` is a placeholder. When the shared repo exists:
+`claude/` is [claude-config](https://github.com/SeanningTatum/claude-config), the Home Repo that holds
+the shared skills, agents, hooks and settings. Change the harness there, never here.
 
 ```bash
-git rm -r claude && git submodule add <git-url> claude
-git submodule update --remote claude   # later, to take the latest
+git submodule update --init claude     # after a clone; needs read access to claude-config
+git submodule update --remote claude   # take its latest, then commit the new pointer
 ```
 
-The CLI copies it into each new project's `.claude/` and records a hash per file in
-`harness.lock.json`; `create-tanstack-cf-saas harness check|sync` compares and refreshes it.
+The CLI's bundle copies its `.claude/` into each new project's `.claude/` and records a hash per
+file in `harness.lock.json`; `create-tanstack-cf-saas harness check|sync` compares and refreshes it.
+CI checks out no submodules, so its tests use a stand-in harness.
 
 ## Releasing
 

@@ -424,6 +424,7 @@ export const harness = (action: string, force: boolean) => {
     for (const f of changed) console.log(`${pc.yellow("changed")} .claude/${f}`);
     for (const f of missing) console.log(`${pc.red("missing")} .claude/${f}`);
     if (!changed.length && !missing.length) console.log("The harness matches harness.lock.json.");
+    if (changed.length || missing.length) process.exitCode = 1;
     return;
   }
   const { updated, kept } = syncHarness(harnessDir(), root, force);

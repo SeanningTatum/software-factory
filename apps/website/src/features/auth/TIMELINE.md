@@ -9,8 +9,8 @@ Better Auth with email and password, sessions in D1, rate-limited sign-in and si
 - Depends on: [db](../core/db/TIMELINE.md)
 - Used by: [billing](../billing/TIMELINE.md), [uploads](../uploads/TIMELINE.md)
 - Bindings: `AUTH_LIMITER` (ratelimit)
-- Vars: `APP_URL` (required), `TRUSTED_ORIGINS`
-- Secrets: `BETTER_AUTH_SECRET` (required)
+- Vars: `APP_URL` (required), `TRUSTED_ORIGINS`, `TURNSTILE_SITE_KEY`
+- Secrets: `BETTER_AUTH_SECRET` (required), `TURNSTILE_SECRET_KEY`
 - Also owns: none
 - Feeds: `src/gen/layers.ts`, `src/gen/errors.ts`, `src/gen/events.ts`, `src/gen/nav.ts`, `src/gen/viewer.ts`, `src/gen/routes.ts`
 - Routes: `/api/auth/$`, `/dashboard`, `/login`, `/signup`
@@ -47,6 +47,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Sign-up needs a Cloudflare Turnstile token when `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are both set (Better Auth's `captcha` plugin, `/sign-up/email` only); with either missing, sign-up is as before. Sign-in stays open. Why: the rate limit slows one address but not a bot farm making accounts, while sign-in has the rate limit and a bot gains nothing from it, and guarding it would put the widget on `/login` too. `.dev.vars.example` carries Cloudflare's always-pass test keys so dev and the browser specs run guarded; `wrangler.jsonc` and the deployed secrets start empty, and the plugin logs a warning when it sees the test secret on a non-local `APP_URL`.
 - 2026-11-24 — The audit log lives in auth, as `audit_log` beside Better Auth's tables, and every event `Auth.handle` records goes to both analytics and the log. Why: only auth knows who the actor is, and billing and uploads already require auth; a separate core module would need auth to require it.
 - 2026-11-24 — A failed audit write is logged as a warning with `audit: true` and the request goes on. Why: a lost audit row is better than a user who cannot sign in.
 - 2026-11-24 — A sign-in the rate limiter blocks goes to analytics only, not the audit log. Why: one row per blocked attempt would let a flood grow the table.
@@ -79,3 +80,4 @@ stateDiagram-v2
 - 2026-11-24 — Auth calls run through `outsideCall` and the rate limiter binding is read with `binding`, both from `core/lib`; imports db, analytics and ui from `src/features/core/`.
 - 2026-11-24 — The path specs wait for an enabled button, give each test its own visitor IP so the sign-up limiter does not trip on a second run, and wait for sign-out before signing up again; `reaches submitting` now signs up for real. Added an SSR test for the form.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.
+- 2026-11-25 — Auth hardening from an audit: a failed sign-up deletes the user row it left without a password; sign-in is also limited per account (`acct:<email>`) and IPv6 clients by their /64; the four Stripe subscription endpoints are rate limited; a Stripe webhook answered 5xx drops its queued analytics and audit events so the retry records them once. (https://github.com/SeanningTatum/tanstack-cf-saas-starter/pull/17)

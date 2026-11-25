@@ -1,22 +1,28 @@
 import { useMachine } from "@xstate/react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { fromPromise } from "xstate";
 import { Button } from "#/features/core/ui/components/button.tsx";
 import { Input } from "#/features/core/ui/components/input.tsx";
 import { Label } from "#/features/core/ui/components/label.tsx";
 import { type Credentials, credentialsMachine } from "./credentials.machine.ts";
+import { Turnstile } from "./turnstile.tsx";
 
 interface Props {
   readonly mode: "sign-in" | "sign-up";
   readonly submit: (credentials: Credentials) => Promise<void>;
   readonly onDone: () => void;
+  /** Turnstile site key: when set, the form shows the check and sends its token with the submit. */
+  readonly siteKey?: string;
 }
 
-export function CredentialsForm({ mode, submit, onDone }: Props) {
+export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
   const [snapshot, send] = useMachine(
     credentialsMachine.provide({ actors: { submit: fromPromise(({ input }) => submit(input)) } }),
   );
   const id = useId();
+  const [token, setToken] = useState<string>();
+  // A token works once; a new `key` mounts a new check for the next try.
+  const [attempt, setAttempt] = useState(0);
   if (snapshot.status === "done") queueMicrotask(onDone);
   const busy = snapshot.matches("submitting") || snapshot.status === "done";
 
@@ -30,12 +36,17 @@ export function CredentialsForm({ mode, submit, onDone }: Props) {
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
+        if (siteKey) {
+          setToken(undefined);
+          setAttempt((n) => n + 1);
+        }
         send({
           type: "SUBMIT",
           credentials: {
             email: String(form.get("email") ?? ""),
             password: String(form.get("password") ?? ""),
             ...(mode === "sign-up" ? { name: String(form.get("name") ?? "") } : {}),
+            ...(siteKey ? { captcha: token } : {}),
           },
         });
       }}
@@ -61,12 +72,13 @@ export function CredentialsForm({ mode, submit, onDone }: Props) {
           required
         />
       </div>
+      {siteKey && <Turnstile key={attempt} siteKey={siteKey} onToken={setToken} />}
       {snapshot.context.error && (
         <p role="alert" className="text-sm text-destructive">
           {snapshot.context.error}
         </p>
       )}
-      <Button type="submit" disabled={busy}>
+      <Button type="submit" disabled={busy || (Boolean(siteKey) && !token)}>
         {busy ? "Please wait…" : mode === "sign-in" ? "Sign in" : "Create account"}
       </Button>
     </form>

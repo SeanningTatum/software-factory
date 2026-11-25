@@ -8,6 +8,8 @@ const VarSpec = Schema.Struct({
   description: Schema.String,
   required: Schema.Boolean,
   default: Schema.optionalKey(Schema.String),
+  /** What `.dev.vars.example` shows when it should differ from the deployed default. */
+  example: Schema.optionalKey(Schema.String),
   help: Schema.optionalKey(Schema.String),
 });
 
@@ -125,6 +127,8 @@ const unsafeFile = (file: string): string | undefined => {
   if (!file.trim() || path === "." || path.startsWith("./")) return "is the project itself";
   if (isAbsolute(file) || win32.isAbsolute(file)) return "is absolute";
   if (path === ".." || path.startsWith("../")) return "climbs out of the project";
+  // shortcut: only .git and node_modules; dotfiles like .dev.vars may be listed legitimately.
+  if (/^(\.git|node_modules)(\/|$)/.test(path)) return "is git or package data";
   return undefined;
 };
 
@@ -155,7 +159,7 @@ export const featureDir = (root: string, name: string): string | undefined =>
  * Throws when two features declare the same env name (var, secret or binding: all keys of `Env`)
  * or the same workflow class, which would generate duplicate code.
  */
-const rejectClashes = (manifests: ReadonlyMap<string, BlockManifest>) => {
+export const rejectClashes = (manifests: ReadonlyMap<string, BlockManifest>) => {
   const owners = new Map<string, string>();
   const claim = (key: string, label: string, name: string) => {
     const owner = owners.get(key);

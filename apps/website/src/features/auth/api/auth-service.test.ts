@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Effect, ErrorReporter, Layer } from "effect";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { type AppEnv, CloudflareEnv } from "#/app/env.ts";
 import { CurrentRequest, requestInfoFrom } from "#/app/request.ts";
 import type { Captured } from "#/features/core/analytics/api/adapter.ts";
@@ -8,7 +8,7 @@ import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb, testDatabaseLayer } from "#/features/core/db/api/test-database.ts";
 import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
-import { auditLog, authSchema } from "../schema.ts";
+import { account, auditLog, authSchema, user } from "../schema.ts";
 import type { AuthPluginFactory } from "./auth.ts";
 import { Auth } from "./auth-service.ts";
 import { AuthRateLimiter, LIMITED_PATHS } from "./rate-limit.ts";
@@ -22,12 +22,14 @@ const request = async (
   incoming: Request,
   allow = true,
   plugins = featureAuthPlugins as ReadonlyArray<AuthPluginFactory>,
+  appEnv = env,
+  keys?: Array<string>,
 ) => {
   const sent: Array<Captured> = [];
   const reported: Array<string> = [];
   const info = requestInfoFrom(incoming);
   const base = Layer.mergeAll(
-    CloudflareEnv.layer(env),
+    CloudflareEnv.layer(appEnv),
     CurrentRequest.layer(info),
     testDatabaseLayer(db),
     ErrorReporter.layer([ErrorReporter.make(({ error }) => void reported.push(error.message))]),
@@ -37,7 +39,12 @@ const request = async (
     send: (batch) => Effect.sync(() => void sent.push(...batch)),
   }));
   const limiter = Layer.succeed(AuthRateLimiter)(
-    AuthRateLimiter.fromLimiter({ limit: async () => ({ success: allow }) }),
+    AuthRateLimiter.fromLimiter({
+      limit: async ({ key }) => {
+        keys?.push(key);
+        return { success: allow };
+      },
+    }),
   );
   const layer = Auth.layerWith(plugins).pipe(
     Layer.provideMerge(Layer.mergeAll(analytics, limiter)),
@@ -77,6 +84,65 @@ describe("Auth", () => {
     expect(signIn.response.status).toBe(200);
     expect(signIn.events).toEqual(["sign_in_succeeded"]);
     expect(signIn.response.headers.get("set-cookie")).toContain("better-auth.session_token");
+  });
+
+  describe("with Turnstile keys", () => {
+    const guarded = {
+      ...env,
+      TURNSTILE_SITE_KEY: "site",
+      TURNSTILE_SECRET_KEY: "secret",
+    } as unknown as AppEnv;
+    const credentials = { email: "bot@example.com", password: "correct horse battery", name: "B" };
+    const siteverify = (success: boolean) =>
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ success }));
+    afterEach(() => vi.restoreAllMocks());
+
+    it("refuses a sign-up with no token, before it reaches Cloudflare or the database", async () => {
+      const fetched = siteverify(true);
+      const { response, events } = await request(
+        db,
+        post("/api/auth/sign-up/email", credentials),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(response.status).toBe(400);
+      expect(events).toEqual([]);
+      expect(fetched).not.toHaveBeenCalled();
+    });
+
+    it("refuses a token Cloudflare rejects", async () => {
+      siteverify(false);
+      const { response } = await request(
+        db,
+        post("/api/auth/sign-up/email", credentials, { "x-captcha-response": "bad" }),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(response.status).toBe(403);
+    });
+
+    it("signs up with a token Cloudflare accepts, and leaves sign-in alone", async () => {
+      const fetched = siteverify(true);
+      const signUp = await request(
+        db,
+        post("/api/auth/sign-up/email", credentials, { "x-captcha-response": "good" }),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(signUp.response.status).toBe(200);
+      expect(String(fetched.mock.calls[0]?.[0])).toContain("/turnstile/v0/siteverify");
+      const signIn = await request(
+        db,
+        post("/api/auth/sign-in/email", credentials),
+        true,
+        undefined,
+        guarded,
+      );
+      expect(signIn.response.status).toBe(200);
+    });
   });
 
   it("reads the session from the cookie and tags the request with the user", async () => {
@@ -208,9 +274,77 @@ describe("Auth", () => {
     expect(rows).toEqual([]);
   });
 
-  it.each(LIMITED_PATHS)("rate limits %s, a route Better Auth really serves", async (path) => {
-    const { response } = await request(db, post(path, {}));
-    expect(response.status).not.toBe(404);
+  // The subscription paths come from the Stripe plugin and need the billing schema, so they are
+  // checked against the plugin's own route list, not served here.
+  it.each(LIMITED_PATHS.filter((path) => !path.includes("/subscription/")))(
+    "rate limits %s, a route Better Auth really serves",
+    async (path) => {
+      const { response } = await request(db, post(path, {}));
+      expect(response.status).not.toBe(404);
+    },
+  );
+
+  it("limits a sign-in by account as well as by address, with the one limiter", async () => {
+    const keys: Array<string> = [];
+    await request(
+      db,
+      post(
+        "/api/auth/sign-in/email",
+        { email: "Ada@Example.com", password: "whatever123" },
+        { "cf-connecting-ip": "2001:db8:1:2:aaaa:bbbb:cccc:dddd" },
+      ),
+      true,
+      undefined,
+      env,
+      keys,
+    );
+    expect(keys).toEqual(["2001:db8:1:2::/64:/api/auth/sign-in/email", "acct:ada@example.com"]);
+  });
+
+  it("answers 429 when only the account is over its limit", async () => {
+    const { response } = await request(
+      db,
+      post("/api/auth/sign-in/email", { email: "ada@example.com", password: "whatever123" }),
+      false,
+    );
+    expect(response.status).toBe(429);
+  });
+
+  it("deletes the user when sign-up fails after the user row, so the email can sign up again", async () => {
+    const fresh = await makeTestDb(authSchema);
+    const failing = new Proxy(fresh, {
+      get: (target, key) =>
+        key === "insert"
+          ? (table: unknown) => {
+              if (table === account) throw new Error("D1 down");
+              return target.insert(table as typeof user);
+            }
+          : Reflect.get(target, key).bind?.(target),
+    });
+    const credentials = { email: "lost@example.com", password: "correct horse battery", name: "L" };
+    const first = await request(failing, post("/api/auth/sign-up/email", credentials));
+    expect(first.response.status).toBeGreaterThanOrEqual(500);
+    expect(await fresh.select().from(user)).toEqual([]);
+    const again = await request(fresh, post("/api/auth/sign-up/email", credentials));
+    expect(again.response.status).toBe(200);
+  });
+
+  it("drops the queued events when a webhook is answered 5xx, so its retry records them once", async () => {
+    const retried: AuthPluginFactory = ({ onEvent }) => [
+      {
+        id: "test-webhook",
+        onRequest: async (incoming) => {
+          if (!incoming.url.endsWith("/stripe/webhook")) return undefined;
+          onEvent({ _tag: "signed_out" }, "u1");
+          return { response: new Response("retry", { status: 500 }) };
+        },
+      },
+    ];
+    const { response, events } = await request(db, post("/api/auth/stripe/webhook", {}), true, [
+      retried,
+    ]);
+    expect(response.status).toBe(500);
+    expect(events).toEqual([]);
   });
 
   it("sends what Better Auth logs as an error to the error reporter, not the console", async () => {

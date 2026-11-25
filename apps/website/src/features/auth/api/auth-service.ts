@@ -1,3 +1,4 @@
+import { and, eq, notExists, sql } from "drizzle-orm";
 import { Cause, Context, DateTime, Effect, ErrorReporter, Layer, Schema } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured, Unauthorized } from "#/app/errors.ts";
@@ -10,11 +11,15 @@ import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
 import { authEvents, SIGN_OUT } from "../lib/auth-events.ts";
-import { auditLog } from "../schema.ts";
+import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
-import { AuthRateLimiter, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
+import { captchaPlugin } from "./captcha.ts";
+import { AuthRateLimiter, accountKey, LIMITED_PATHS, limitKey, SIGN_IN } from "./rate-limit.ts";
 
 const IDENTIFIES = new Set(["sign_up_completed", "sign_in_succeeded"]);
+const SIGN_UP = "/api/auth/sign-up/email";
+const WEBHOOK = "/api/auth/stripe/webhook";
+const SERVER_ERROR = 500;
 const RESETS_ANON_ID = new Set([...IDENTIFIES, "signed_out"]);
 
 export class AuthServiceError extends Schema.TaggedError<AuthServiceError>()("AuthServiceError", {
@@ -86,7 +91,7 @@ export class Auth extends Context.Service<
             errors.push(message);
           } else if (level === "warn") warnings.push([message, {}]);
         };
-        const plugins = factories.flatMap((factory) => factory(deps));
+        const plugins = [captchaPlugin, ...factories].flatMap((factory) => factory(deps));
         const instance = makeAuth(config, database.db, plugins, log);
 
         /** Writes one audit row. A failed write is logged, never the user's problem. */
@@ -189,6 +194,8 @@ export class Auth extends Context.Service<
               discard: true,
             },
           );
+          // A webhook answered 5xx will be retried, and the retry queues the same events again.
+          if (path === WEBHOOK && response.status >= SERVER_ERROR) pending.length = 0;
           yield* flushPending;
           if (!events.some(({ event }) => RESETS_ANON_ID.has(event._tag))) return response;
           // A new anonymous id once a session starts or ends, so it is never tied to two users.
@@ -197,31 +204,93 @@ export class Auth extends Context.Service<
           return reset;
         });
 
+        /** The lower-cased email in a sign-in or sign-up body, read from a copy so Better Auth still gets it. */
+        const emailOf = (incoming: Request) =>
+          Effect.promise(() =>
+            (incoming.clone().json() as Promise<{ email?: unknown } | null>)
+              .then((body) =>
+                typeof body?.email === "string" ? body.email.toLowerCase() : undefined,
+              )
+              .catch(() => undefined),
+          );
+
+        /**
+         * Sign-up is three D1 writes (user, credential account, session) with no transaction. If a
+         * 5xx left a user with no password, delete it: re-signing up would say "exists" and there is
+         * no password reset.
+         */
+        const dropHalfSignUp = (email: string | undefined) =>
+          email
+            ? database
+                .query("auth.dropHalfSignUp", (db) =>
+                  db.delete(user).where(
+                    and(
+                      eq(user.email, email),
+                      notExists(
+                        db
+                          .select({ one: sql`1` })
+                          .from(account)
+                          .where(
+                            and(eq(account.userId, user.id), eq(account.providerId, "credential")),
+                          ),
+                      ),
+                    ),
+                  ),
+                )
+                .pipe(
+                  Effect.catch((error) =>
+                    Effect.logWarning("half sign-up cleanup failed", { error }),
+                  ),
+                )
+            : Effect.void;
+
+        /** A 429 when the request is over a limit, else undefined. */
+        const refuseIfLimited = Effect.fn("Auth.refuseIfLimited")(function* (
+          incoming: Request,
+          path: string,
+        ) {
+          // Sign-in is also limited per account, so many addresses cannot guess one password.
+          const keys = [limitKey(incoming.headers, path)];
+          if (path === SIGN_IN) {
+            const email = yield* emailOf(incoming);
+            if (email) keys.push(accountKey(email));
+          }
+          const limited = yield* Effect.result(
+            Effect.forEach(keys, (key) => limiter.check(key), { discard: true }),
+          );
+          if (limited._tag === "Success") return undefined;
+          // Analytics only: an audit row per blocked attempt would let a flood grow the table.
+          yield* Effect.forEach(
+            authEvents("POST", path, 429, null),
+            ({ event }) => analytics.capture(event),
+            { discard: true },
+          );
+          return Response.json(
+            { message: "Too many attempts. Try again in a minute." },
+            { status: 429, headers: { "retry-after": String(limited.failure.retryAfterSeconds) } },
+          );
+        });
+
+        /** Better Auth's answer, cleaning up after a sign-up that failed part way. */
+        const serve = Effect.fn("Auth.serve")(function* (incoming: Request, path: string) {
+          const signUpEmail =
+            incoming.method === "POST" && path === SIGN_UP ? yield* emailOf(incoming) : undefined;
+          const response = yield* call("handler", () => instance.handler(incoming)).pipe(
+            Effect.tapError(() => dropHalfSignUp(signUpEmail)),
+          );
+          if (response.status >= SERVER_ERROR) yield* dropHalfSignUp(signUpEmail);
+          return response;
+        });
+
         const handle = Effect.fn("Auth.handle")(function* (incoming: Request) {
           const path = new URL(incoming.url).pathname;
           if (incoming.method === "POST" && LIMITED_PATHS.includes(path)) {
-            const limited = yield* Effect.result(limiter.check(limitKey(incoming.headers, path)));
-            if (limited._tag === "Failure") {
-              // Analytics only: an audit row per blocked attempt would let a flood grow the table.
-              yield* Effect.forEach(
-                authEvents("POST", path, 429, null),
-                ({ event }) => analytics.capture(event),
-                {
-                  discard: true,
-                },
-              );
-              return Response.json(
-                { message: "Too many attempts. Try again in a minute." },
-                {
-                  status: 429,
-                  headers: { "retry-after": String(limited.failure.retryAfterSeconds) },
-                },
-              );
-            }
+            const refused = yield* refuseIfLimited(incoming, path);
+            if (refused) return refused;
           }
           // Sign-out ends the session, so read whose it was first.
           if (path === SIGN_OUT) yield* Effect.result(currentUser);
-          const response = yield* call("handler", () => instance.handler(incoming));
+          const response = yield* serve(incoming, path);
           return yield* afterResponse(incoming.method, path, response);
         });
 

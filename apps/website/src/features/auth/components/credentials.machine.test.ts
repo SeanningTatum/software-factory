@@ -16,6 +16,23 @@ describe("credentials machine", () => {
     expect(actor.getSnapshot().value).toBe("done");
   });
 
+  it("hands the Turnstile token to submit", async () => {
+    let seen: unknown;
+    const actor = createActor(
+      credentialsMachine.provide({
+        actors: {
+          submit: fromPromise(({ input }) => {
+            seen = input;
+            return Promise.resolve();
+          }),
+        },
+      }),
+    ).start();
+    actor.send({ type: "SUBMIT", credentials: { ...credentials, captcha: "tok" } });
+    await waitFor(actor, (s) => s.status === "done");
+    expect(seen).toMatchObject({ captcha: "tok" });
+  });
+
   it("shows the server's message and clears it on edit", async () => {
     const actor = start(() => Promise.reject(new Error("Invalid email or password")));
     actor.send({ type: "SUBMIT", credentials });

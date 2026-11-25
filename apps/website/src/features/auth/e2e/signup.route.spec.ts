@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { expectAccessible, visitor } from "#/app/testing/e2e.ts";
+import { asVisitor, expectAccessible } from "#/app/testing/e2e.ts";
 
-test.beforeEach(({ page }) => page.setExtraHTTPHeaders(visitor()));
+test.beforeEach(({ page }) => asVisitor(page));
 
 test("@golden /signup shows the sign-up form and has no serious a11y violation", async ({
   page,
@@ -9,6 +9,15 @@ test("@golden /signup shows the sign-up form and has no serious a11y violation",
   await page.goto("/signup");
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await expectAccessible(page);
+});
+
+// Assumes the Turnstile test keys from .dev.vars.example, as every browser spec does.
+test("@golden /signup shows the Turnstile check and turns the button on once it passes", async ({
+  page,
+}) => {
+  await page.goto("/signup");
+  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
+  await expect(page.locator("input[name='cf-turnstile-response']")).not.toHaveValue("");
 });
 
 test("@error /signup keeps a too-short password on the page", async ({ page }) => {

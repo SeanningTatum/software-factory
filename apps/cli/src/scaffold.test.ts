@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadManifests } from "@tanstack-cf-saas/blocks";
+import { parse } from "jsonc-parser";
 import { add, remove } from "./commands.ts";
 import {
   blankSettings,
@@ -15,7 +16,11 @@ import {
 } from "./scaffold.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../template");
-const HARNESS = join(import.meta.dirname, "../harness");
+/** A stand-in harness: the real one is a private submodule that CI does not check out. */
+const HARNESS = mkdtempSync(join(tmpdir(), "harness-"));
+mkdirSync(join(HARNESS, "agents"));
+writeFileSync(join(HARNESS, "settings.json"), "{}\n");
+writeFileSync(join(HARNESS, "agents/reviewer.md"), "---\nname: reviewer\n---\n");
 
 const target = () => {
   const dir = mkdtempSync(join(tmpdir(), "scaffold-"));
@@ -50,6 +55,24 @@ describe("scaffold", () => {
       'APP_NAME = "Acme App"',
     );
     expect(readFileSync(join(dir, ".dev.vars"), "utf8")).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);
+  });
+
+  test("gives each project its own rate-limit namespace ids", () => {
+    const ids = (name: string) => {
+      const dir = target();
+      const options = { templateDir: TEMPLATE, harnessDir: undefined, targetDir: dir };
+      scaffold({ ...options, name, features: ["auth"] });
+      const json = parse(readFileSync(join(dir, "wrangler.jsonc"), "utf8"));
+      return [...json.ratelimits, ...json.env.staging.ratelimits].map(
+        (r: { namespace_id: string }) => r.namespace_id,
+      );
+    };
+    const a = ids("app-a");
+    const b = ids("app-b");
+    expect(a.length).toBeGreaterThan(2);
+    expect(new Set(a).size).toBe(a.length);
+    expect(a.filter((id) => b.includes(id))).toEqual([]);
+    expect(a.some((id) => /^[12]00\d$/.test(id))).toBe(false);
   });
 
   test("asks for billing's Stripe settings and writes the answers into .dev.vars", () => {

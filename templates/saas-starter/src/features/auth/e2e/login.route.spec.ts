@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { expectAccessible, visitor } from "#/app/testing/e2e.ts";
+import { asVisitor, expectAccessible } from "#/app/testing/e2e.ts";
 
-test.beforeEach(({ page }) => page.setExtraHTTPHeaders(visitor()));
+test.beforeEach(({ page }) => asVisitor(page));
 
 test("@golden /login shows the sign-in form and has no serious a11y violation", async ({
   page,

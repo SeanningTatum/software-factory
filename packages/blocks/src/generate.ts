@@ -204,7 +204,7 @@ export const devVarsExample = (manifests: Manifests): string => {
     const lines = entries.map(([key, spec]) => {
       const need = spec.required ? "required" : "optional";
       const help = spec.help ? ` See ${spec.help}` : "";
-      return `# ${spec.description} (${need}).${help}\n${key}=${spec.default ?? ""}`;
+      return `# ${spec.description} (${need}).${help}\n${key}=${spec.example ?? spec.default ?? ""}`;
     });
     return [`# --- ${m.title} ---\n${lines.join("\n")}`];
   });

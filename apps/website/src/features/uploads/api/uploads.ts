@@ -4,11 +4,17 @@ import { NotConfigured, NotFound, type RateLimited } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { checkLimit, type Limiter } from "#/features/core/lib/rate-limit.ts";
+import { MAX_FILES_PER_USER, PAGE_SIZE } from "../constants.ts";
 import { type AllowedType, check, type Rejection } from "../lib/validate.ts";
 
 export class UploadRejected extends Schema.TaggedError<UploadRejected>()("UploadRejected", {
   reason: Schema.Literals(["empty", "too_large", "unsupported_type", "type_mismatch"]),
 }) {}
+
+export class FileLimitReached extends Schema.TaggedError<FileLimitReached>()(
+  "FileLimitReached",
+  {},
+) {}
 
 export class StorageError extends Schema.TaggedError<StorageError>()("StorageError", {
   operation: Schema.String,
@@ -22,6 +28,11 @@ export interface StoredFile {
   readonly contentType: string;
   readonly size: number;
   readonly uploadedAt: string;
+}
+
+export interface FilePage {
+  readonly files: ReadonlyArray<StoredFile>;
+  readonly cursor: string | undefined;
 }
 
 /** The parts of the R2 and rate-limit bindings the service uses. */
@@ -54,8 +65,6 @@ export interface Bucket {
     }>;
   }>;
 }
-/** R2's own maximum per list call; the list follows the cursor until it has every file. */
-const LIST_LIMIT = 1000;
 const HEAD_BYTES = 16;
 const NAME_MAX = 200;
 
@@ -69,10 +78,15 @@ export class Uploads extends Context.Service<
     readonly upload: (
       userId: string,
       file: File,
-    ) => Effect.Effect<StoredFile, UploadRejected | StorageError | RateLimited | NotConfigured>;
+    ) => Effect.Effect<
+      StoredFile,
+      UploadRejected | FileLimitReached | StorageError | RateLimited | NotConfigured
+    >;
+    /** One page of files, with the cursor for the next page when there is one. */
     readonly list: (
       userId: string,
-    ) => Effect.Effect<ReadonlyArray<StoredFile>, StorageError | NotConfigured>;
+      cursor?: string,
+    ) => Effect.Effect<FilePage, StorageError | NotConfigured>;
     readonly download: (
       userId: string,
       id: string,
@@ -92,6 +106,11 @@ export class Uploads extends Context.Service<
       yield* checkLimit(limiter, userId);
       const early = check(file);
       if (early) return yield* reject(early);
+      // One keys-only list call, capped at the limit: R2 stops there however many files exist.
+      const held = yield* call("count", () =>
+        bucket.list({ prefix: prefixFor(userId), limit: MAX_FILES_PER_USER }),
+      );
+      if (held.objects.length >= MAX_FILES_PER_USER) return yield* new FileLimitReached();
       const bytes = yield* call("read", () => file.arrayBuffer());
       const late = check(file, new Uint8Array(bytes.slice(0, HEAD_BYTES)));
       if (late) return yield* reject(late);
@@ -108,33 +127,26 @@ export class Uploads extends Context.Service<
       return { id, name, contentType: file.type as AllowedType, size: file.size, uploadedAt };
     });
 
-    const list = Effect.fn("Uploads.list")(function* (userId: string) {
+    const list = Effect.fn("Uploads.list")(function* (userId: string, cursor?: string) {
       const prefix = prefixFor(userId);
-      const files: Array<StoredFile> = [];
-      let cursor: string | undefined;
-      do {
-        const after = cursor;
-        const page = yield* call("list", () =>
-          bucket.list({
-            prefix,
-            limit: LIST_LIMIT,
-            include: ["customMetadata", "httpMetadata"],
-            ...(after ? { cursor: after } : {}),
-          }),
-        );
-        for (const o of page.objects) {
-          files.push({
-            id: o.key.slice(prefix.length),
-            name: o.customMetadata?.name ?? "file",
-            contentType: o.httpMetadata?.contentType ?? "application/octet-stream",
-            size: o.size,
-            uploadedAt: o.customMetadata?.uploadedAt ?? o.uploaded.toISOString(),
-          });
-        }
-        cursor = page.truncated ? page.cursor : undefined;
-      } while (cursor);
-      // Keys are random, so R2's key order means nothing to people: newest first.
-      return files.sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+      const page = yield* call("list", () =>
+        bucket.list({
+          prefix,
+          limit: PAGE_SIZE,
+          include: ["customMetadata", "httpMetadata"],
+          ...(cursor ? { cursor } : {}),
+        }),
+      );
+      const files = page.objects.map((o) => ({
+        id: o.key.slice(prefix.length),
+        name: o.customMetadata?.name ?? "file",
+        contentType: o.httpMetadata?.contentType ?? "application/octet-stream",
+        size: o.size,
+        uploadedAt: o.customMetadata?.uploadedAt ?? o.uploaded.toISOString(),
+      }));
+      // Keys are random, so R2's key order means nothing to people: newest first within a page.
+      files.sort((x, y) => y.uploadedAt.localeCompare(x.uploadedAt));
+      return { files, cursor: page.truncated ? page.cursor : undefined };
     });
 
     const download = Effect.fn("Uploads.download")(function* (userId: string, id: string) {
