@@ -34,7 +34,6 @@ Rules for a good item:
 
 | Id   | Title                                             | Area              | Size | Needs you             |
 | ---- | ------------------------------------------------- | ----------------- | ---- | --------------------- |
-| B-01 | CI runs on GitHub                                 | Repo              | S    | Fix Actions billing   |
 | B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
 | B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
 | B-08 | The Claude workflows are the real repo            | Agentic workflows | S    | The repo URL          |
@@ -43,21 +42,6 @@ Rules for a good item:
 | B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 
 ## Now
-
-### B-01 · CI runs on GitHub
-
-- **Area:** Repo
-- **Size:** S
-- **Needs you:** Fix the payment or spending limit under GitHub Settings → Billing, or make the repo public
-
-**Why:** GitHub refuses to start any job on this repo, so no workflow has ever run there. Every "passes" in this repo comes from a laptop.
-
-**Done when:**
-
-- [ ] `check`, `blocks` and `release` each finish on `main`.
-- [ ] Any failure they show is fixed or has its own item here.
-
-**Where:** `.github/workflows/`, and the Actions tab of the repo.
 
 ### B-03 · The health check and Stripe keys agree
 
