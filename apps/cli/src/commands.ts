@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
@@ -346,33 +345,11 @@ export const add = (arg: string) => {
   );
 };
 
-/** Uncommitted changes under `paths`, or undefined when git can't tell (not a repository). */
-const uncommitted = (root: string, paths: ReadonlyArray<string>) => {
-  const status = spawnSync("git", ["status", "--porcelain", "--", ...paths], {
-    cwd: root,
-    encoding: "utf8",
-  });
-  return status.status === 0 ? status.stdout.trim() : undefined;
-};
-
 export const remove = (arg: string, force = false) => {
   const feature = featureArg(arg);
   const root = process.cwd();
   readProject(root);
-  const manifest = loadManifests(root).get(feature);
-  if (manifest && !force) {
-    // What removeBlock deletes: the feature's folder and the files its manifest lists.
-    const changes = uncommitted(root, [manifest.dir, ...(manifest.files ?? [])]);
-    if (changes === undefined)
-      throw new Error(
-        `Can't tell whether ${feature} has uncommitted work: this is not a git repository. Pass --force to remove it anyway.`,
-      );
-    if (changes)
-      throw new Error(
-        `${feature} has uncommitted changes, which removing it would delete:\n${changes}\nCommit or stash them, or pass --force.`,
-      );
-  }
-  removeBlock(root, feature);
+  removeBlock(root, feature, { force });
   console.log(`Removed ${feature}. Install packages to drop the ones it used.`);
 };
 

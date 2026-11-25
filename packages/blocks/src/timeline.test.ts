@@ -102,7 +102,7 @@ describe("TIMELINE.md", () => {
     expect(read(root, "FEATURES.md")).toContain(
       "- **auth** (optional): auth. Requires: db. [TIMELINE.md](src/features/auth/TIMELINE.md)",
     );
-    removeBlock(root, "auth");
+    removeBlock(root, "auth", { force: true });
     expect(read(root, "src/features/core/db/TIMELINE.md")).toContain("- Used by: none\n");
     expect(read(root, "FEATURES.md")).not.toContain("auth");
     expect(existsSync(join(root, "src/features/auth"))).toBe(false);

@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { dependentsOf, withRequirements } from "./graph.ts";
@@ -54,11 +55,20 @@ export const prune = (root: string, selected: ReadonlyArray<string>): ReadonlyAr
 
 export class BlockError extends Error {}
 
+/** Uncommitted changes under `paths`, or undefined when git can't tell (not a repository). */
+const uncommitted = (root: string, paths: ReadonlyArray<string>) => {
+  const status = spawnSync("git", ["status", "--porcelain", "--", ...paths], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  return status.status === 0 ? status.stdout.trim() : undefined;
+};
+
 /**
- * Removes one feature or core module: its folder plus its `files`. Refuses required ones and ones
- * others require.
+ * Removes one feature or core module: its folder plus its `files`. Refuses required ones, ones
+ * others require, and, unless `force`, ones with uncommitted work (or outside a git repository).
  */
-export const removeBlock = (root: string, name: string) => {
+export const removeBlock = (root: string, name: string, { force = false } = {}) => {
   const manifests = loadManifests(root);
   const manifest = manifests.get(name);
   if (!manifest) throw new BlockError(`"${name}" is not an enabled feature`);
@@ -66,6 +76,17 @@ export const removeBlock = (root: string, name: string) => {
   const dependents = dependentsOf(manifests, [...manifests.keys()], name);
   if (dependents.length) {
     throw new BlockError(`"${name}" is required by ${dependents.join(", ")}; remove those first`);
+  }
+  if (!force) {
+    const changes = uncommitted(root, ownedPaths(manifest));
+    if (changes === undefined)
+      throw new BlockError(
+        `Can't tell whether ${name} has uncommitted work: this is not a git repository. Pass --force to remove it anyway.`,
+      );
+    if (changes)
+      throw new BlockError(
+        `${name} has uncommitted changes, which removing it would delete:\n${changes}\nCommit or stash them, or pass --force.`,
+      );
   }
   const kept = [...manifests.values()].filter((m) => m.name !== name);
   plan(root); // fails on a broken project before anything is deleted
@@ -89,12 +110,13 @@ export const addBlock = (
   const added = wanted.map((n) => {
     const manifest = available.get(n);
     if (!manifest) throw new BlockError(`Unknown feature "${n}"`);
-    for (const path of ownedPaths(manifest)) {
-      const from = join(templateRoot, path);
-      if (existsSync(from)) cpSync(from, join(root, path), { recursive: true });
-    }
     return manifest;
   });
+  plan(root); // fails on a broken project before anything is copied
+  for (const path of added.flatMap(ownedPaths)) {
+    const from = join(templateRoot, path);
+    if (existsSync(from)) cpSync(from, join(root, path), { recursive: true });
+  }
   writePackage(root, withBlockPackages(readPackage(root), added));
   sync(root);
   return wanted;
