@@ -32,14 +32,15 @@ Rules for a good item:
 
 ## At a glance
 
-| Id   | Title                                             | Area       | Size | Needs you             |
-| ---- | ------------------------------------------------- | ---------- | ---- | --------------------- |
-| B-03 | The health check and Stripe keys agree            | Deployment | S    | A decision            |
-| B-07 | Billing works with real Stripe test keys          | Features   | M    | Stripe test keys      |
-| B-09 | A first deploy to staging succeeds                | Deployment | M    | A Cloudflare token    |
-| B-10 | The packages are on npm                           | Repo       | S    | Claim the npm scope   |
-| B-19 | Users can verify their email and reset a password | Features   | L    | Pick an email service |
-| B-20 | cf-saas-lint parses without a second TypeScript   | Repo       | M    | no                    |
+| Id   | Title                                             | Area              | Size | Needs you             |
+| ---- | ------------------------------------------------- | ----------------- | ---- | --------------------- |
+| B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
+| B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
+| B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision            |
+| B-09 | A first deploy to staging succeeds                | Deployment        | M    | A Cloudflare token    |
+| B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
+| B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
+| B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
 
 ## Now
 
@@ -76,6 +77,21 @@ Rules for a good item:
 
 **Where:** `templates/saas-starter/src/features/billing/`.
 
+### B-08 · New projects get a real Claude harness
+
+- **Area:** Agentic workflows
+- **Size:** S
+- **Needs you:** A decision: which skills, agents and hooks ship
+
+**Why:** `claude/` is a stand-in with three files. Four scorecard areas cannot move until a real one is in.
+
+**Done when:**
+
+- [ ] `claude/` holds the real harness as plain files, with no submodule.
+- [ ] A new project gets those files in `.claude/` and `harness check` is clean.
+
+**Where:** `claude/`, `apps/cli/scripts/bundle-template.ts`.
+
 ### B-09 · A first deploy to staging succeeds
 
 - **Area:** Deployment
@@ -95,7 +111,7 @@ Rules for a good item:
 
 - **Area:** Repo
 - **Size:** S
-- **Needs you:** Claim the `@tanstack-cf-saas` scope, decide between an npm token and trusted publishing, and add a `CLAUDE_CONFIG_TOKEN` secret that can read the private `claude-config` repo
+- **Needs you:** Claim the `@tanstack-cf-saas` scope, and decide between an npm token and trusted publishing
 
 **Why:** A project made by the CLI cannot install until the four packages are published. `bun run try` works round it with local files.
 
@@ -103,9 +119,8 @@ Rules for a good item:
 
 - [ ] `bunx create-tanstack-cf-saas my-app` installs and runs with no local files.
 - [ ] `release.yml` publishes on a merged changeset.
-- [ ] The published CLI ships the harness: `release.yml` checks out `claude/` with `CLAUDE_CONFIG_TOKEN`, a token that can read `claude-config` (nothing else).
 
-**Where:** `.github/workflows/release.yml`, `.changeset/`, `apps/cli/scripts/bundle-template.ts`.
+**Where:** `.github/workflows/release.yml`, `.changeset/`.
 
 ## Later
 

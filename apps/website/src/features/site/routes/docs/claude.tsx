@@ -11,9 +11,9 @@ function Claude() {
     <>
       <H1>Claude workflows</H1>
       <P>
-        New projects get a <code>.claude/</code> folder with shared skills, agents, hooks and
-        settings, and a<code> harness.lock.json</code> that records a hash for each file. Your edits
-        are yours: check what you changed, and update the rest from a newer CLI.
+        New projects get a <code>.claude/</code> folder with shared agents, commands and settings,
+        and a<code> harness.lock.json</code> that records a hash for each file. Your edits are
+        yours: check what you changed, and update the rest from a newer CLI.
       </P>
       <Code>
         {"bunx create-tanstack-cf-saas harness check\nbunx create-tanstack-cf-saas harness sync"}
