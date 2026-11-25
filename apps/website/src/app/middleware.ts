@@ -1,5 +1,5 @@
 import { env, waitUntil } from "cloudflare:workers";
-import { createMiddleware } from "@tanstack/react-start";
+import { createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 import { Effect } from "effect";
 import type { AppEnv } from "./env.ts";
 import { parentSpanFor, requestInfoFrom } from "./request.ts";
@@ -10,6 +10,15 @@ const nonces = new WeakMap<Request, string>();
 
 /** The CSP nonce for a request, so the router can stamp it on the scripts it renders. */
 export const nonceFor = (request: Request) => nonces.get(request);
+
+/**
+ * Refuses a server function call that comes from another site: Start checks `Sec-Fetch-Site`,
+ * then `Origin`, then `Referer` against the request's own origin. API routes (`/api/auth/*`,
+ * `/api/events`, webhooks) are not server functions, so the filter leaves them alone.
+ * shortcut: a call with none of those headers is refused; allow it only if a non-browser
+ * client must call server functions.
+ */
+export const csrf = createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" });
 
 /**
  * Runs for every request: gives it an id and an Effect runtime, adds security headers

@@ -1,0 +1,8 @@
+{
+  "routes": {
+    "/": { "budget": 185, "now": 164.8 },
+    "/login": { "budget": 195, "now": 176.8 },
+    "/docs/": { "budget": 180, "now": 163.7 }
+  },
+  "worker": { "budget": 1020, "now": 926.1 }
+}

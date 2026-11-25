@@ -10,12 +10,58 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # to write the size table into the pull request's description
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run build
+      - name: Pages and the Worker stay under size-budgets.json
+        run: bun run size --markdown="$RUNNER_TEMP/size.md"
+      - name: Size table in the pull request's description
+        # Production deploys from main, so each pull request into it shows what it will ship.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          test -s "$RUNNER_TEMP/size.md" || exit 0; cp "$RUNNER_TEMP/size.md" "$RUNNER_TEMP/tables.md"
+          gh pr view "$PR" --json body --jq .body > "$RUNNER_TEMP/body.md"
+          perl -0pi -e 's/\n*<!-- size:start -->.*?<!-- size:end -->\n?//s' "$RUNNER_TEMP/body.md"
+          { cat "$RUNNER_TEMP/body.md"; printf '\n\n<!-- size:start -->\n## Size\n\n'; cat "$RUNNER_TEMP/tables.md"
+            printf '\nBudgets live in `size-budgets.json`. CI rewrites this section on each push.\n<!-- size:end -->\n'; } > "$RUNNER_TEMP/new.md"
+          gh pr edit "$PR" --body-file "$RUNNER_TEMP/new.md"
+      - name: No package with a known high or critical hole
+        run: bun audit --audit-level=high
+      - name: Migrations match the schema
+        # db:generate writes a file only when a schema.ts changed and its migration was not made.
+        run: |
+          if grep -q '"db:generate"' package.json; then
+            bun run db:generate
+            if [ -n "$(git status --porcelain -- drizzle)" ]; then
+              git status --porcelain -- drizzle
+              echo "::error::A schema changed without a migration. Run bun run db:generate and commit drizzle/."
+              exit 1
+            fi
+          fi
+
+  # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
+  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: No keys in the code
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE" ]; then scan=(git /repo "--log-opts=origin/$BASE..HEAD"); else scan=(dir /repo); fi
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 "${scan[@]}" --redact --no-banner
 
   # The Playwright specs in each feature's e2e folder, against `vite dev` with local D1, R2 and KV.
   e2e:

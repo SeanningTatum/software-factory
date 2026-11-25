@@ -1,4 +1,7 @@
 import { createClient } from "@libsql/client";
+// Loaded with the file, not inside the first test: it is large, and on a busy CI runner loading it
+// took longer than the 5 s a test gets.
+import { generateSQLiteDrizzleJson, generateSQLiteMigration } from "drizzle-kit/api";
 import { drizzle } from "drizzle-orm/libsql";
 import { Layer } from "effect";
 import { Database, type Db } from "./database.ts";
@@ -8,7 +11,6 @@ import { Database, type Db } from "./database.ts";
  * real SQL. Builds the DDL with drizzle-kit, so it always matches the schema files.
  */
 export const makeTestDb = async (schema: Record<string, unknown>): Promise<Db> => {
-  const { generateSQLiteDrizzleJson, generateSQLiteMigration } = await import("drizzle-kit/api");
   const client = createClient({ url: ":memory:" });
   const empty = await generateSQLiteDrizzleJson({});
   const target = await generateSQLiteDrizzleJson(schema);

@@ -6,7 +6,7 @@ describe("redactText", () => {
     ["Authorization: Bearer abc.def.ghi", "[redacted]"],
     ["token=supersecret123", "token=[redacted]"],
     ["postgres://user:pa55@db.example.com/app", "postgres://[redacted]@db.example.com/app"],
-    ["key sk_test_4eC39HqLyjWDarjtT1zdp7dc", "[redacted-key]"],
+    ["key sk_test_4eC39HqLyjWDarjtT1zdp7dc", "[redacted-key]"], // gitleaks:allow (Stripe's public docs key)
     ["jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig_nature", "[redacted-jwt]"],
   ])("removes secrets from %s", (input, expected) => {
     expect(redactText(input)).toContain(expected);

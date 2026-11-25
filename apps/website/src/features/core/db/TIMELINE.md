@@ -33,6 +33,7 @@ Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-25 — `makeTestDb` imports `drizzle-kit/api` with the file instead of inside the first test, which timed out on a busy CI runner.
 - 2026-11-24 — Squashed `0000_init`, `0001_indexes` and `0002_audit_log` into one `0000_init`; the schema is identical. The template keeps a single migration because new projects generate their own.
 - 2026-11-24 — Moved to `src/features/core/db/` from `src/features/db/`. Queries run through `outsideCall` and the binding is read with `binding`, both from `core/lib`.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

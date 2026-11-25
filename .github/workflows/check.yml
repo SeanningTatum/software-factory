@@ -9,10 +9,63 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write # to write the size table into the pull request's description
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
+      # bun links a package's bin only if its file exists, and cf-saas-lint's bin is in dist/:
+      # build the packages, then install again to link it.
+      - run: bunx turbo run build --filter='./packages/*'
+      - run: bun install --frozen-lockfile
       - run: bun run check
+      - name: The template and website stay under their size budgets
+        run: |
+          bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"
+          bun run --cwd apps/website size --markdown="$RUNNER_TEMP/website.md"
+      - name: Size table in the pull request's description
+        # Production deploys from main, so each pull request into it shows what it will ship.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          for app in template website; do
+            if test -s "$RUNNER_TEMP/$app.md"; then printf '### %s\n\n%s\n\n' "$app" "$(cat "$RUNNER_TEMP/$app.md")"; fi
+          done > "$RUNNER_TEMP/tables.md"
+          test -s "$RUNNER_TEMP/tables.md" || exit 0
+          gh pr view "$PR" --json body --jq .body > "$RUNNER_TEMP/body.md"
+          perl -0pi -e 's/\n*<!-- size:start -->.*?<!-- size:end -->\n?//s' "$RUNNER_TEMP/body.md"
+          { cat "$RUNNER_TEMP/body.md"; printf '\n\n<!-- size:start -->\n## Size\n\n'; cat "$RUNNER_TEMP/tables.md"
+            printf '\nBudgets live in `size-budgets.json`. CI rewrites this section on each push.\n<!-- size:end -->\n'; } > "$RUNNER_TEMP/new.md"
+          gh pr edit "$PR" --body-file "$RUNNER_TEMP/new.md"
+      - name: No package with a known high or critical hole
+        run: bun audit --audit-level=high
+      - name: Migrations match the schema
+        # db:generate writes a file only when a schema.ts changed and its migration was not made.
+        run: |
+          for app in templates/saas-starter apps/website; do bun run --cwd "$app" db:generate; done
+          if [ -n "$(git status --porcelain -- '*/drizzle')" ]; then
+            git status --porcelain -- '*/drizzle'
+            echo "::error::A schema changed without a migration. See the migration rule in CLAUDE.md."
+            exit 1
+          fi
+
+  # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
+  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - name: No keys in the code
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE" ]; then scan=(git /repo "--log-opts=origin/$BASE..HEAD"); else scan=(dir /repo); fi
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 "${scan[@]}" --redact --no-banner
