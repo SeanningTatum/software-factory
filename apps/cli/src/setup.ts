@@ -32,6 +32,8 @@ export interface Item {
   readonly required: boolean;
   readonly state: ItemState;
   readonly fix: string;
+  /** Set on secrets: the ones `setup` asks for and uploads when run again. */
+  readonly secret?: true;
 }
 
 const SETUP = "bun run setup";
@@ -129,6 +131,7 @@ const secretItems = (
             : ("missing" as const)
           : ("unknown" as const),
         fix: `${SETUP} --env ${env}`,
+        secret: true as const,
       })),
     );
   });
@@ -161,6 +164,11 @@ export const readiness = (root: string, wrangler?: Wrangler): ReadonlyArray<Item
 
 export const isReady = (items: ReadonlyArray<Item>) =>
   !items.some((i) => i.required && i.state === "missing");
+
+/** The secrets Cloudflare lacks in some environment, required or not, each named once. */
+export const missingSecrets = (items: ReadonlyArray<Item>): ReadonlyArray<string> => [
+  ...new Set(items.filter((i) => i.secret && i.state === "missing").map((i) => i.name)),
+];
 
 const D1_ID = /"?database_id"?\s*[:=]\s*"([0-9a-f-]{36})"/;
 const KV_ID = /"?id"?\s*[:=]\s*"([0-9a-f]{32})"/;

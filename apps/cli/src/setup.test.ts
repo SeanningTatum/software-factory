@@ -11,6 +11,7 @@ import {
   isLoggedIn,
   isReady,
   migrate,
+  missingSecrets,
   provision,
   putSecret,
   readiness,
@@ -83,6 +84,19 @@ describe("readiness", () => {
     expect(
       items.find((i) => i.name === "BETTER_AUTH_SECRET" && i.env === "production")?.state,
     ).toBe("set");
+  });
+
+  test("names each secret Cloudflare lacks once, optional ones too, and no vars", () => {
+    const dir = project(["auth"]);
+    const { wrangler } = fakeWrangler({ secrets: ["BETTER_AUTH_SECRET"] });
+    const missing = missingSecrets(readiness(dir, wrangler));
+    expect(missing).toContain("TURNSTILE_SECRET_KEY");
+    expect(missing).toContain("ALERT_WEBHOOK_URL");
+    expect(missing).not.toContain("BETTER_AUTH_SECRET");
+    expect(missing).not.toContain("TURNSTILE_SITE_KEY");
+    expect(new Set(missing).size).toBe(missing.length);
+    // Not logged in: nothing is known to be missing.
+    expect(missingSecrets(readiness(dir))).toEqual([]);
   });
 });
 

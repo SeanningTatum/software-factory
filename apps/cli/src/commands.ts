@@ -49,6 +49,7 @@ import {
   isLoggedIn,
   isReady,
   migrate,
+  missingSecrets,
   provision,
   type RunScript,
   readiness,
@@ -303,6 +304,9 @@ export const create = async (args: CreateArgs) => {
 const closingLine = (cloudflare: ReadonlyArray<Item> | undefined, pm: PackageManager) => {
   const setup = pc.cyan(runCommand(pm, "setup").flat().join(" "));
   if (!cloudflare) return `When you're ready to deploy: ${setup}`;
+  const skipped = missingSecrets(cloudflare);
+  if (skipped.length)
+    return `Both are deployed. Not on Cloudflare yet: ${skipped.join(", ")}. Run ${setup} again to upload them.`;
   if (isReady(cloudflare)) return "Staging and production are live.";
   return `Both are deployed. To fill what the table marks missing: ${setup}`;
 };
