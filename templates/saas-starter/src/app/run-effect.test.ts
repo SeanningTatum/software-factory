@@ -1,6 +1,6 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { NotFound } from "./errors.ts";
+import { NotFound, RateLimited } from "./errors.ts";
 import { requestInfoFrom } from "./request.ts";
 import {
   describeFailure,
@@ -38,6 +38,15 @@ describe("runEffect", () => {
 });
 
 describe("runResponse", () => {
+  it("tells a rate-limited client when to retry", async () => {
+    const response = await runResponse(
+      context(),
+      Effect.fail(new RateLimited({ retryAfterSeconds: 30 })),
+    );
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("30");
+  });
+
   it("hides a defect behind a plain 500", async () => {
     const response = await runResponse(context(), Effect.die(new Error("db password is hunter2")));
     expect(response.status).toBe(500);

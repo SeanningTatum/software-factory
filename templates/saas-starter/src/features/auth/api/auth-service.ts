@@ -130,7 +130,10 @@ export class Auth extends Context.Service<
               yield* analytics.capture(event);
             return Response.json(
               { message: "Too many attempts. Try again in a minute." },
-              { status: 429 },
+              {
+                status: 429,
+                headers: { "retry-after": String(limited.failure.retryAfterSeconds) },
+              },
             );
           }
         }

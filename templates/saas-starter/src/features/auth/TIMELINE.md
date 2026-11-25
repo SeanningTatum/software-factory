@@ -47,6 +47,10 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Before launch, wire a mail hook: email verification and password reset do not work yet. Set `sendResetPassword` under `emailAndPassword`, `sendVerificationEmail` under `emailVerification`, and `requireEmailVerification: true` in `api/auth.ts`, then add `/api/auth/request-password-reset` back to `LIMITED_PATHS`. Why: no sender is wired, so anyone can sign up with an address they don't own and nobody can reset a password.
+- 2026-11-24 — The limited paths are sign-in and sign-up only; `request-password-reset` is off the list until a reset sender exists. Why: limiting a route that sends nothing was dead code that implied resets worked.
+- 2026-11-24 — An `APP_URL` without `http://` or `https://` degrades auth to `NotConfigured` naming `APP_URL (a full https:// URL)`. Why: `new URL` threw while the layer was built, so every route answered 500, not only auth.
+- 2026-11-24 — A 429 carries a `retry-after` header from `RateLimited.retryAfterSeconds`, both from auth's handler and from `runResponse`. Why: clients had no way to know when to try again.
 - 2026-11-24 — No GitHub sign-in: email and password only, so `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are gone. Why: a provider nobody set up was dead weight; add one to `socialProviders` in `api/auth.ts` when you need it.
 - 2026-11-24 — Better Auth's log lines go to the request's logger, and its errors to the error reporter, through the `logger.log` option; plugins get `loggedErrors()` to see them. Why: plugins such as Stripe's catch their own failures and only log them, so a console logger hid them from on-call.
 - 2026-11-24 — A GitHub callback counts as `sign_in_succeeded` only when the response sets a session cookie. Why: Better Auth answers every OAuth failure with a redirect too, so a redirect status proved nothing.

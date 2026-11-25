@@ -124,6 +124,7 @@ describe("Auth", () => {
       false,
     );
     expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("60");
     expect(events).toEqual(["sign_in_failed"]);
   });
 
