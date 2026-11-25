@@ -13,6 +13,7 @@ import {
   noTryCatch,
 } from "./rules/ast-rules.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
+import { rulesFile } from "./rules/rules-file.ts";
 import { sharedLib } from "./rules/shared-lib.ts";
 import { testMap } from "./rules/test-map.ts";
 import type { Finding, ProjectRule, Rule } from "./rules/types.ts";
@@ -29,7 +30,7 @@ export const rules: ReadonlyArray<Rule> = [
 ];
 
 /** Rules over the whole file list, not one source file. */
-export const projectRules: ReadonlyArray<ProjectRule> = [featureLayout];
+export const projectRules: ReadonlyArray<ProjectRule> = [featureLayout, rulesFile];
 
 /** Rules that tests may break: they throw from mocks and run effects directly. */
 const SOURCE_ONLY = new Set(["no-throw", "no-try-catch", "no-run-effect", "external-call-span"]);
@@ -64,13 +65,15 @@ const projectFindings = (
   root: string,
   config: LintConfig,
   allFiles: ReadonlySet<string>,
-): ReadonlyArray<Finding> =>
-  projectRules.flatMap((rule) =>
+): ReadonlyArray<Finding> => {
+  const ruleIds = new Set([...rules, ...projectRules].map((r) => r.id));
+  return projectRules.flatMap((rule) =>
     rule
-      .checkProject({ root, config, allFiles })
+      .checkProject({ root, config, allFiles, ruleIds })
       .filter((f) => !matchesAny(f.file, config.allow[rule.id] ?? []))
       .map((f) => ({ rule: rule.id, ...f })),
   );
+};
 
 export const lint = (
   root: string,

@@ -56,6 +56,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `metric` in `events.ts`: the share of started onboardings that finish.
 - 2026-11-24 — Each step disposes its runtime even when it fails, so queued analytics are still sent.
 - 2026-11-24 — Workflow calls run through `outsideCall` and the binding is read with `binding`, both from `core/lib`; imports analytics from `src/features/core/`.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

@@ -61,15 +61,19 @@ export const billingPlugins = (
       subscription: {
         enabled: true,
         plans: plansFrom(env).map(({ name, priceId }) => ({ name, priceId })),
-        getCheckoutSessionParams: ({ plan }) => {
-          onEvent({ _tag: "checkout_started", plan: plan.name });
+        getCheckoutSessionParams: ({ plan, user }) => {
+          onEvent({ _tag: "checkout_started", plan: plan.name }, user.id);
           return {};
         },
-        onSubscriptionComplete: async ({ plan }) => {
-          onEvent({ _tag: "subscription_activated", plan: plan.name });
+        // Webhooks carry no session; the subscription's reference id is the user's.
+        onSubscriptionComplete: async ({ plan, subscription }) => {
+          onEvent({ _tag: "subscription_activated", plan: plan.name }, subscription.referenceId);
         },
         onSubscriptionCancel: async ({ subscription }) => {
-          onEvent({ _tag: "subscription_canceled", plan: subscription.plan });
+          onEvent(
+            { _tag: "subscription_canceled", plan: subscription.plan },
+            subscription.referenceId,
+          );
         },
         onSubscriptionUpdate: async ({ event, subscription, stripeSubscription }) => {
           const change = unexpectedChange(event, subscription.status);
