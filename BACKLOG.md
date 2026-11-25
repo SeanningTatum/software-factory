@@ -39,6 +39,7 @@ Rules for a good item:
 | B-09 | A first deploy to staging succeeds                | Deployment | M    | A Cloudflare token    |
 | B-10 | The packages are on npm                           | Repo       | S    | Claim the npm scope   |
 | B-19 | Users can verify their email and reset a password | Features   | L    | Pick an email service |
+| B-20 | cf-saas-lint parses without a second TypeScript   | Repo       | M    | no                    |
 
 ## Now
 
@@ -122,3 +123,18 @@ Rules for a good item:
 - [ ] Reset and verification work end to end in a browser spec.
 
 **Where:** a new module under `templates/saas-starter/src/features/core/`, and `src/features/auth/`.
+
+### B-20 · cf-saas-lint parses without a second TypeScript
+
+- **Area:** Repo
+- **Size:** M
+- **Needs you:** no
+
+**Why:** TypeScript 7 has no JS API, so `cf-saas-lint` reads source through `@typescript/typescript6`. Every project installs a second full compiler just for lint, and that parser stays on TypeScript 6 syntax.
+
+**Done when:**
+
+- [ ] `packages/lint` parses with `oxc-parser` (already in the tree through knip) and no longer depends on `@typescript/typescript6`.
+- [ ] `bun run --filter @tanstack-cf-saas/lint test` and `test:matrix` pass.
+
+**Where:** `packages/lint/src/files.ts`, `lint.ts`, `rules/ast-rules.ts`, `rules/shared-lib.ts`, `rules/types.ts`.
