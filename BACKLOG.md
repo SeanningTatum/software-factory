@@ -102,7 +102,7 @@ Rules for a good item:
 
 - [ ] `bunx create-tanstack-cf-saas my-app` installs and runs with no local files.
 - [ ] `release.yml` publishes on a merged changeset.
-- [ ] The published CLI ships the harness: `release.yml` checks out the `claude/` submodule with `CLAUDE_CONFIG_TOKEN`.
+- [ ] The published CLI ships the harness: `release.yml` checks out `claude/` with `CLAUDE_CONFIG_TOKEN`, a token that can read `claude-config` (nothing else).
 
 **Where:** `.github/workflows/release.yml`, `.changeset/`, `apps/cli/scripts/bundle-template.ts`.
 

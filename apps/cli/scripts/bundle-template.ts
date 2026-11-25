@@ -104,8 +104,14 @@ if (local) throw new Error(`The template's package.json has a local dependency: 
 writeFileSync(pkgPath, pkgText);
 
 rmSync(harnessTarget, { recursive: true, force: true });
-if (existsSync(harnessSource)) {
+if (!existsSync(harnessSource))
+  console.warn(
+    "No claude/.claude (run git submodule update --init claude): the CLI ships no harness.",
+  );
+else {
   copyTree(harnessSource, harnessTarget, (rel) => rel.split("/").includes(".git"));
+  // Every new project's Claude settings come from this file: refuse to ship it broken.
+  JSON.parse(readFileSync(join(harnessTarget, "settings.json"), "utf8"));
   const commit = (() => {
     const run = (cmd: string) =>
       execSync(cmd, {
