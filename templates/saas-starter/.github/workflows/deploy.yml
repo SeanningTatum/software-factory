@@ -1,8 +1,9 @@
 # Staging on every push to main, then production after a person approves the `production`
 # environment (Settings → Environments → production → required reviewers).
-# Needs repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, and vars STAGING_URL and
-# PRODUCTION_URL. Optional secret ALERT_WEBHOOK_URL: a failed production deploy posts there.
-# Skipped until CLOUDFLARE_ACCOUNT_ID is set, so a fresh fork stays green.
+# Needs the repository secret CLOUDFLARE_API_TOKEN and the repository variables CLOUDFLARE_ACCOUNT_ID,
+# STAGING_URL and PRODUCTION_URL (Settings → Variables, not Secrets). Optional secret
+# ALERT_WEBHOOK_URL: a failed production deploy posts there.
+# Skipped until the variable CLOUDFLARE_ACCOUNT_ID is set, so a fresh fork stays green.
 #
 # The smoke test calls /api/health, which answers 503 unless every required setting is set, APP_URL
 # is the URL being tested, and D1 answers. Migrations run before the new code and a failed smoke test
@@ -19,10 +20,11 @@ jobs:
   staging:
     if: ${{ vars.CLOUDFLARE_ACCOUNT_ID != '' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: staging
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - run: bun run check
       - name: Migrate and deploy
@@ -33,15 +35,25 @@ jobs:
           if grep -q '"db:migrate:staging"' package.json; then bun run db:migrate:staging; fi
           bun run deploy:staging
       - name: Smoke test
-        run: curl --fail-with-body --retry 5 --retry-delay 3 "${{ vars.STAGING_URL }}/api/health"
+        run: |
+          curl --fail-with-body --retry 5 --retry-delay 3 --max-time 15 "${{ vars.STAGING_URL }}/api/health"
+          # A CSP with a nonce is sent only by a production build, so only a deploy can see it break.
+          csp() {
+            curl -sS --max-time 15 -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" "$1/" || return 1
+            n=$(tr -d '\r' < "$RUNNER_TEMP/h" | grep -i '^content-security-policy:' | grep -o "'nonce-[^']*'" | head -1 | cut -c8- | tr -d "'")
+            test -n "$n" || { echo "no nonce in the content-security-policy header"; return 1; }
+            ! tr '\n' ' ' < "$RUNNER_TEMP/b" | grep -o '<script[^>]*>' | grep -vF "nonce=\"$n\""
+          }
+          csp "${{ vars.STAGING_URL }}"
 
   production:
     needs: staging
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: production
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - name: Migrate and deploy
         env:
@@ -56,7 +68,14 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
         run: |
-          if ! curl --fail-with-body --retry 5 --retry-delay 3 "${{ vars.PRODUCTION_URL }}/api/health"; then
+          # A CSP with a nonce is sent only by a production build, so only a deploy can see it break.
+          csp() {
+            curl -sS --max-time 15 -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" "$1/" || return 1
+            n=$(tr -d '\r' < "$RUNNER_TEMP/h" | grep -i '^content-security-policy:' | grep -o "'nonce-[^']*'" | head -1 | cut -c8- | tr -d "'")
+            test -n "$n" || { echo "no nonce in the content-security-policy header"; return 1; }
+            ! tr '\n' ' ' < "$RUNNER_TEMP/b" | grep -o '<script[^>]*>' | grep -vF "nonce=\"$n\""
+          }
+          if ! { curl --fail-with-body --retry 5 --retry-delay 3 --max-time 15 "${{ vars.PRODUCTION_URL }}/api/health" && csp "${{ vars.PRODUCTION_URL }}"; }; then
             # Alert first: if the rollback fails too, the step exits before anything after it.
             if [ -n "$ALERT_WEBHOOK_URL" ]; then
               curl -sS --max-time 10 -X POST -H 'Content-Type: application/json' \
