@@ -48,11 +48,12 @@ export class Billing extends Context.Service<
                 eq(subscription.referenceId, userId),
                 inArray(subscription.status, ["active", "trialing", "past_due"]),
               ),
-            )
-            .limit(1),
+            ),
         );
-        const current = rows[0];
-        const entitled = Boolean(current && isStatus(current.status) && isEntitled(current.status));
+        // A user can hold several live rows (past_due beside active): the entitled one wins.
+        const entitledRow = rows.find((row) => isStatus(row.status) && isEntitled(row.status));
+        const current = entitledRow ?? rows[0];
+        const entitled = Boolean(entitledRow);
         return {
           configured,
           entitled,
