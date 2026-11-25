@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstLoadBytes, routePreloads } from "./size";
+import { firstLoadBytes, markdownTable, routePreloads } from "./size";
 
 const manifest = `routes: {
 	__root__: {
@@ -33,5 +33,19 @@ describe("size", () => {
     const size = (path: string) => path.length;
     expect(firstLoadBytes(manifest, "/", size)).toBe(3 * "/assets/a.js".length);
     expect(firstLoadBytes(manifest, "/login", size)).toBeUndefined();
+  });
+
+  it("writes a markdown row per measure and marks the ones over budget", () => {
+    expect(
+      markdownTable([
+        ["/", 1024, 2048],
+        ["Worker", 3072, 2048],
+      ]).split("\n"),
+    ).toEqual([
+      "| What | Size (gzip) | Budget | |",
+      "| --- | ---: | ---: | --- |",
+      "| / | 1.0 kB | 2.0 kB | ok |",
+      "| Worker | 3.0 kB | 2.0 kB | over |",
+    ]);
   });
 });
