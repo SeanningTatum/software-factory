@@ -21,12 +21,8 @@ SENTRY_DSN=
 APP_URL=http://localhost:3000
 # Extra origins allowed to call the auth API, comma-separated (optional).
 TRUSTED_ORIGINS=
-# GitHub OAuth app client id; GitHub sign-in is off without it (optional). See https://github.com/settings/developers
-GITHUB_CLIENT_ID=
 # Signs sessions; at least 32 random characters (required).
 BETTER_AUTH_SECRET=
-# GitHub OAuth app client secret (optional).
-GITHUB_CLIENT_SECRET=
 
 # --- Billing ---
 # Stripe price id for the Pro plan (price_...) (required). See https://dashboard.stripe.com/products
@@ -35,7 +31,3 @@ STRIPE_PRICE_PRO=
 STRIPE_SECRET_KEY=
 # Signing secret of the webhook pointing at /api/auth/stripe/webhook (required). See https://dashboard.stripe.com/webhooks
 STRIPE_WEBHOOK_SECRET=
-
-# --- Workflows ---
-# Bearer token that may start workflows through /api/workflows/onboarding (optional).
-WORKFLOWS_TRIGGER_TOKEN=

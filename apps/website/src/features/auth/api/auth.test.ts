@@ -26,19 +26,6 @@ describe("authConfig", () => {
     );
     expect(config).toMatchObject({
       trustedOrigins: ["https://a.dev", "https://b.dev"],
-      github: undefined,
     });
-  });
-
-  it("turns GitHub on only with both keys", () => {
-    const config = authConfig(
-      env({
-        BETTER_AUTH_SECRET: SECRET,
-        APP_URL: "https://a.dev",
-        GITHUB_CLIENT_ID: "id",
-        GITHUB_CLIENT_SECRET: "s",
-      }),
-    );
-    expect(config).toMatchObject({ github: { clientId: "id", clientSecret: "s" } });
   });
 });

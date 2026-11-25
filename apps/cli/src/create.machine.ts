@@ -7,6 +7,8 @@ export interface CreatePlan {
   readonly claude: boolean;
   readonly install: boolean;
   readonly git: boolean;
+  /** Values for .dev.vars, asked for when a chosen feature can't work without them. */
+  readonly devVars?: Readonly<Record<string, string>>;
 }
 
 /** Each step of `create`, run in order; steps the plan turns off are skipped. */

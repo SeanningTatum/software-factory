@@ -8,6 +8,7 @@ import {
   isLoggedIn,
   isReady,
   provision,
+  putSecret,
   readiness,
   SetupError,
   setupEnvs,
@@ -189,4 +190,21 @@ test("checks login with whoami --json, since plain whoami exits 0 when logged ou
   };
   expect(isLoggedIn(loggedOut)).toBe(false);
   expect(seen).toEqual(["whoami --json"]);
+});
+
+describe("putSecret", () => {
+  test("sends the value on stdin, never in the arguments, and names the environment", () => {
+    const { wrangler, calls } = fakeWrangler();
+    putSecret(wrangler, "STRIPE_SECRET_KEY", "staging", "sk_test_1");
+    putSecret(wrangler, "STRIPE_SECRET_KEY", "production", "sk_live_1");
+    expect(calls).toEqual([
+      { args: ["secret", "put", "STRIPE_SECRET_KEY", "--env", "staging"], input: "sk_test_1" },
+      { args: ["secret", "put", "STRIPE_SECRET_KEY"], input: "sk_live_1" },
+    ]);
+  });
+
+  test("fails with wrangler's error", () => {
+    const failing: Wrangler = () => ({ ok: false, stdout: "", stderr: "not authorized" });
+    expect(() => putSecret(failing, "K", "staging", "v")).toThrow(/K \(staging\).*not authorized/s);
+  });
 });

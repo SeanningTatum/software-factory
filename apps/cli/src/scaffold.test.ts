@@ -5,7 +5,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadManifests } from "@tanstack-cf-saas/blocks";
 import { add, remove } from "./commands.ts";
-import { hasTables, parseFeatures, scaffold, titleCase, validateName } from "./scaffold.ts";
+import {
+  blankSettings,
+  hasTables,
+  parseFeatures,
+  scaffold,
+  titleCase,
+  validateName,
+} from "./scaffold.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../template");
 const HARNESS = join(import.meta.dirname, "../harness");
@@ -43,6 +50,30 @@ describe("scaffold", () => {
       'APP_NAME = "Acme App"',
     );
     expect(readFileSync(join(dir, ".dev.vars"), "utf8")).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);
+  });
+
+  test("asks for billing's Stripe settings and writes the answers into .dev.vars", () => {
+    expect(blankSettings(TEMPLATE, ["db", "auth"])).toEqual([]);
+    const blanks = blankSettings(TEMPLATE, ["db", "auth", "billing"]);
+    expect(blanks.map((b) => [b.key, b.secret])).toEqual([
+      ["STRIPE_PRICE_PRO", false],
+      ["STRIPE_SECRET_KEY", true],
+      ["STRIPE_WEBHOOK_SECRET", true],
+    ]);
+    const dir = target();
+    scaffold({
+      templateDir: TEMPLATE,
+      harnessDir: undefined,
+      targetDir: dir,
+      name: "acme-app",
+      features: ["db", "auth", "billing"],
+      devVars: { STRIPE_SECRET_KEY: "sk_test_1", STRIPE_PRICE_PRO: "bad\nLINE=1" },
+    });
+    const devVars = readFileSync(join(dir, ".dev.vars"), "utf8");
+    expect(devVars).toMatch(/^STRIPE_SECRET_KEY=sk_test_1$/m);
+    expect(devVars).toMatch(/^STRIPE_PRICE_PRO=$/m);
+    expect(devVars).toMatch(/^STRIPE_WEBHOOK_SECRET=$/m);
+    expect(devVars).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);
   });
 
   test("leaves no trace of removed features in generated files or package.json", () => {

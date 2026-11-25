@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-const Method = Schema.Literals(["email", "github"]);
+const Method = Schema.Literal("email");
 
 const SignUpCompleted = Schema.TaggedStruct("sign_up_completed", { method: Method });
 const SignInSucceeded = Schema.TaggedStruct("sign_in_succeeded", { method: Method });

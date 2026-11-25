@@ -7,7 +7,7 @@ import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
-import { authEvents, setsSession } from "../lib/auth-events.ts";
+import { authEvents } from "../lib/auth-events.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
 import { AuthRateLimiter, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
 
@@ -148,7 +148,6 @@ export class Auth extends Context.Service<
           path,
           response.status,
           body,
-          setsSession(response.headers),
         )) {
           yield* analytics.capture(event, distinctId);
         }
