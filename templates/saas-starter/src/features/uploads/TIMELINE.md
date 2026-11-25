@@ -65,7 +65,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
-- 2026-11-25 — A user may keep 1,000 files (`MAX_FILES_PER_USER`; the next upload fails with `FileLimitReached`, 409), and `list` returns one page of 50 with a cursor: `/uploads?cursor=` shows a "More" link and `GET /api/uploads?cursor=` answers `{ files, cursor }`. Files sort newest first within a page, not across pages. (LANE_PR)
+- 2026-11-25 — A user may keep 1,000 files (`MAX_FILES_PER_USER`; the next upload fails with `FileLimitReached`, 409), and `list` returns one page of 50 with a cursor: `/uploads?cursor=` shows a "More" link and `GET /api/uploads?cursor=` answers `{ files, cursor }`. Files sort newest first within a page, not across pages. (https://github.com/SeanningTatum/tanstack-cf-saas-starter/pull/16)
 - 2026-11-24 — The paths spec sets its made-up client address with `asVisitor(page)`, which leaves Turnstile's requests alone.
 - 2026-11-24 — Route specs for /uploads, /api/uploads and /api/uploads/:id: the normal case, 401 signed out, 400 with no file, 404 for a missing file.
 - 2026-11-24 — `metric` in `events.ts`: files uploaded per active user.
