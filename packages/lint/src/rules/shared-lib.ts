@@ -1,4 +1,4 @@
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { placeOf } from "../place.ts";
 import type { Rule } from "./types.ts";
 
