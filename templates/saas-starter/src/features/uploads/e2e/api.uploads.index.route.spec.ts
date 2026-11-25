@@ -11,7 +11,7 @@ test("@golden /api/uploads stores a file and lists it", async ({ page }) => {
   expect(made.status()).toBe(201);
   const list = await page.request.get("/api/uploads");
   expect(list.status()).toBe(200);
-  expect(await list.json()).toMatchObject([{ name: "cat.png" }]);
+  expect(await list.json()).toMatchObject({ files: [{ name: "cat.png" }] });
 });
 
 test("@error /api/uploads answers 401 to a signed-out visitor", async ({ request }) => {
