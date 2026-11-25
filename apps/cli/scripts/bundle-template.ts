@@ -80,8 +80,13 @@ copyTree(source, target, (rel) => rel.split("/").some((part) => SKIP.has(part)) 
 renameSync(join(target, ".gitignore"), join(target, "_gitignore"));
 
 const versionOf = (name: string) => {
-  for (const dir of readdirSync(join(repo, "packages"))) {
-    const pkg = JSON.parse(readFileSync(join(repo, "packages", dir, "package.json"), "utf8"));
+  // The CLI is one of them: a project carries the version that made it, so `setup` runs locally.
+  const dirs = [
+    ...readdirSync(join(repo, "packages")).map((dir) => join(repo, "packages", dir)),
+    join(import.meta.dirname, ".."),
+  ];
+  for (const dir of dirs) {
+    const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
     if (pkg.name === name) return `^${pkg.version}`;
   }
   throw new Error(`No workspace package named ${name}`);

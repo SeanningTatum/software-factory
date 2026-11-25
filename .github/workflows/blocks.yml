@@ -1,9 +1,12 @@
 name: blocks
+# The feature matrix, on pull requests into staging or production that touch what it proves.
+# Not a required check: a workflow with a paths filter never reports on the pull requests it skips.
 on:
   pull_request:
+    branches: [staging, production]
     paths: ["templates/**", "packages/**", "apps/cli/**"]
   push:
-    branches: [main]
+    branches: [staging]
 permissions: {}
 jobs:
   matrix:

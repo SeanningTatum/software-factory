@@ -6,7 +6,7 @@ import { type TimelineText, timelineProblems, touchedFeatures } from "./timeline
 import { TIMELINE_FILE } from "./timeline-doc.ts";
 
 export interface TimelineOptions {
-  /** The ref to compare with. Default: origin/main, else HEAD~1. */
+  /** The ref to compare with. Default: origin/staging, else origin/main, else HEAD~1. */
   readonly base?: string;
   /** Skip the gate, for a change too small to record. */
   readonly skip?: boolean;
@@ -42,7 +42,7 @@ export const runTimeline = (root: string, options: TimelineOptions = {}): Timeli
   if (git(root, ["rev-parse", "--is-inside-work-tree"]) === undefined) {
     return skipped("not a git repository");
   }
-  const candidates = options.base ? [options.base] : ["origin/main", "HEAD~1"];
+  const candidates = options.base ? [options.base] : ["origin/staging", "origin/main", "HEAD~1"];
   const base = candidates.find((ref) => verified(root, ref));
   if (!base) return skipped(`no base ref (${candidates.join(", ")})`);
   const from = git(root, ["merge-base", base, "HEAD"])?.trim() || base;

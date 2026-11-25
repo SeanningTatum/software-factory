@@ -11,16 +11,44 @@ bun run db:migrate:local   # when the db feature is on
 bun run dev
 ```
 
+After you change a `schema.ts`, name the migration for what it changes; the script fails without a
+name:
+
+```bash
+bun run db:generate add_invoices   # writes drizzle/0001_add_invoices.sql
+```
+
 `.dev.vars` holds local settings and secrets; `.dev.vars.example` lists every one with what it is for.
 
 ## Ship it
 
+The `create` wizard offers these steps when it makes the project. Run them again here after you
+add a feature, or if you skipped one. The project holds the CLI that made it as a dev dependency,
+so after `bun install` these run that copy and fetch nothing:
+
 ```bash
-bunx create-tanstack-cf-saas setup          # create D1, KV and R2, set secrets, for production and staging
-bunx create-tanstack-cf-saas setup --check  # what is still missing, and the command that fixes each
-bun run deploy:staging
+bun run setup                        # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
+bun run setup --check                # what is still missing, and the command that fixes each
+bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, and what CI deploys with
+bun run deploy:staging               # by hand; CI does both once the repository variables are set
 bun run deploy
 ```
+
+Two branches deploy. `staging` is the default branch, and a push to it deploys staging.
+`production` deploys production, and moves only by a pull request from `staging` whose last commit
+has a version tag:
+
+```bash
+git tag v1.2.0 origin/staging && git push origin v1.2.0
+gh pr create --base production --head staging --title "Release v1.2.0"
+```
+
+Work in small pull requests stacked on each other. One whose base is another branch gets the short
+checks in `pr.yml` (lint, types, unit tests, a scan for keys). The pull request that rolls the
+stack up into `staging` gets all of `ci.yml`, the same checks production requires. The rules live
+in `.github/rulesets/`; change a file and run `github` again to apply it. Add your own workflows
+beside the four in `.github/workflows/`. `docs/branches.md` draws the whole flow and says why each
+rule is there.
 
 ## Layout
 

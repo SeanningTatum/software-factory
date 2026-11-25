@@ -3,25 +3,34 @@ import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import {
   addBlock,
+  type EnvName,
   loadManifests,
   readProject,
   removeBlock,
+  WRANGLER_FILE,
   withRequirements,
 } from "@tanstack-cf-saas/blocks";
 import pc from "picocolors";
 import { createActor, fromPromise, toPromise } from "xstate";
 import { type CreatePlan, createMachine } from "./create.machine.ts";
+import {
+  type Cli,
+  DEPLOY_SECRET,
+  DEPLOY_SWITCH,
+  hasSecret,
+  requireGh,
+  setupGithub,
+} from "./github.ts";
 import { harnessStatus, syncHarness } from "./harness.ts";
 import { harnessDir, templateDir } from "./paths.ts";
 import {
   detectPackageManager,
-  execCommand,
   installCommand,
   type PackageManager,
   packageManagers,
   runCommand,
 } from "./pm.ts";
-import { gitIdentity, projectWrangler, run } from "./run.ts";
+import { capture, gitIdentity, projectWrangler, run } from "./run.ts";
 import {
   type BlankSetting,
   blankSettings,
@@ -33,13 +42,19 @@ import {
   validateName,
 } from "./scaffold.ts";
 import {
+  accountId,
+  appUrl,
+  firstDeploy,
   type Item,
   isLoggedIn,
   isReady,
+  migrate,
+  missingSecrets,
   provision,
-  putSecret,
+  type RunScript,
   readiness,
   setupEnvs,
+  typedSettings,
 } from "./setup.ts";
 import { resetHistory, today } from "./timeline.ts";
 import { VERSION } from "./version.ts";
@@ -170,10 +185,13 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
     `cd ${shellPath(plan.targetDir)}`,
     ...(pending.includes("install") && plan.install ? [installCommand(pm).flat().join(" ")] : []),
     ...(pending.includes("migrate") && hasDb
-      ? [runCommand(pm, "db:generate").flat().join(" ")]
+      ? [
+          runCommand(pm, "db:generate", "init").flat().join(" "),
+          runCommand(pm, "db:migrate:local").flat().join(" "),
+        ]
       : []),
     ...(pending.includes("git") && plan.git
-      ? [`git init && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
+      ? [`git init -b staging && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
       : []),
   ];
 };
@@ -219,12 +237,16 @@ export const create = async (args: CreateArgs) => {
         }),
         migrate: fromPromise(async ({ input }) => {
           step = "migrate";
-          if (hasTables(input.targetDir))
-            await run(...runCommand(pm, "db:generate"), input.targetDir);
+          if (!hasTables(input.targetDir)) return;
+          // db:generate needs a name; a project's first migration is 0000_init.
+          await run(...runCommand(pm, "db:generate", "init"), input.targetDir);
+          // The local database gets its tables now, so `dev` works straight away.
+          migrate(input.targetDir, projectWrangler(input.targetDir), "local", () => {});
         }),
         git: fromPromise(async ({ input }) => {
           step = "git";
-          await run("git", ["init", "--quiet"], input.targetDir);
+          // The shipped workflows deploy staging from `staging` and production from `production`.
+          await run("git", ["init", "--quiet", "--initial-branch=staging"], input.targetDir);
           await run("git", ["add", "-A"], input.targetDir);
           await run(
             "git",
@@ -256,7 +278,8 @@ export const create = async (args: CreateArgs) => {
   const steps = [
     `cd ${shellPath(plan.targetDir)}`,
     ...(plan.install ? [] : [installCommand(pm).flat().join(" ")]),
-    ...(context.features.includes("db")
+    // With packages installed, create has already migrated the local database.
+    ...(context.features.includes("db") && !plan.install
       ? [runCommand(pm, "db:migrate:local").flat().join(" ")]
       : []),
     runCommand(pm, "dev").flat().join(" "),
@@ -271,55 +294,144 @@ export const create = async (args: CreateArgs) => {
         .map((b) => b.key)
         .join(", ")} in .dev.vars.`,
     );
-  if (!args.yes) await saveSecretsToCloudflare(plan, context.features);
+  const cloudflare = args.yes ? undefined : await offerCloudflare(plan, context.features, pm);
+  if (!args.yes && plan.git) await offerGithub(plan);
   p.note(steps.join("\n"), "Next");
-  p.outro(
-    `When you're ready to deploy: ${pc.cyan(`${execCommand(pm)} create-tanstack-cf-saas setup`)}`,
-  );
+  p.outro(closingLine(cloudflare, pm));
 };
 
-/** Offers to put the secrets typed during `create` into Cloudflare too, so a deploy has them. */
-const saveSecretsToCloudflare = async (plan: CreatePlan, features: ReadonlyArray<string>) => {
-  const secrets = blankSettings(plan.targetDir, features).flatMap((b) => {
-    const value = b.secret ? plan.devVars?.[b.key] : undefined;
-    return value ? [{ key: b.key, value }] : [];
-  });
-  if (!secrets.length) return;
-  const env = cancelled(
-    await p.select({
-      message: `Also save ${secrets.map((s) => s.key).join(", ")} to Cloudflare (wrangler secret put)?`,
-      options: [
-        { value: "staging", label: "Yes, to staging", hint: "where test keys belong" },
-        { value: "production", label: "Yes, to production" },
-        { value: "skip", label: "Not now", hint: "setup asks again before you deploy" },
-      ],
+/** The last line of create: what setup is still for, or that nothing is left. */
+const closingLine = (cloudflare: ReadonlyArray<Item> | undefined, pm: PackageManager) => {
+  const setup = pc.cyan(runCommand(pm, "setup").flat().join(" "));
+  if (!cloudflare) return `When you're ready to deploy: ${setup}`;
+  const skipped = missingSecrets(cloudflare);
+  if (skipped.length)
+    return `Both are deployed. Not on Cloudflare yet: ${skipped.join(", ")}. Run ${setup} again to upload them.`;
+  if (isReady(cloudflare)) return "Staging and production are live.";
+  return `Both are deployed. To fill what the table marks missing: ${setup}`;
+};
+
+/** Runs a package script in the project with its output captured, for steps that read it. */
+const runScript =
+  (pm: PackageManager, cwd: string): RunScript =>
+  (script) => {
+    const [cmd, args] = runCommand(pm, script);
+    return capture(cmd, cwd)(args);
+  };
+
+const SETUP_LATER = "Run the project's `setup` script when you are ready.";
+
+/**
+ * Offers to create the Cloudflare side now, for staging and production: the resources, the secrets
+ * and each environment's URL. What was typed for local use is test data, so it goes to staging and
+ * never to production; production's own keys show as missing until `setup --env production`.
+ * Returns where things stand once both are deployed, and nothing when setup did not finish.
+ */
+const offerCloudflare = async (
+  plan: CreatePlan,
+  features: ReadonlyArray<string>,
+  pm: PackageManager,
+) => {
+  const go = cancelled(
+    await p.confirm({
+      message:
+        "Set up Cloudflare now? Creates the database and storage for staging and production, migrates them, saves your secrets and deploys both (a few minutes).",
+      initialValue: true,
     }),
   );
-  if (env === "skip") return;
+  if (!go) return undefined;
   // Only the project's pinned wrangler gets the keys, never whatever `npx` downloads today.
   if (!existsSync(join(plan.targetDir, "node_modules/.bin/wrangler"))) {
-    p.log.warn(`Packages aren't installed. Install them, then run \`setup --env ${env}\`.`);
-    return;
+    p.log.warn(`Packages aren't installed. ${SETUP_LATER}`);
+    return undefined;
   }
   const wrangler = projectWrangler(plan.targetDir);
   if (!isLoggedIn(wrangler)) {
-    p.log.warn(`Not logged in to Cloudflare. Run \`wrangler login\`, then \`setup --env ${env}\`.`);
-    return;
+    p.log.warn(`Not logged in to Cloudflare: run \`wrangler login\`. ${SETUP_LATER}`);
+    return undefined;
   }
+  const blanks = blankSettings(plan.targetDir, features);
+  const urls: Partial<Record<EnvName, string>> = {};
   try {
-    for (const { key, value } of secrets) {
-      putSecret(wrangler, key, env, value);
-      p.log.step(`secret ${key} (${env}): set`);
+    for (const env of ["staging", "production"] as const) {
+      const url = cancelled(
+        await p.text({
+          message: `URL of ${env}, if it has its own domain (leave empty to use its workers.dev address)`,
+          defaultValue: "",
+          validate: (v) => (!v || /^https:\/\/\S+$/.test(v) ? undefined : "Start with https://"),
+        }),
+      ).trim();
+      if (url) urls[env] = url;
+      const typed = typedSettings(blanks, plan.devVars, env);
+      await provision(plan.targetDir, wrangler, {
+        envs: [env],
+        vars: typed.vars,
+        secretValue: async (key) => typed.secrets[key],
+        log: (line) => p.log.step(line),
+      });
     }
-    const vars = blankSettings(plan.targetDir, features).flatMap((b) => {
-      const value = b.secret ? undefined : plan.devVars?.[b.key];
-      return value ? [`--var ${b.key}=${value}`] : [];
-    });
-    if (vars.length)
-      p.log.info(`Save the other settings with \`setup --env ${env} ${vars.join(" ")}\`.`);
+    firstDeploy(
+      plan.targetDir,
+      ["staging", "production"],
+      runScript(pm, plan.targetDir),
+      (line) => p.log.step(line),
+      urls,
+    );
+    p.log.info("Where things stand:");
+    const items = readiness(plan.targetDir, wrangler);
+    printTable(items);
+    return items;
   } catch (error) {
-    // The project is already made; a failed put is something setup can finish later.
-    p.log.warn(`${(error as Error).message}\nRun \`setup --env ${env}\` to try again.`);
+    // The project is already made; setup finishes what is left when run again.
+    p.log.warn(`${(error as Error).message}\n${SETUP_LATER}`);
+    return undefined;
+  } finally {
+    // Also after a failure: the ids of what was made must reach the first push, not placeholders.
+    if (plan.git) await commitWrangler(plan.targetDir);
+  }
+};
+
+/** Commits wrangler.jsonc when setup changed it; CI deploys from what is committed. */
+const commitWrangler = async (dir: string) => {
+  if (!capture("git", dir)(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) return;
+  await run("git", ["add", WRANGLER_FILE], dir);
+  const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
+  await run("git", [...gitIdentity(dir), ...commit], dir);
+};
+
+const GITHUB = "create-tanstack-cf-saas github";
+
+/** Offers to create the GitHub repository and its branch rules, so the first push is protected. */
+const offerGithub = async (plan: CreatePlan) => {
+  const visibility = cancelled(
+    await p.select({
+      message:
+        "Create a GitHub repository with branch rules? staging is the default branch; production takes only a tagged pull request from staging.",
+      options: [
+        {
+          value: "private" as const,
+          label: "Yes, private",
+          hint: "rules on a private repository need a paid GitHub plan",
+        },
+        { value: "public" as const, label: "Yes, public" },
+        { value: "skip" as const, label: "Not now", hint: `run \`${GITHUB}\` later` },
+      ],
+    }),
+  );
+  if (visibility === "skip") return;
+  try {
+    const gh = capture("gh", plan.targetDir);
+    requireGh(gh); // before the token question, so a typed token is never thrown away
+    const missing = setupGithub(plan.targetDir, gh, capture("git", plan.targetDir), {
+      name: () => plan.name,
+      visibility,
+      deploy: await deployInputs(plan.targetDir, gh, false),
+      log: (line) => p.log.step(line),
+    });
+    printMissing(missing);
+  } catch (error) {
+    // The project is already made; the command finishes what is left when run again.
+    p.log.warn(`${(error as Error).message}\nRun \`${GITHUB}\` in the project to try again.`);
   }
 };
 
@@ -340,7 +452,7 @@ export const add = (arg: string) => {
   resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
   console.log(
     added.length
-      ? `Added ${added.join(", ")}. Install packages, then run db:generate if a feature has tables.`
+      ? `Added ${added.join(", ")}. Install packages, then run db:generate <name> (say, add_${added[0]}) if a feature has tables.`
       : `${feature} is already on.`,
   );
 };
@@ -396,9 +508,12 @@ export const setup = async (args: SetupArgs) => {
   const envs = setupEnvs(args.env, [...Object.keys(vars).map((k) => `--var ${k}`), ...fromEnv]);
   if (!loggedIn) throw new Error("Log in first: npx wrangler login");
   p.intro(pc.inverse(" setup "));
+  migrate(root, wrangler, "local", (line) => p.log.step(line));
+  // A URL is given with --env, so it belongs to the one environment named.
+  const { APP_URL: url, ...rest } = vars;
   await provision(root, wrangler, {
     envs,
-    vars,
+    vars: rest,
     secretValue: async (key, env, isSet) => {
       const value = process.env[key];
       if (value) return value;
@@ -410,9 +525,74 @@ export const setup = async (args: SetupArgs) => {
     },
     log: (line) => p.log.step(line),
   });
+  firstDeploy(
+    root,
+    envs,
+    runScript(detectPackageManager(), root),
+    (line) => p.log.step(line),
+    url && envs[0] ? { [envs[0]]: url } : {},
+  );
   p.log.info("Where things stand:");
   printTable(readiness(root, wrangler));
   p.outro("Run setup again any time; it only adds what is missing.");
+};
+
+/** How to supply each setting deploy.yml needs, for the ones `github` could not work out. */
+const DEPLOY_FIX: Readonly<Record<string, string>> = {
+  [DEPLOY_SWITCH]:
+    "held back until the staging URL and the token are set, because it switches the deploys on. If it is the only one listed, run `wrangler login` or set it in your shell",
+  STAGING_URL: "run `setup --env staging --var APP_URL=https://...`",
+  PRODUCTION_URL: "run `setup --env production --var APP_URL=https://...`",
+  [DEPLOY_SECRET]: "run `gh secret set CLOUDFLARE_API_TOKEN`",
+};
+
+/**
+ * What deploy.yml needs from this machine: the Cloudflare account, the two URLs and the token. The
+ * URLs are each environment's APP_URL, because /api/health refuses any other. Nothing is guessed.
+ */
+const deployInputs = async (root: string, gh: Cli, hasRepository: boolean) => {
+  if (!existsSync(join(root, WRANGLER_FILE))) return undefined; // not made from the template
+  const variables = {
+    [DEPLOY_SWITCH]: process.env.CLOUDFLARE_ACCOUNT_ID || accountId(projectWrangler(root)),
+    STAGING_URL: appUrl(root, "staging"),
+    PRODUCTION_URL: appUrl(root, "production"),
+  };
+  // Asked for, never taken from the shell: a token there may be wider than CI should hold.
+  const token =
+    (hasRepository && hasSecret(gh, DEPLOY_SECRET)) || !process.stdin.isTTY
+      ? undefined
+      : cancelled(
+          await p.password({
+            message: `Cloudflare API token for GitHub Actions to deploy with (${DEPLOY_SECRET}; leave empty to skip)`,
+          }),
+        ) || undefined;
+  return { variables, token };
+};
+
+/** Names what deploy.yml still lacks and how to supply each; until then its jobs skip. */
+const printMissing = (missing: ReadonlyArray<string>) => {
+  if (!missing.length) return;
+  console.log(
+    pc.yellow("\nGitHub Actions can't deploy until these are set. Then run `github` again:"),
+  );
+  for (const name of missing) console.log(`  ${name}: ${DEPLOY_FIX[name]}`);
+};
+
+export const github = async (isPublic: boolean) => {
+  const root = process.cwd();
+  const gh = capture("gh", root);
+  const git = capture("git", root);
+  requireGh(gh); // before the token question, so a typed token is never thrown away
+  const missing = setupGithub(root, gh, git, {
+    name: () => readProject(root).name,
+    visibility: isPublic ? "public" : "private",
+    deploy: await deployInputs(root, gh, git(["remote", "get-url", "origin"]).ok),
+    log: console.log,
+  });
+  printMissing(missing);
+  console.log(
+    "\nTo ship: git tag v0.1.0 origin/staging && git push origin v0.1.0, then open a pull request from staging into production.",
+  );
 };
 
 export const harness = (action: string, force: boolean) => {

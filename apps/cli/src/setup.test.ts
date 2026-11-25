@@ -5,13 +5,19 @@ import { join } from "node:path";
 import { prune } from "@tanstack-cf-saas/blocks";
 import { parse } from "jsonc-parser";
 import {
+  accountId,
+  appUrl,
+  firstDeploy,
   isLoggedIn,
   isReady,
+  migrate,
+  missingSecrets,
   provision,
   putSecret,
   readiness,
   SetupError,
   setupEnvs,
+  typedSettings,
   type Wrangler,
 } from "./setup.ts";
 
@@ -79,6 +85,19 @@ describe("readiness", () => {
       items.find((i) => i.name === "BETTER_AUTH_SECRET" && i.env === "production")?.state,
     ).toBe("set");
   });
+
+  test("names each secret Cloudflare lacks once, optional ones too, and no vars", () => {
+    const dir = project(["auth"]);
+    const { wrangler } = fakeWrangler({ secrets: ["BETTER_AUTH_SECRET"] });
+    const missing = missingSecrets(readiness(dir, wrangler));
+    expect(missing).toContain("TURNSTILE_SECRET_KEY");
+    expect(missing).toContain("ALERT_WEBHOOK_URL");
+    expect(missing).not.toContain("BETTER_AUTH_SECRET");
+    expect(missing).not.toContain("TURNSTILE_SITE_KEY");
+    expect(new Set(missing).size).toBe(missing.length);
+    // Not logged in: nothing is known to be missing.
+    expect(missingSecrets(readiness(dir))).toEqual([]);
+  });
 });
 
 describe("provision", () => {
@@ -95,6 +114,19 @@ describe("provision", () => {
     expect(json.d1_databases[0].database_id).toBe("11111111-2222-3333-4444-555555555555");
     expect(json.env.staging.kv_namespaces[0].id).toBe("a".repeat(32));
     expect(json.vars.APP_URL).toBe("https://acme.dev");
+    // Each environment's database is migrated once its id is on disk, before its secrets.
+    const steps = calls.map((c) => c.args.join(" "));
+    const migrated = steps.filter((s) => s.startsWith("d1 migrations"));
+    expect(migrated).toEqual([
+      "d1 migrations apply DB --remote",
+      "d1 migrations apply DB --remote --env staging",
+    ]);
+    const created = steps.indexOf("d1 create saas-starter-db");
+    expect(created).toBeGreaterThanOrEqual(0);
+    expect(created).toBeLessThan(steps.indexOf(migrated[0] ?? ""));
+    expect(steps.indexOf(migrated[0] ?? "")).toBeLessThan(
+      steps.indexOf("secret put BETTER_AUTH_SECRET"),
+    );
     const put = calls.filter((c) => c.args[0] === "secret" && c.args[1] === "put");
     expect(put.map((c) => c.args.join(" "))).toEqual([
       "secret put BETTER_AUTH_SECRET",
@@ -206,5 +238,154 @@ describe("putSecret", () => {
   test("fails with wrangler's error", () => {
     const failing: Wrangler = () => ({ ok: false, stdout: "", stderr: "not authorized" });
     expect(() => putSecret(failing, "K", "staging", "v")).toThrow(/K \(staging\).*not authorized/s);
+  });
+});
+
+describe("what GitHub Actions needs from Cloudflare's side", () => {
+  test("an environment's URL is its APP_URL, once that is not local", async () => {
+    const dir = project([]);
+    expect(appUrl(dir, "staging")).toBeUndefined();
+    await provision(dir, fakeWrangler().wrangler, {
+      envs: ["staging"],
+      vars: { APP_URL: "https://staging.example.com/" },
+      secretValue: async () => undefined,
+      log: () => {},
+    });
+    expect(appUrl(dir, "staging")).toBe("https://staging.example.com");
+    expect(appUrl(dir, "production")).toBeUndefined();
+  });
+
+  test("the account is wrangler's, only when there is exactly one", () => {
+    const who =
+      (accounts: Array<{ id: string }>): Wrangler =>
+      () => ({
+        ok: true,
+        stdout: JSON.stringify({ loggedIn: true, accounts }),
+        stderr: "",
+      });
+    expect(accountId(who([{ id: "one" }]))).toBe("one");
+    expect(accountId(who([{ id: "one" }, { id: "two" }]))).toBeUndefined();
+    expect(accountId(() => ({ ok: false, stdout: "", stderr: "" }))).toBeUndefined();
+    expect(accountId(() => ({ ok: true, stdout: "not json", stderr: "" }))).toBeUndefined();
+  });
+});
+
+describe("settings typed during create", () => {
+  const blanks = [
+    { key: "STRIPE_SECRET_KEY", secret: true },
+    { key: "STRIPE_PRICE_PRO", secret: false },
+    { key: "LEFT_EMPTY", secret: true },
+  ];
+  const typed = { STRIPE_SECRET_KEY: "typed-test-key", STRIPE_PRICE_PRO: "price_123" };
+
+  test("go to staging, split into secrets and vars", () => {
+    expect(typedSettings(blanks, typed, "staging")).toEqual({
+      secrets: { STRIPE_SECRET_KEY: "typed-test-key" },
+      vars: { STRIPE_PRICE_PRO: "price_123" },
+    });
+  });
+
+  test("never go to production: they are test data", () => {
+    expect(typedSettings(blanks, typed, "production")).toEqual({ secrets: {}, vars: {} });
+  });
+});
+
+describe("migrate", () => {
+  test("applies to the local database, and stops with wrangler's words when it fails", () => {
+    const dir = project(["auth"]);
+    const { wrangler, calls } = fakeWrangler();
+    migrate(dir, wrangler, "local", () => {});
+    expect(calls.map((c) => c.args.join(" "))).toEqual(["d1 migrations apply DB --local"]);
+    const broken: Wrangler = () => ({ ok: false, stdout: "", stderr: "no such table" });
+    expect(() => migrate(dir, broken, "staging", () => {})).toThrow(/staging.*\n.*no such table/);
+  });
+
+  test("does nothing in a project with no database", () => {
+    const { wrangler, calls } = fakeWrangler();
+    migrate(project([]), wrangler, "local", () => {});
+    expect(calls).toEqual([]);
+  });
+
+  test("does nothing before the first migration is generated", () => {
+    const dir = project(["auth"]);
+    rmSync(join(dir, "drizzle"), { recursive: true });
+    const { wrangler, calls } = fakeWrangler();
+    migrate(dir, wrangler, "staging", () => {});
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("firstDeploy", () => {
+  /** A deploy stand-in: prints what wrangler prints, on an account whose subdomain is `acme`. */
+  const deployer = (printsAddress = true) => {
+    const ran: Array<string> = [];
+    const script = (name: string) => {
+      ran.push(name);
+      const worker = name === "deploy" ? "saas-starter" : "saas-starter-staging";
+      const stdout = printsAddress
+        ? `Uploaded ${worker}\n  https://${worker}.acme.workers.dev\n`
+        : "";
+      return { ok: true, stdout, stderr: "" };
+    };
+    return { ran, script };
+  };
+
+  test("learns the address from staging, then deploys each environment under its own URL", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    firstDeploy(dir, ["production", "staging"], script, () => {});
+    // Staging twice: its first deploy could not know its URL. Production once: the subdomain was known.
+    expect(ran).toEqual(["deploy:staging", "deploy:staging", "deploy"]);
+    expect(appUrl(dir, "staging")).toBe("https://saas-starter-staging.acme.workers.dev");
+    expect(appUrl(dir, "production")).toBe("https://saas-starter.acme.workers.dev");
+
+    ran.length = 0;
+    firstDeploy(dir, ["production", "staging"], script, () => {});
+    expect(ran).toEqual([]);
+  });
+
+  test("a deploy that fails under the new URL leaves no URL, so the next run tries again", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    const failsSecond = (name: string) =>
+      ran.length === 1 ? { ok: false, stdout: "network down", stderr: "" } : script(name);
+    expect(() => firstDeploy(dir, ["staging"], failsSecond, () => {})).toThrow(/network down/);
+    expect(appUrl(dir, "staging")).toBeUndefined();
+
+    firstDeploy(dir, ["staging"], script, () => {});
+    expect(appUrl(dir, "staging")).toBe("https://saas-starter-staging.acme.workers.dev");
+  });
+
+  test("an environment with its own domain deploys once under it; a later URL is only recorded", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    const urls = { production: "https://app.example.com" };
+    firstDeploy(dir, ["production"], script, () => {}, urls);
+    expect(ran).toEqual(["deploy"]);
+    expect(appUrl(dir, "production")).toBe("https://app.example.com");
+
+    firstDeploy(dir, ["production"], script, () => {}, { production: "https://new.example.com" });
+    expect(ran).toEqual(["deploy"]);
+    expect(appUrl(dir, "production")).toBe("https://new.example.com");
+  });
+
+  test("touches only the environments asked for", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    firstDeploy(dir, ["staging"], script, () => {});
+    expect(ran).toEqual(["deploy:staging", "deploy:staging"]);
+    expect(appUrl(dir, "production")).toBeUndefined();
+  });
+
+  test("stops with the build's last lines when a deploy fails, and when no address is printed", () => {
+    const dir = project([]);
+    const broken = () => ({ ok: false, stdout: "vite: build failed", stderr: "" });
+    expect(() => firstDeploy(dir, ["staging"], broken, () => {})).toThrow(
+      /staging failed[\s\S]*build failed/,
+    );
+    expect(() => firstDeploy(dir, ["staging"], deployer(false).script, () => {})).toThrow(
+      /no workers\.dev address/,
+    );
+    expect(appUrl(dir, "staging")).toBeUndefined();
   });
 });

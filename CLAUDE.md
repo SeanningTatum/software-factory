@@ -8,7 +8,7 @@ that builds projects from it.
 | Path                      | What it is                                                                                                                    |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `templates/saas-starter/` | The template, with every feature on. Its own `CLAUDE.md` holds the code rules.                                                |
-| `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `harness`. Ships the template and `claude/`.                   |
+| `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `github`, `harness`. Ships the template and `claude/`.         |
 | `packages/biome-config/`  | Shared Biome rules (published).                                                                                               |
 | `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                        |
 | `packages/lint/`          | `cf-saas-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |
@@ -39,9 +39,8 @@ that builds projects from it.
   alone, each optional one with what it requires, and everything together, then runs every gate on
   each.
 - **The template keeps one migration, `drizzle/0000_init.sql`.** After a schema change, delete
-  `drizzle/*.sql` and `drizzle/meta/`, run `bun run db:generate`, and rename the file to
-  `0000_init.sql` (and its tag in `meta/_journal.json`). New projects never see it: the CLI's bundle
-  leaves `drizzle/` out and `create` generates their own.
+  `drizzle/*.sql` and `drizzle/meta/`, and run `bun run db:generate init`. New projects never see
+  it: the CLI's bundle leaves `drizzle/` out and `create` generates their own `0000_init.sql`.
 - Server code in the template is Effect; every flow and lifecycle is an XState machine. The rules and
   the gates that enforce them are in `templates/saas-starter/CLAUDE.md`.
 
@@ -71,5 +70,11 @@ here. Start sessions there.
 
 ## Releasing
 
-`bun run changeset` to describe a change, then merge; `release.yml` publishes `packages/*` and the CLI
-under the `@tanstack-cf-saas` npm scope (claim it before the first publish).
+`staging` is the default branch; `production` takes only a pull request from `staging` whose last
+commit has a `v*` tag (`.github/rulesets/`, applied with `create-tanstack-cf-saas github`). Stack
+small pull requests on each other: they get `pr.yml`; the one into `staging` gets `check.yml`.
+`templates/saas-starter/docs/branches.md` draws the flow and says why each rule is there.
+
+`bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
+pull request; on `production` it publishes `packages/*` and the CLI under the `@tanstack-cf-saas`
+npm scope (claim it before the first publish).

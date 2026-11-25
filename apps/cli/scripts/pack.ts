@@ -1,7 +1,7 @@
 /** Packs this repo's packages the way npm would serve them, for projects made before they publish. */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 export const repo = join(import.meta.dirname, "../../..");
 
@@ -10,10 +10,16 @@ const localPackages: Record<string, string> = {
   "@tanstack-cf-saas/blocks": "packages/blocks",
   "@tanstack-cf-saas/lint": "packages/lint",
   "@tanstack-cf-saas/tsconfig": "packages/tsconfig",
+  // Projects run `setup` from their own copy of the CLI. Build it before packing: it ships dist/.
+  "create-tanstack-cf-saas": "apps/cli",
 };
 
-/** Packs each workspace package into `into`, with workspace:* rewritten; returns `file:` specs. */
-export const packAll = (into: string): Record<string, string> => {
+/**
+ * Packs each workspace package into `into`, with workspace:* rewritten; returns `file:` specs.
+ * `as` is the folder the specs name: pass a relative one when `into` travels with the project, so
+ * the project installs wherever it is cloned.
+ */
+export const packAll = (into: string, as = into): Record<string, string> => {
   mkdirSync(into, { recursive: true });
   return Object.fromEntries(
     Object.entries(localPackages).map(([name, rel]) => {
@@ -23,7 +29,7 @@ export const packAll = (into: string): Record<string, string> => {
       });
       if (result.status !== 0) throw new Error(`packing ${name} failed:\n${result.stderr}`);
       const tarball = result.stdout.trim().split("\n").pop() ?? "";
-      return [name, `file:${tarball.startsWith("/") ? tarball : join(into, tarball)}`];
+      return [name, `file:${as}/${basename(tarball)}`];
     }),
   );
 };

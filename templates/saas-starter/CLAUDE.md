@@ -7,8 +7,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - `src/app/` is the kernel: the runtime, request, env, errors, middleware, run-effect, security
   headers and the page shell. It imports only itself, `src/gen/` and required features and modules.
 - Core holds shared modules of one kind: components only, or services and helpers only. A module
-  with both, or with a page, is a feature. Your own code goes in a feature, beside `auth` and
-  `billing`.
+  with both, or with a page, is a feature. Your own code goes in a feature, beside `auth`.
   - `src/features/core/<name>/` is a core module: `db`, `kv`, `observability`, `analytics` (services
     and helpers: `api/`, `lib/`, `machines/`, the top-level files below, and server routes under
     `routes/api/` only) and `ui` (components only: `components/`, `lib/`, `feature.json`,
@@ -67,6 +66,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
   `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
+- With `db`, name each migration for its change: `bun run db:generate add_invoices`. Bare, it fails.
 - Log with `Effect.log*`, never `console`. Every line already carries the request id and user.
 - With `auth`, sign-ins, sign-outs and plan changes pass through `Auth.handle` into analytics and
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.

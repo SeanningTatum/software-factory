@@ -1,0 +1,27 @@
+# The short checks, for a pull request stacked on another branch: lint, types, unit tests and a
+# scan for keys. The build, size budgets, audit, migration check, e2e and timeline gate wait in
+# ci.yml for the pull request that rolls the stack up into staging.
+name: pr
+on:
+  pull_request:
+    branches-ignore: [staging, production]
+permissions:
+  contents: read
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  # Named apart from ci.yml's jobs, so a pass here never counts as one of its required checks.
+  quick:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - name: No keys in the code
+        env:
+          BASE: ${{ github.base_ref }}
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 git /repo "--log-opts=origin/$BASE..HEAD" --redact --no-banner

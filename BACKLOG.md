@@ -37,7 +37,7 @@ Rules for a good item:
 | B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
 | B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
 | B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision            |
-| B-09 | A first deploy to staging succeeds                | Deployment        | M    | A Cloudflare token    |
+| B-09 | A tagged promotion deploys production             | Deployment        | S    | A test project        |
 | B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
 | B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 | B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
@@ -92,20 +92,21 @@ Rules for a good item:
 
 **Where:** `claude/`, `apps/cli/scripts/bundle-template.ts`.
 
-### B-09 · A first deploy to staging succeeds
+### B-09 · A tagged promotion deploys production
 
 - **Area:** Deployment
-- **Size:** M
-- **Needs you:** A Cloudflare API token and account id as repo secrets
+- **Size:** S
+- **Needs you:** A test project made with `bun run try`, set up on Cloudflare and GitHub
 
-**Why:** The deploy pipeline and `setup` have never touched a real Cloudflare account. The Deployment score is a guess until they do.
+**Why:** On 2026-11-25 a test project went the whole way to staging: `create` made its resources, migrated and deployed both environments, and its first push ran `deploy.yml` green on staging with the smoke test. Both rulesets are active on its repository. The second half has never run: no pull request has gone into `production`, and no one has run `setup` twice.
 
 **Done when:**
 
-- [ ] `create-tanstack-cf-saas setup --env staging` creates the resources and a second run changes nothing.
-- [ ] `deploy.yml` deploys to staging and its smoke test passes.
+- [ ] A second `bun run setup` on a project that is already set up changes nothing.
+- [ ] A pull request into `production` without a tag is refused.
+- [ ] One with a tag merges, `deploy.yml` deploys production, and its smoke test passes.
 
-**Where:** `apps/cli/src/setup.ts`, `templates/saas-starter/.github/workflows/deploy.yml`.
+**Where:** `apps/cli/src/setup.ts`, `apps/cli/src/github.ts`, `templates/saas-starter/.github/`.
 
 ### B-10 · The packages are on npm
 

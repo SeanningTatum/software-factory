@@ -62,7 +62,7 @@ describe("create", () => {
     expect(result.status).toBe(1);
     expect(result.out).toContain(`The project is in ${join(dir, "app")}`);
     expect(result.out).toContain("npm install");
-    expect(result.out).toContain("npm run db:generate");
+    expect(result.out).toContain("npm run db:generate -- init");
   });
 
   test("commits with a stand-in author when git has no identity", () => {
@@ -75,6 +75,12 @@ describe("create", () => {
       encoding: "utf8",
     });
     expect(log.stdout.trim()).toBe("noreply@example.com");
+    // The shipped workflows deploy from `staging` and `production`, so the first branch is staging.
+    const branch = spawnSync("git", ["branch", "--show-current"], {
+      cwd: join(dir, "app"),
+      encoding: "utf8",
+    });
+    expect(branch.stdout.trim()).toBe("staging");
   });
 
   test("warns about an unknown --pm", () => {

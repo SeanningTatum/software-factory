@@ -9,5 +9,13 @@ describe("package manager", () => {
   });
   test("builds script commands", () => {
     expect(runCommand("npm", "db:generate")).toEqual(["npm", ["run", "db:generate"]]);
+    expect(runCommand("npm", "db:generate", "init")).toEqual([
+      "npm",
+      ["run", "db:generate", "--", "init"],
+    ]);
+    expect(runCommand("bun", "db:generate", "init")).toEqual([
+      "bun",
+      ["run", "db:generate", "init"],
+    ]);
   });
 });

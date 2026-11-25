@@ -8,9 +8,9 @@ const usage = `cf-saas-lint [command]
 
   (none)                     run the house rules on this project
   --rules                    list the rules
-  timeline [--base <ref>]    fail when a feature changed since <ref> (default origin/main, else
-           [--skip]          HEAD~1) without a new line in its TIMELINE.md; --skip or
-                             TIMELINE_SKIP=1 skips it`;
+  timeline [--base <ref>]    fail when a feature changed since <ref> (default origin/staging,
+           [--skip]          else origin/main, else HEAD~1) without a new line in its
+                             TIMELINE.md; --skip or TIMELINE_SKIP=1 skips it`;
 
 const runLint = () => {
   const findings = lint(process.cwd());

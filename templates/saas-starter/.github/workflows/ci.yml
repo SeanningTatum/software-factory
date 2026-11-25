@@ -1,12 +1,24 @@
+# The full checks: every pull request into staging or production, and every push to staging.
+# A pull request stacked on another branch gets the short checks in pr.yml instead, until it is
+# rolled up into staging. .github/rulesets/ makes these jobs required; keep a job's name and its
+# ruleset entry the same. A job that can skip (timeline, on a push) is required on staging only:
+# see promote.yml.
 name: ci
 on:
   pull_request:
+    branches: [staging, production]
     # labeled/unlabeled re-run the timeline gate when someone adds or drops `no-timeline`.
+    # When a stacked pull request's parent merges, GitHub points it at staging but starts nothing:
+    # push to it (a rebase does) or close and reopen it. `edited` would catch the retarget, and
+    # also restart every check on each edit of the description.
     types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
-    branches: [main]
+    branches: [staging]
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -22,8 +34,8 @@ jobs:
       - name: Pages and the Worker stay under size-budgets.json
         run: bun run size --markdown="$RUNNER_TEMP/size.md"
       - name: Size table in the pull request's description
-        # Production deploys from main, so each pull request into it shows what it will ship.
-        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+        # Every pull request here is on its way to production, so each shows what it will ship.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
@@ -40,16 +52,17 @@ jobs:
         # db:generate writes a file only when a schema.ts changed and its migration was not made.
         run: |
           if grep -q '"db:generate"' package.json; then
-            bun run db:generate
+            bun run db:generate unnamed
             if [ -n "$(git status --porcelain -- drizzle)" ]; then
               git status --porcelain -- drizzle
-              echo "::error::A schema changed without a migration. Run bun run db:generate and commit drizzle/."
+              echo "::error::A schema changed without a migration. Run bun run db:generate <what_changed> and commit drizzle/."
               exit 1
             fi
           fi
 
-  # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
-  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  # A pull request's own commits must hold no keys; a push to staging checks the files as they stand.
+  # Build a test value that looks like a key from parts, as redact.test.ts does. An allow comment
+  # quiets gitleaks but not GitHub, whose push protection refuses the whole push.
   secrets:
     runs-on: ubuntu-latest
     steps:

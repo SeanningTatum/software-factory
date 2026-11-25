@@ -1,9 +1,20 @@
+# The full checks: every pull request into staging or production, and every push to staging.
+# A pull request stacked on another branch gets the short checks in pr.yml instead, until it is
+# rolled up into staging. .github/rulesets/ makes these jobs required on both branches; keep a
+# job's name and its ruleset entry the same. The template ships the same model to new projects.
 name: check
 on:
   pull_request:
+    branches: [staging, production]
+    # When a stacked pull request's parent merges, GitHub points it at staging but starts nothing:
+    # push to it (a rebase does) or close and reopen it. `edited` would catch the retarget, and
+    # also restart every check on each edit of the description.
   push:
-    branches: [main]
+    branches: [staging]
 permissions: {}
+concurrency:
+  group: check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -22,8 +33,8 @@ jobs:
       - name: The template stays under its size budgets
         run: bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"
       - name: Size table in the pull request's description
-        # Production deploys from main, so each pull request into it shows what it will ship.
-        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+        # Every pull request here is on its way to a release, so each shows what it will ship.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
@@ -42,7 +53,7 @@ jobs:
       - name: Migrations match the schema
         # db:generate writes a file only when a schema.ts changed and its migration was not made.
         run: |
-          bun run --cwd templates/saas-starter db:generate
+          bun run --cwd templates/saas-starter db:generate unnamed
           if [ -n "$(git status --porcelain -- '*/drizzle/*')" ]; then
             git status --porcelain -- '*/drizzle/*'
             echo "::error::A schema changed without a migration. See the migration rule in CLAUDE.md."
@@ -93,8 +104,9 @@ jobs:
       - run: bun run --cwd packages/lint test
       - run: bun run --cwd packages/blocks test
 
-  # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
-  # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
+  # A pull request's own commits must hold no keys; a push to staging checks the files as they stand.
+  # Build a test value that looks like a key from parts, as redact.test.ts does. An allow comment
+  # quiets gitleaks but not GitHub, whose push protection refuses the whole push.
   secrets:
     runs-on: ubuntu-latest
     permissions:
@@ -103,6 +115,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: No allowed keys in the template
+        # A new project's first push goes through GitHub's push protection, which ignores this
+        # comment and refuses the push.
+        run: |
+          if git grep -n "gitleaks:allow" -- templates ':!*.md'; then
+            echo "::error::Build the value from parts instead of allowing it; see redact.test.ts."; exit 1
+          fi
       - name: No keys in the code
         env:
           BASE: ${{ github.base_ref }}
