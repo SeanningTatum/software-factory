@@ -14,7 +14,7 @@
     "typecheck": "tsc -p .",
     "lint": "biome check . && cf-saas-lint && cf-saas-blocks check",
     "format": "biome check --write .",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:e2e": "playwright test",
     "blocks:sync": "cf-saas-blocks sync",
     "blocks:check": "cf-saas-blocks check",
@@ -46,6 +46,7 @@
     "xstate": "5.33.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.1",
     "@biomejs/biome": "2.6.8",
     "@cloudflare/vite-plugin": "^1.70.1",
     "@libsql/client": "^0.18.0",
@@ -61,6 +62,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.3.0",
+    "@vitest/coverage-v8": "5.1.1",
     "drizzle-kit": "^0.31.11",
     "knip": "^6.48.0",
     "tailwindcss": "^4.3.5",

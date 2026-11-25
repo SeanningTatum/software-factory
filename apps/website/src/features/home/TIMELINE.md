@@ -33,6 +33,7 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Route specs for /api/health and, for core modules that have no `e2e/`, /api/events and /api/browser-report. Why: the test map now needs `e2e/<route>.route.spec.ts` for every route file, and a core module's routes take theirs here.
 - 2026-11-24 — Imports ui from `src/features/core/ui/`.
 - 2026-11-24 — Removed `routes/index.tsx`; the `site` feature serves `/` on this website.
 - 2026-11-24 — Created from create-tanstack-cf-saas 0.1.0.

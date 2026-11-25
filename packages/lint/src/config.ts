@@ -9,9 +9,13 @@ export interface TestMapEntry {
   /**
    * Test files that must exist. `{dir}`, `{file}` (no extension), `{name}` (also no `.machine`)
    * and `{feature}` (the feature's folder under src/features, e.g. `auth` or `core/kv`) come from
-   * the source file.
+   * the source file. `{route}` is a route file's path under its `routes/` folder, without the
+   * extension, `/` as `.` and `$` dropped (`api/uploads/$id.ts` is `api.uploads.id`, `api/auth/$.ts`
+   * is `api.auth.splat`).
    */
   readonly requires: ReadonlyArray<string>;
+  /** Applies to files in `testExempt` too; the exemption then skips only the other entries. */
+  readonly always?: boolean;
 }
 
 /**
@@ -108,6 +112,17 @@ export const defaults: LintConfig = {
       requires: ["src/features/{feature}/e2e/{name}.paths.spec.ts"],
     },
     { files: "src/{app,features}/**/*.ts", requires: ["{dir}/{file}.test.ts"] },
+    {
+      files: "src/features/*/routes/**/*.{ts,tsx}",
+      requires: ["src/features/{feature}/e2e/{route}.route.spec.ts"],
+      always: true,
+    },
+    // A core module has no e2e/, so `home`, which is required and always there, holds its specs.
+    {
+      files: "src/features/core/*/routes/**/*.{ts,tsx}",
+      requires: ["src/features/home/e2e/{route}.route.spec.ts"],
+      always: true,
+    },
   ],
   testExempt: ["**/*.test.ts", "**/*.spec.ts"],
   featureLayout: defaultFeatureLayout,

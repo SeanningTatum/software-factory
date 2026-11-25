@@ -53,6 +53,54 @@ jobs:
             exit 1
           fi
 
+  # The Playwright specs of the template and the website, against `vite dev` with local D1, R2 and KV.
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [templates/saas-starter, apps/website]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+        working-directory: .
+      - run: bun run --filter './packages/*' build
+        working-directory: .
+      - run: bunx playwright install --with-deps chromium
+      - name: Local settings
+        # .dev.vars is not committed. Start from the example and give auth a throwaway secret.
+        run: |
+          cp .dev.vars.example .dev.vars
+          sed -i "s/^BETTER_AUTH_SECRET=.*/BETTER_AUTH_SECRET=$(openssl rand -hex 32)/" .dev.vars
+      - run: bun run db:migrate:local
+      - run: bun run test:e2e
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ failure() }}
+        with:
+          name: playwright-traces-${{ strategy.job-index }}
+          path: ${{ matrix.app }}/test-results/
+          retention-days: 7
+
+  # The CLI tools run on users' machines, Windows included: their path handling is tested there.
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # The template's postinstall (wrangler types) is not what this job tests.
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run --cwd packages/lint build
+      - run: bun run --cwd packages/lint test
+      - run: bun run --cwd packages/blocks test
+
   # A pull request's own commits must hold no keys; a push to main checks the files as they stand.
   # A test value that looks like a key gets a `gitleaks:allow` comment on its line.
   secrets:

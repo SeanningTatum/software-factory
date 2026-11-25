@@ -33,6 +33,7 @@ The website's own pages: the landing page at / and the docs under /docs.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Route specs for /, /docs and every docs page, each with an axe scan and a not-found case.
 - 2026-11-24 — The landing page and docs describe core modules and features apart: `lib/features.ts` marks the optional core modules and splits the required list into `requiredModules` and `requiredFeatures`, its test reads manifests from both levels, and the imports follow ui into `src/features/core/`.
 - 2026-11-24 — The copy button stays disabled until hydration, like the shared `Button`, so an early click is not silently lost.
 - 2026-11-24 — Moved the landing page and docs from `src/routes/` and `src/site/` into this feature, regenerated the rest of the website with the feature layout, and renamed `/docs/blocks` to `/docs/features`.

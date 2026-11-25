@@ -195,6 +195,33 @@ describe("lint", () => {
     ]);
   });
 
+  test("requires a route spec, even for routes the test exemption covers", () => {
+    const config = {
+      ...defaults,
+      testExempt: [...defaults.testExempt, "src/features/**/routes/**"],
+    };
+    const root = project({
+      "src/features/auth/feature.json": "{}",
+      "src/features/auth/TIMELINE.md": "",
+      "src/features/auth/routes/dashboard.tsx": "export const a = 1;",
+      "src/features/auth/routes/api/auth/$.ts": "export const b = 1;",
+      "src/features/auth/e2e/api.auth.splat.route.spec.ts": "",
+      "src/features/home/feature.json": "{}",
+      "src/features/home/TIMELINE.md": "",
+      "src/features/core/kv/feature.json": "{}",
+      "src/features/core/kv/TIMELINE.md": "",
+      "src/features/core/kv/routes/api/ping.ts": "export const c = 1;",
+    });
+    expect(
+      lint(root, config)
+        .filter((f) => f.rule === "test-map")
+        .map((f) => f.message),
+    ).toEqual([
+      "missing its test: src/features/auth/e2e/dashboard.route.spec.ts",
+      "missing its test: src/features/home/e2e/api.ping.route.spec.ts",
+    ]);
+  });
+
   test("keeps services, layers and React out of core/lib, but allows Effect functions", () => {
     const root = project({
       "src/features/core/lib/call.ts": [

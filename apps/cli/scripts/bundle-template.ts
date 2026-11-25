@@ -33,6 +33,7 @@ const SKIP = new Set([
   "routeTree.gen.ts",
   "playwright-report",
   "test-results",
+  "coverage",
   ".turbo",
   ".tanstack",
 ]);

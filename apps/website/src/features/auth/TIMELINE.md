@@ -71,6 +71,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Every route has a spec: `e2e/<route>.route.spec.ts` for /login, /signup, /dashboard and /api/auth, each with a normal and an error case and (for pages) an axe scan.
 - 2026-11-24 — Added `audit_log` (in `0000_init`), indexed on time, actor and action; `Auth.layerWith(factories)` for tests; plugins pass a user id with `onEvent`.
 - 2026-11-24 — `metric` in `events.ts`: the share of sign-in attempts that succeed.
 - 2026-11-24 — Added the indexes Better Auth's own schema asks for (`session.user_id`, `account.user_id`, `verification.identifier`) and `user.stripe_customer_id`, in migration `0001_indexes`.
