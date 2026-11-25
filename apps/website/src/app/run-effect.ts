@@ -1,6 +1,6 @@
 import { setResponseStatus } from "@tanstack/react-start/server";
 import { Cause, Effect, ErrorReporter, Exit, Option } from "effect";
-import { type AppError, type ErrorInfo, errorInfo, INTERNAL } from "./errors.ts";
+import { type AppError, type ErrorInfo, errorInfo, INTERNAL, RateLimited } from "./errors.ts";
 import { parentSpanFor, type RequestInfo } from "./request.ts";
 import type { AppRuntime, AppServices } from "./runtime.ts";
 
@@ -89,5 +89,10 @@ export const runResponse = async <E extends AppError>(
   const exit = await runExit(context, effect, span);
   if (Exit.isSuccess(exit)) return exit.value;
   const { info, body } = describeFailure(exit.cause, context.request.id);
-  return Response.json(body, { status: info.status });
+  const failure = Cause.findErrorOption(exit.cause);
+  const headers =
+    Option.isSome(failure) && failure.value instanceof RateLimited
+      ? { "retry-after": String(failure.value.retryAfterSeconds) }
+      : undefined;
+  return Response.json(body, { status: info.status, headers });
 };

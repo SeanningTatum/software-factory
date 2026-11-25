@@ -38,6 +38,9 @@ export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string
     return { missing: "BETTER_AUTH_SECRET (32+ characters)" };
   const baseURL = setting(env, "APP_URL");
   if (!baseURL) return { missing: "APP_URL" };
+  // `new URL` throws on a bare host, and this runs while the layer is built: every route would 500.
+  if (!/^https?:\/\//.test(baseURL) || !URL.canParse(baseURL))
+    return { missing: "APP_URL (a full https:// URL)" };
   const extra = (setting(env, "TRUSTED_ORIGINS") ?? "")
     .split(",")
     .map((origin) => origin.trim())

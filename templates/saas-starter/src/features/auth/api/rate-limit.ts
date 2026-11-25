@@ -20,11 +20,10 @@ export class AuthRateLimiter extends Context.Service<
   );
 }
 
-/** Paths that take a password or create an account; only these are rate limited. */
-export const LIMITED_PATHS = [
-  "/api/auth/sign-in/email",
-  "/api/auth/sign-up/email",
-  "/api/auth/request-password-reset",
-];
+/**
+ * Paths that take a password or create an account; only these are rate limited. Add
+ * `/api/auth/request-password-reset` here once a reset sender is wired.
+ */
+export const LIMITED_PATHS = ["/api/auth/sign-in/email", "/api/auth/sign-up/email"];
 
 export const limitKey = (headers: Headers, path: string) => `${clientAddress(headers)}:${path}`;
