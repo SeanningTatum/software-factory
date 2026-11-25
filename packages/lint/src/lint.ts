@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { type LintConfig, loadConfig } from "./config.ts";
 import { walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";

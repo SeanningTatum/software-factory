@@ -9,7 +9,11 @@ updates:
     groups:
       packages:
         update-types: [minor, patch]
+  # Outside "/", Dependabot reads the .yml files in the folder itself, so name the workflow folders.
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /templates/saas-starter/.github/workflows
+      - /apps/website/.github/workflows
     schedule:
       interval: weekly

@@ -134,5 +134,5 @@ describe("the command line", () => {
     expect(existsSync(join(app, "src/features/core/kv/mine.ts"))).toBe(true);
     expect(cli(["remove", "kv", "--force"], app).status).toBe(0);
     expect(existsSync(join(app, "src/features/core/kv"))).toBe(false);
-  });
+  }, 20_000); // a scaffold and two removals: over 5 s on a busy CI runner
 });
