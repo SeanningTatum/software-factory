@@ -140,7 +140,8 @@ const manifestDirs = (root: string, parent: string): ReadonlyArray<string> => {
   if (!existsSync(full)) return [];
   return readdirSync(full, { withFileTypes: true })
     .filter((e) => e.isDirectory() && existsSync(join(full, e.name, MANIFEST_FILE)))
-    .map((e) => `${parent}/${e.name}`);
+    .map((e) => `${parent}/${e.name}`)
+    .sort(); // readdir order differs by file system; generated files must not.
 };
 
 /**
