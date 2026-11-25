@@ -13,17 +13,6 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - id: harness
-        run: echo "sha=$(git rev-parse HEAD:claude)" >> "$GITHUB_OUTPUT"
-      # claude/ is the private claude-config repo, and the CLI must not ship without it. Its own
-      # checkout keeps the token to this one read; with no token, this step fails the release.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: SeanningTatum/claude-config
-          ref: ${{ steps.harness.outputs.sha }}
-          path: claude
-          token: ${{ secrets.CLAUDE_CONFIG_TOKEN }}
-          persist-credentials: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       # changesets/action v2 no longer writes .npmrc from NPM_TOKEN; setup-node writes one that
