@@ -25,6 +25,26 @@ describe("posthogAdapter", () => {
     });
   });
 
+  it("sends user_identified as PostHog's $identify, linking the anonymous id", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const identify = {
+      event: { _tag: "user_identified" as const, anonId: "anon:a1" },
+      distinctId: "u1",
+      timestamp: "2026-01-01T00:00:00Z",
+    };
+    await Effect.runPromise(posthogAdapter("k", "https://ph.example").send([identify]));
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).batch).toEqual([
+      {
+        event: "$identify",
+        distinct_id: "u1",
+        timestamp: "2026-01-01T00:00:00Z",
+        properties: { $anon_distinct_id: "anon:a1" },
+      },
+    ]);
+  });
+
   it("fails with a delivery error on a bad status", async () => {
     vi.stubGlobal("fetch", async () => new Response(null, { status: 500 }));
     const exit = await Effect.runPromiseExit(posthogAdapter("k", "https://ph.example").send(batch));

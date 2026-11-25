@@ -36,6 +36,12 @@ that builds projects from it, and the website that sells it.
   tests: `bun run --filter create-tanstack-cf-saas test:matrix`. It scaffolds the required features
   alone, each optional one with what it requires, and everything together, then runs every gate on
   each.
+- **The template keeps one migration, `drizzle/0000_init.sql`.** After a schema change, delete
+  `drizzle/*.sql` and `drizzle/meta/`, run `bun run db:generate`, and rename the file to
+  `0000_init.sql` (and its tag in `meta/_journal.json`). New projects never see it: the CLI's bundle
+  leaves `drizzle/` out and `create` generates their own. Do the same in `apps/website` until its
+  first deploy (B-09); from then on it adds migrations like any live app, since D1 skips a
+  migration whose name it has already applied.
 - Server code in the template is Effect; every flow and lifecycle is an XState machine. The rules and
   the gates that enforce them are in `templates/saas-starter/CLAUDE.md`.
 

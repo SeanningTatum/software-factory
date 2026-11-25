@@ -32,28 +32,25 @@ Rules for a good item:
 
 ## At a glance
 
-| Id   | Title                                                   | Area                      | Size | Needs you             |
-| ---- | ------------------------------------------------------- | ------------------------- | ---- | --------------------- |
-| B-01 | CI runs on GitHub                                       | Repo                      | S    | Fix Actions billing   |
-| B-02 | Server functions refuse cross-site calls                | Security                  | S    | no                    |
-| B-03 | The health check and Stripe keys agree                  | Deployment                | S    | A decision            |
-| B-04 | The template's CLAUDE.md stays under 80 lines           | Code structure for agents | S    | no                    |
-| B-05 | Pages have a size budget in CI                          | Bundle size               | M    | no                    |
-| B-06 | Every route has a working and a failing spec            | Testing                   | M    | no                    |
-| B-07 | Billing works with real Stripe test keys                | Features                  | M    | Stripe test keys      |
-| B-08 | The Claude workflows are the real repo                  | Agentic workflows         | S    | The repo URL          |
-| B-09 | A first deploy to staging succeeds                      | Deployment                | M    | A Cloudflare token    |
-| B-10 | The packages are on npm                                 | Repo                      | S    | Claim the npm scope   |
-| B-11 | CI scans for leaked secrets and vulnerable packages     | Quality checks            | S    | no                    |
-| B-12 | Sign-ins, sign-outs and plan changes leave an audit log | Logging                   | M    | no                    |
-| B-13 | The website's browser specs run                         | Testing                   | S    | no                    |
-| B-14 | The tools are proven on Windows                         | Quality checks            | S    | no                    |
-| B-15 | Tests have coverage floors                              | Testing                   | S    | no                    |
-| B-16 | Pages are checked for accessibility                     | Quality checks            | M    | no                    |
-| B-17 | A migration that drifts from the schema fails CI        | Quality checks            | S    | no                    |
-| B-18 | Sign-up is protected from bots                          | Security                  | M    | Turnstile keys        |
-| B-19 | Users can verify their email and reset a password       | Features                  | L    | Pick an email service |
-| B-20 | On-call has alerts and a runbook                        | Logging                   | M    | Where alerts go       |
+| Id   | Title                                               | Area              | Size | Needs you             |
+| ---- | --------------------------------------------------- | ----------------- | ---- | --------------------- |
+| B-01 | CI runs on GitHub                                   | Repo              | S    | Fix Actions billing   |
+| B-02 | Server functions refuse cross-site calls            | Security          | S    | no                    |
+| B-03 | The health check and Stripe keys agree              | Deployment        | S    | A decision            |
+| B-05 | Pages have a size budget in CI                      | Bundle size       | M    | no                    |
+| B-06 | Every route has a working and a failing spec        | Testing           | M    | no                    |
+| B-07 | Billing works with real Stripe test keys            | Features          | M    | Stripe test keys      |
+| B-08 | The Claude workflows are the real repo              | Agentic workflows | S    | The repo URL          |
+| B-09 | A first deploy to staging succeeds                  | Deployment        | M    | A Cloudflare token    |
+| B-10 | The packages are on npm                             | Repo              | S    | Claim the npm scope   |
+| B-11 | CI scans for leaked secrets and vulnerable packages | Quality checks    | S    | no                    |
+| B-13 | The website's browser specs run                     | Testing           | S    | no                    |
+| B-14 | The tools are proven on Windows                     | Quality checks    | S    | no                    |
+| B-15 | Tests have coverage floors                          | Testing           | S    | no                    |
+| B-16 | Pages are checked for accessibility                 | Quality checks    | M    | no                    |
+| B-17 | A migration that drifts from the schema fails CI    | Quality checks    | S    | no                    |
+| B-18 | Sign-up is protected from bots                      | Security          | M    | Turnstile keys        |
+| B-19 | Users can verify their email and reset a password   | Features          | L    | Pick an email service |
 
 ## Now
 
@@ -101,21 +98,6 @@ Rules for a good item:
 - [ ] `/api/health` and the README's first-run steps match it.
 
 **Where:** `templates/saas-starter/src/features/billing/feature.json`, `src/features/home/routes/api/health.ts`.
-
-### B-04 · The template's CLAUDE.md stays under 80 lines
-
-- **Area:** Code structure for agents
-- **Size:** S
-- **Needs you:** no
-
-**Why:** The rules file agents read first is 88 lines, over the limit we set, and nothing stops it growing.
-
-**Done when:**
-
-- [ ] `templates/saas-starter/CLAUDE.md` is 80 lines or fewer and still true.
-- [ ] `cf-saas-lint` fails when it is longer.
-
-**Where:** `templates/saas-starter/CLAUDE.md`, `packages/lint/src/rules/`.
 
 ## Next
 
@@ -225,21 +207,6 @@ Rules for a good item:
 
 **Where:** `templates/saas-starter/.github/`, `.github/`.
 
-### B-12 · Sign-ins, sign-outs and plan changes leave an audit log
-
-- **Area:** Logging
-- **Size:** M
-- **Needs you:** no
-
-**Why:** When a customer asks "who changed this and when", there is nothing to look at.
-
-**Done when:**
-
-- [ ] Auth and billing events write a row with who, what and when.
-- [ ] A test shows a sign-in and a plan change each leave one row.
-
-**Where:** a new module under `templates/saas-starter/src/features/core/`.
-
 ### B-13 · The website's browser specs run
 
 - **Area:** Testing
@@ -341,18 +308,3 @@ Rules for a good item:
 - [ ] Reset and verification work end to end in a browser spec.
 
 **Where:** a new module under `templates/saas-starter/src/features/core/`, and `src/features/auth/`.
-
-### B-20 · On-call has alerts and a runbook
-
-- **Area:** Logging
-- **Size:** M
-- **Needs you:** Say where alerts should go
-
-**Why:** Errors are reported, but nobody is told, and there is no page that says what to do.
-
-**Done when:**
-
-- [ ] A burst of errors sends one alert.
-- [ ] `docs/runbook.md` covers a bad deploy, a failed migration and a Stripe outage.
-
-**Where:** `templates/saas-starter/src/features/core/observability/`.

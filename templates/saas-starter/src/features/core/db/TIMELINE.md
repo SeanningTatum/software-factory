@@ -33,5 +33,6 @@ Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Squashed `0000_init`, `0001_indexes` and `0002_audit_log` into one `0000_init`; the schema is identical. The template keeps a single migration because new projects generate their own.
 - 2026-11-24 — Moved to `src/features/core/db/` from `src/features/db/`. Queries run through `outsideCall` and the binding is read with `binding`, both from `core/lib`.
 - 2026-11-24 — Renamed from `d1` to `db` and moved into `src/features/db/` from `src/blocks/d1/` when the template switched from blocks to features.

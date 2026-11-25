@@ -13,8 +13,11 @@ const DAY_SECONDS = 60 * 60 * 24;
 /** What a feature that extends auth (billing, for one) gets to build its Better Auth plugins. */
 interface AuthPluginDeps {
   readonly env: AppEnv;
-  /** Queues an analytics event; it is sent with the request's batch. */
-  readonly onEvent: (event: AnalyticsEvent) => void;
+  /**
+   * Queues an analytics event, sent with the request's batch, and an audit log row. Pass the user's
+   * id when the request has no session of its own: a Stripe webhook, say.
+   */
+  readonly onEvent: (event: AnalyticsEvent, userId?: string) => void;
   /** Queues a warning for the request's log, with the request id on it. */
   readonly onWarning: (message: string, details: Record<string, unknown>) => void;
   /** How many errors Better Auth has logged while serving this request. */

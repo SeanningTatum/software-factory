@@ -26,6 +26,8 @@ export interface ProjectContext {
   readonly root: string;
   readonly config: LintConfig;
   readonly allFiles: ReadonlySet<string>;
+  /** Every cf-saas-lint rule id, for rules that check text naming one. */
+  readonly ruleIds: ReadonlySet<string>;
 }
 
 /** A rule over the whole project's file list rather than one source file. */

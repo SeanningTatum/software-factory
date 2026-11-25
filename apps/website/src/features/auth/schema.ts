@@ -73,4 +73,28 @@ export const verification = sqliteTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-export const authSchema = { user, session, account, verification };
+/**
+ * Who did what, and when: one row per sign-up, sign-in (failed ones too), sign-out and plan change.
+ * The app only ever adds rows. `actor_id` has no foreign key, so a row outlives its user.
+ */
+export const auditLog = sqliteTable(
+  "audit_log",
+  {
+    id: text("id").primaryKey(),
+    at: integer("at", { mode: "timestamp_ms" }).notNull(),
+    actorId: text("actor_id"),
+    action: text("action").notNull(),
+    /** The event's properties as JSON; ids and codes only, like every analytics event. */
+    details: text("details").notNull(),
+    requestId: text("request_id").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+  },
+  (t) => [
+    index("audit_log_at_idx").on(t.at),
+    index("audit_log_actor_id_idx").on(t.actorId),
+    index("audit_log_action_idx").on(t.action),
+  ],
+);
+
+export const authSchema = { user, session, account, verification, auditLog };

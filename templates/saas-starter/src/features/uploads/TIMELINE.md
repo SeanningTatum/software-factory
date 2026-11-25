@@ -65,6 +65,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — `metric` in `events.ts`: files uploaded per active user.
 - 2026-11-24 — R2 calls run through `outsideCall` and the bindings are read with `binding`, both from `core/lib`; imports analytics and ui from `src/features/core/`.
 - 2026-11-24 — The file picker stays disabled until hydration, and the spec waits for it, and for the dashboard, before it goes on.
 - 2026-11-24 — Renamed from `r2` to `uploads` and moved into `src/features/uploads/` from `src/blocks/r2/` when the template switched from blocks to features.

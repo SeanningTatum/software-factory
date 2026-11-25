@@ -16,11 +16,8 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   - `src/features/core/lib/` holds pure helpers that two or more features use: flat `.ts` files,
     each with a sibling test, no `feature.json`. Plain functions and Effect functions only: no
     services, layers or React (rule `shared-lib`). It imports only `src/app`.
-  - `src/features/<name>/` is a feature: `consent`, `home`, `auth`, `billing`, `uploads`,
-    `workflows`.
-- Names are unique across both levels, and `core` and `lib` are reserved. Tools find a feature's
-  folder from its name, so `--features db,auth` and `cf-saas-blocks remove kv` work wherever it
-  lives.
+  - `src/features/<name>/` is a feature: `consent`, `home`, `auth`, `billing`, `uploads`, `workflows`.
+- Names are unique across both levels; `core` and `lib` are reserved. Tools find a folder by name.
 - A feature or module owns its folder and the paths its `feature.json` lists in `files`, and
   nothing else. `cf-saas-lint` (rule `feature-layout`) allows only this vocabulary inside a
   feature; make only the folders it needs:
@@ -33,17 +30,14 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   - `*.machine.ts` only in `components/` or `machines/`, `*.spec.ts` only in `e2e/`;
   - every feature has `feature.json` and `TIMELINE.md`. To change the list, set `featureLayout` in
     `cf-saas-lint.json`.
-- Required features and modules have `"required": true` and can't be removed: `observability`,
-  `analytics`, `ui`, `consent`, `home`. The rest are optional, in core or not.
+- `"required": true` ones can't be removed: `observability`, `analytics`, `ui`, `consent`, `home`.
 - Imports (`cf-saas-blocks check`): a core module imports the kernel, `src/gen/`, `core/lib` and
   other core modules (an optional one only if its `requires` lists it); nothing in core imports a
   feature outside core. A feature imports the kernel, `src/gen/`, `core/lib`, required features and
   modules, and what its `requires` lists, transitively.
 - `src/routes/` holds only `__root.tsx`. `src/gen/routes.ts` mounts each feature's `routes/`.
-- `src/gen/` is made by `bun run blocks:sync`. Never edit it; change a `feature.json` or a
-  feature's `layer.ts`, `errors.ts`, `events.ts`, `nav.ts`, `viewer.ts`, `auth-plugins.ts`,
-  `workflows.ts` or `routes/`.
-- `FEATURES.md` (made by `bun run blocks:sync`) lists every core module and feature in one line.
+- `bun run blocks:sync` writes `src/gen/`, `FEATURES.md`, `.dev.vars.example` and the bindings in
+  `wrangler.jsonc`. Never edit those by hand; change a `feature.json` or the feature's own files.
 - `cf-saas-blocks check` fails on a file outside `src/app/`, `src/features/`, `src/gen/`,
   `src/routes/__root.tsx` and `src/{start.ts,router.tsx,server.ts,styles.css}`.
 
@@ -62,12 +56,6 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `bunx cf-saas-lint timeline --base origin/<base>`, which fails when a feature changed with no new
   line. The `no-timeline` label (or `TIMELINE_SKIP=1`) skips it for a trivial change.
 
-```bash
-bun run blocks:sync      # src/gen, wrangler.jsonc, .dev.vars.example, FEATURES.md, TIMELINE blocks
-bun run machines:print   # machine diagrams into each TIMELINE.md
-bunx cf-saas-lint timeline --base origin/main   # the CI timeline gate, run locally
-```
-
 ## Code
 
 - Effect for everything on the server. Services are `Context.Service` classes with a static `layer`.
@@ -77,12 +65,15 @@ bunx cf-saas-lint timeline --base origin/main   # the CI timeline gate, run loca
   `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
   `runResponse` from `src/app/run-effect.ts`.
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
-  `Effect.withSpan`; `outsideCall` in `core/lib/call.ts` does both.
+  `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
 - Log with `Effect.log*`, never `console`. Every line already carries the request id and user.
+- With `auth`, sign-ins, sign-outs and plan changes pass through `Auth.handle` into analytics and
+  `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
 - Every flow a user can see, and every lifecycle, is an XState machine in a `*.machine.ts` file with a
   unit test. Machines that drive UI sit in a feature's `components/` and also need
   `e2e/<name>.paths.spec.ts` in that feature.
-- New user-visible outcomes get an analytics event in the feature's `events.ts`. No personal data in
-  event properties.
+- New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
+  `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
+  personal data in event properties.
 - Every source file under `src/app` and `src/features` has a sibling `*.test.ts` unless
   `cf-saas-lint.json` exempts it.

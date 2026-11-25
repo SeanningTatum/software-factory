@@ -5,6 +5,7 @@ export interface Captured {
   readonly distinctId?: string;
 }
 
+export const SIGN_OUT = "/api/auth/sign-out";
 const TOO_MANY = 429;
 const CREDENTIAL_FAILURES = new Set([401, 403]);
 
@@ -36,7 +37,7 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   },
   {
     method: "POST",
-    path: "/api/auth/sign-out",
+    path: SIGN_OUT,
     rule: (status) => (isOk(status) ? [{ event: { _tag: "signed_out" } }] : []),
   },
 ];

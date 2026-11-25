@@ -55,6 +55,8 @@ export interface LintConfig {
   /** Files where a rule is allowed, keyed by rule id. Keep these lists short. */
   readonly allow: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly maxLines: number;
+  /** Most lines CLAUDE.md may have. */
+  readonly maxRulesLines: number;
   readonly testMap: ReadonlyArray<TestMapEntry>;
   /** Source files that need no test of their own: declarations, wiring, UI primitives. */
   readonly testExempt: ReadonlyArray<string>;
@@ -98,6 +100,7 @@ export const defaults: LintConfig = {
   exclude: ["src/gen/**", "src/routeTree.gen.ts", "**/*.d.ts"],
   allow: {},
   maxLines: 400,
+  maxRulesLines: 80,
   testMap: [
     { files: "src/**/*.machine.ts", requires: ["{dir}/{file}.test.ts"] },
     {

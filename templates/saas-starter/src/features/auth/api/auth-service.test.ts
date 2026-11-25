@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { Effect, ErrorReporter, Layer } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 import { type AppEnv, CloudflareEnv } from "#/app/env.ts";
@@ -6,7 +7,9 @@ import type { Captured } from "#/features/core/analytics/api/adapter.ts";
 import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb, testDatabaseLayer } from "#/features/core/db/api/test-database.ts";
-import { authSchema } from "../schema.ts";
+import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
+import { auditLog, authSchema } from "../schema.ts";
+import type { AuthPluginFactory } from "./auth.ts";
 import { Auth } from "./auth-service.ts";
 import { AuthRateLimiter, LIMITED_PATHS } from "./rate-limit.ts";
 
@@ -14,7 +17,12 @@ const APP = "http://localhost:3000";
 const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as AppEnv;
 
 /** Runs one request through a real Auth service on an in-memory database. */
-const request = async (db: Db, incoming: Request, allow = true) => {
+const request = async (
+  db: Db,
+  incoming: Request,
+  allow = true,
+  plugins = featureAuthPlugins as ReadonlyArray<AuthPluginFactory>,
+) => {
   const sent: Array<Captured> = [];
   const reported: Array<string> = [];
   const info = requestInfoFrom(incoming);
@@ -31,7 +39,7 @@ const request = async (db: Db, incoming: Request, allow = true) => {
   const limiter = Layer.succeed(AuthRateLimiter)(
     AuthRateLimiter.fromLimiter({ limit: async () => ({ success: allow }) }),
   );
-  const layer = Auth.layer.pipe(
+  const layer = Auth.layerWith(plugins).pipe(
     Layer.provideMerge(Layer.mergeAll(analytics, limiter)),
     Layer.provideMerge(base),
   );
@@ -39,7 +47,7 @@ const request = async (db: Db, incoming: Request, allow = true) => {
     const auth = yield* Auth;
     return yield* auth.handle(incoming);
   }).pipe(Effect.provide(layer), Effect.runPromise);
-  return { response, events: sent.map((c) => c.event._tag), info, reported };
+  return { response, events: sent.map((c) => c.event._tag), sent, info, reported };
 };
 
 const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
@@ -117,8 +125,77 @@ describe("Auth", () => {
     expect(events).toEqual(["sign_in_failed"]);
   });
 
+  it("leaves one audit row for a sign-in, with who and from where", async () => {
+    const credentials = {
+      email: "kay@example.com",
+      password: "correct horse battery",
+      name: "Kay",
+    };
+    await request(db, post("/api/auth/sign-up/email", credentials));
+    const { response, info } = await request(
+      db,
+      post("/api/auth/sign-in/email", credentials, { "cf-connecting-ip": "203.0.113.9" }),
+    );
+    const userId = ((await response.json()) as { user: { id: string } }).user.id;
+    const rows = await db.select().from(auditLog).where(eq(auditLog.requestId, info.id));
+    expect(rows).toMatchObject([
+      { action: "sign_in_succeeded", actorId: userId, ipAddress: "203.0.113.9" },
+    ]);
+    expect(JSON.parse(rows[0]?.details ?? "")).toEqual({ method: "email" });
+  });
+
+  // Billing's plan changes take this path, with the subscription's user id; auth can ship without
+  // billing, so the test sends an auth event.
+  it("leaves one audit row for an outcome a plugin reports for a user", async () => {
+    const plugin: AuthPluginFactory = ({ onEvent }) => [
+      {
+        id: "test-plugin-event",
+        onRequest: async () => {
+          onEvent({ _tag: "signed_out" }, "user-42");
+        },
+      },
+    ];
+    const { info, sent } = await request(db, post("/api/auth/ok", {}), true, [plugin]);
+    const rows = await db.select().from(auditLog).where(eq(auditLog.requestId, info.id));
+    expect(rows).toMatchObject([{ action: "signed_out", actorId: "user-42" }]);
+    expect(sent.map((c) => c.distinctId)).toEqual(["user-42"]);
+  });
+
+  it("ties a consented anonymous id to the user at sign-up, then starts a new one", async () => {
+    const anon = "0b9b8c1e-1d2f-4a3b-9c4d-5e6f7a8b9c0d";
+    const { sent, response } = await request(
+      db,
+      post(
+        "/api/auth/sign-up/email",
+        { email: "max@example.com", password: "correct horse battery", name: "Max" },
+        { cookie: `aid=${anon}` },
+      ),
+    );
+    const userId = sent[0]?.distinctId;
+    expect(sent.map((c) => [c.event._tag, c.distinctId])).toEqual([
+      ["sign_up_completed", userId],
+      ["user_identified", userId],
+    ]);
+    expect(sent[1]?.event).toEqual({ _tag: "user_identified", anonId: `anon:${anon}` });
+    expect(response.headers.getSetCookie().some((c) => c.startsWith("aid=;"))).toBe(true);
+  });
+
+  it("records who signed out and starts a new anonymous id", async () => {
+    const credentials = {
+      email: "ola@example.com",
+      password: "correct horse battery",
+      name: "Ola",
+    };
+    const signUp = await request(db, post("/api/auth/sign-up/email", credentials));
+    const cookie = signUp.response.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const { response, info } = await request(db, post("/api/auth/sign-out", {}, { cookie }));
+    const rows = await db.select().from(auditLog).where(eq(auditLog.requestId, info.id));
+    expect(rows).toMatchObject([{ action: "signed_out", actorId: signUp.sent[0]?.distinctId }]);
+    expect(response.headers.getSetCookie().some((c) => c.startsWith("aid=;"))).toBe(true);
+  });
+
   it("answers 429 when the limiter says so, without reaching Better Auth", async () => {
-    const { response, events } = await request(
+    const { response, events, info } = await request(
       db,
       post("/api/auth/sign-in/email", { email: "a@b.dev", password: "whatever123" }),
       false,
@@ -126,6 +203,9 @@ describe("Auth", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("60");
     expect(events).toEqual(["sign_in_failed"]);
+    // A flood of blocked attempts must not grow the audit log.
+    const rows = await db.select().from(auditLog).where(eq(auditLog.requestId, info.id));
+    expect(rows).toEqual([]);
   });
 
   it.each(LIMITED_PATHS)("rate limits %s, a route Better Auth really serves", async (path) => {

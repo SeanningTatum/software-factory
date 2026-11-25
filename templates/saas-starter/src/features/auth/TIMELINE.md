@@ -47,6 +47,10 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — The audit log lives in auth, as `audit_log` beside Better Auth's tables, and every event `Auth.handle` records goes to both analytics and the log. Why: only auth knows who the actor is, and billing and uploads already require auth; a separate core module would need auth to require it.
+- 2026-11-24 — A failed audit write is logged as a warning with `audit: true` and the request goes on. Why: a lost audit row is better than a user who cannot sign in.
+- 2026-11-24 — A sign-in the rate limiter blocks goes to analytics only, not the audit log. Why: one row per blocked attempt would let a flood grow the table.
+- 2026-11-24 — Sign-up or sign-in with an anonymous id sends `user_identified`, and sign-up, sign-in and sign-out all clear the id cookie. Why: earlier visits join the account, and an id is never tied to two users on a shared browser.
 - 2026-11-24 — Before launch, wire a mail hook: email verification and password reset do not work yet. Set `sendResetPassword` under `emailAndPassword`, `sendVerificationEmail` under `emailVerification`, and `requireEmailVerification: true` in `api/auth.ts`, then add `/api/auth/request-password-reset` back to `LIMITED_PATHS`. Why: no sender is wired, so anyone can sign up with an address they don't own and nobody can reset a password.
 - 2026-11-24 — The limited paths are sign-in and sign-up only; `request-password-reset` is off the list until a reset sender exists. Why: limiting a route that sends nothing was dead code that implied resets worked.
 - 2026-11-24 — An `APP_URL` without `http://` or `https://` degrades auth to `NotConfigured` naming `APP_URL (a full https:// URL)`. Why: `new URL` threw while the layer was built, so every route answered 500, not only auth.
@@ -67,6 +71,8 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-24 — Added `audit_log` (in `0000_init`), indexed on time, actor and action; `Auth.layerWith(factories)` for tests; plugins pass a user id with `onEvent`.
+- 2026-11-24 — `metric` in `events.ts`: the share of sign-in attempts that succeed.
 - 2026-11-24 — Added the indexes Better Auth's own schema asks for (`session.user_id`, `account.user_id`, `verification.identifier`) and `user.stripe_customer_id`, in migration `0001_indexes`.
 - 2026-11-24 — Auth calls run through `outsideCall` and the rate limiter binding is read with `binding`, both from `core/lib`; imports db, analytics and ui from `src/features/core/`.
 - 2026-11-24 — The path specs wait for an enabled button, give each test its own visitor IP so the sign-up limiter does not trip on a second run, and wait for sign-out before signing up again; `reaches submitting` now signs up for real. Added an SSR test for the form.

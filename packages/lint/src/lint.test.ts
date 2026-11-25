@@ -60,6 +60,43 @@ describe("files", () => {
 });
 
 describe("lint", () => {
+  test("fails a CLAUDE.md over the line limit and passes one at it", () => {
+    const at = "rule\n".repeat(defaults.maxRulesLines);
+    expect(lint(project({ "CLAUDE.md": at }))).toEqual([]);
+    expect(lint(project({ "CLAUDE.md": `${at}one more\n` })).map((f) => f.rule)).toEqual([
+      "rules-file",
+    ]);
+  });
+
+  describe("CLAUDE.md is true", () => {
+    const files = {
+      "package.json": '{"scripts":{"test":"x","blocks:sync":"y"}}',
+      "docs/a.md": "",
+    };
+    const messages = (md: string) =>
+      lint(project({ ...files, "CLAUDE.md": md })).map((f) => f.message);
+
+    test("passes paths, scripts and rules that exist, and skips placeholders", () => {
+      const md = [
+        "See `docs/a.md`, `docs/`; run `bun run test` or `bun run blocks:sync`.",
+        "The `no-throw` rule and (rule `shared-lib`) exist. Skipped: `src/features/<name>/`,",
+        "`src/**/*.ts`, `src/{a,b}.ts`, `routes/api/`, `bun run`, `origin/<base>`,",
+        "a route `/docs/x` and a relative `../docs/x`.",
+      ].join("\n");
+      expect(messages(md)).toEqual([]);
+    });
+
+    test("names the missing path, unknown script and unknown rule", () => {
+      expect(messages("See `docs/gone.md`.")).toEqual(["`docs/gone.md` does not exist"]);
+      expect(messages("Run `bun run nope`.")).toEqual([
+        '`bun run nope`: package.json has no script "nope"',
+      ]);
+      expect(messages("The rule `no-such-rule` bites.")).toEqual([
+        "rule `no-such-rule` is not a cf-saas-lint rule",
+      ]);
+    });
+  });
+
   test("reports throw, try/catch, process.env and unspanned outside calls", () => {
     const root = project({
       "src/core/bad.ts": [
