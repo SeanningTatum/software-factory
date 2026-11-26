@@ -43,6 +43,7 @@ Rules for a good item:
 | B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
 | B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
 | B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
+| B-23 | A gradual rollout runs on a real project          | Deployment        | M    | A custom domain       |
 
 ## Now
 
@@ -187,3 +188,21 @@ Rules for a good item:
 - [ ] A real-SQL test sends one event twice and finds one `audit_log` row.
 
 **Where:** `templates/saas-starter/src/features/billing/auth-plugins.ts`, `src/features/billing/schema.ts`.
+
+### B-23 · A gradual rollout runs on a real project
+
+- **Area:** Deployment
+- **Size:** M
+- **Needs you:** A test project on a custom domain in Cloudflare, with the Transform Rule from `docs/branches.md`
+
+**Why:** New projects can release to a share of visitors: the promote button takes `gradual`, and `rollout.yml` raises the share or backs out. Its steps have run only against stand-ins for `wrangler` and `curl` on a laptop. No real Worker has served two versions, so a wrong flag or a Cloudflare limit would first show in someone's production.
+
+**Done when:**
+
+- [ ] Promote with `gradual` at 10: the run's summary shows two versions at 10 and 90, and `/api/health` asked for the new version by id answers with that id.
+- [ ] With the Transform Rule in place, twenty page loads from one address all get scripts from one version.
+- [ ] Rollout to `100` leaves one version; a second gradual release then `back out` leaves the old one.
+- [ ] With `POSTHOG_KEY` set, PostHog shows `deployment_rolled_out` for each step and `app_version` on page views.
+- [ ] A release that adds a Workflows binding goes out `gradual`, or the docs say it cannot.
+
+**Where:** `templates/saas-starter/.github/workflows/deploy.yml`, `rollout.yml`, `.github/scripts/report-rollout.sh`, `docs/branches.md`.

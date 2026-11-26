@@ -62,7 +62,8 @@ run `bunx wrangler tail --search <request id>` while it happens again.
    is set, so the alert goes out even if the rollback fails too. A deploy by hand runs no smoke
    test: call `/api/health` yourself.
 2. If the damage shows later, roll back by hand: `bunx wrangler rollback -y`. This puts back the
-   previous code only. The database stays as the new code left it.
+   previous code only. The database stays as the new code left it. During a gradual rollout, use
+   the button instead: Actions → rollout → `back out` returns every visitor to the old version.
 3. Revert the commit on `staging`, so the next release does not ship it again, then release
    the revert.
 
