@@ -30,7 +30,7 @@ so after `bun install` these run that copy and fetch nothing:
 bun run setup                        # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
 bun run setup --check                # what is still missing, and the command that fixes each
 bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, and what CI deploys with
-bun run deploy:staging               # by hand; CI does both once the repository variables are set
+bun run deploy:staging               # by hand
 bun run deploy
 ```
 
@@ -97,5 +97,6 @@ before changing a feature, and add a line to its timeline with the change.
 `bun run check` runs Biome, the house rules (`cf-saas-lint`), the feature boundary check, the type
 checker, the unit tests (including the state machine gate) and knip. `bun run machines:print`
 writes each machine's Mermaid diagram into its feature's `TIMELINE.md`; the tests fail when one is
-out of date. On pull requests CI also runs `cf-saas-lint timeline`, which fails when a feature
-changed without a new line in its `TIMELINE.md`; the `no-timeline` label skips it.
+out of date. With the GitHub workflows, CI also runs `cf-saas-lint timeline` on pull requests,
+which fails when a feature changed without a new line in its `TIMELINE.md`; the `no-timeline`
+label skips it.

@@ -51,9 +51,9 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - Below them, people write `## Decisions` and `## History`, newest first, one line each:
   `- YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>)` and
   `- YYYY-MM-DD — <what changed>. (<commit sha or PR URL>)`.
-- Add a Decisions or History line with every change to a feature. On pull requests CI runs
-  `bunx cf-saas-lint timeline --base origin/<base>`, which fails when a feature changed with no new
-  line. The `no-timeline` label (or `TIMELINE_SKIP=1`) skips it for a trivial change.
+- Add a Decisions or History line with every change to a feature. With `.github/`, CI runs
+  `bunx cf-saas-lint timeline --base origin/<base>` on pull requests, which fails when a feature
+  changed with no new line. The `no-timeline` label (or `TIMELINE_SKIP=1`) skips a trivial change.
 
 ## Code
 

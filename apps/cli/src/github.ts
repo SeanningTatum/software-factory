@@ -35,10 +35,13 @@ interface Ruleset {
 }
 
 /** The rulesets in `.github/rulesets/`, read and parsed before anything on GitHub changes. */
-const readRulesets = (root: string): ReadonlyArray<Ruleset> => {
+export const readRulesets = (root: string): ReadonlyArray<Ruleset> => {
   const dir = join(root, RULESETS_DIR);
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")) : [];
-  if (!files.length) throw new GithubError(`No rulesets in ${RULESETS_DIR}.`);
+  if (!files.length)
+    throw new GithubError(
+      `No rulesets in ${RULESETS_DIR}. A project made with --no-github has none, so there are no branch rules to apply.`,
+    );
   return files.sort().map((file) => {
     const body = readFileSync(join(dir, file), "utf8");
     const name = (() => {

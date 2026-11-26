@@ -224,9 +224,13 @@ const installHusky = (huskyDir: string, dir: string) => {
   });
 };
 
-/** What only the GitHub side uses. The README's part on it sits between `github` markers. */
+/**
+ * What only the GitHub side uses. In the README that is the part between `github` markers, and
+ * the line for the `github` command, which has no rulesets to apply.
+ */
 const GITHUB_FILES = [".github", "docs/branches.md"];
-const GITHUB_README = /<!-- github:start -->[\s\S]*?<!-- github:end -->\n*/g;
+const GITHUB_README =
+  /<!-- github:start -->[\s\S]*?<!-- github:end -->\n*|^bunx create-tanstack-cf-saas github .*\n/gm;
 
 /** Takes out the workflows, the rulesets, their doc and the README's words about them. */
 const removeGithub = (dir: string) => {

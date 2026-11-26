@@ -107,6 +107,9 @@ describe("scaffold", () => {
     for (const path of [".github", "docs/branches.md"])
       expect([path, existsSync(join(without.dir, path))]).toEqual([path, false]);
     expect(without.readme).not.toMatch(/\.github|branches\.md|github:(start|end)/);
+    // The `github` command applies rulesets, and this project has none.
+    expect(kept.readme).toContain("bunx create-tanstack-cf-saas github ");
+    expect(without.readme).not.toContain("create-tanstack-cf-saas github");
     // Nothing left in the project points at a file that is gone.
     expect(readFileSync(join(without.dir, "docs/runbook.md"), "utf8")).not.toContain("branches.md");
   });

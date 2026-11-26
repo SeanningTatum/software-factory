@@ -18,6 +18,7 @@ import {
   DEPLOY_SECRET,
   DEPLOY_SWITCH,
   hasSecret,
+  readRulesets,
   requireGh,
   setupGithub,
 } from "./github.ts";
@@ -663,7 +664,9 @@ export const github = async (isPublic: boolean) => {
   const root = process.cwd();
   const gh = capture("gh", root);
   const git = capture("git", root);
-  requireGh(gh); // before the token question, so a typed token is never thrown away
+  // Both before the token question, so a typed token is never thrown away.
+  readRulesets(root);
+  requireGh(gh);
   const missing = setupGithub(root, gh, git, {
     name: () => readProject(root).name,
     visibility: isPublic ? "public" : "private",
