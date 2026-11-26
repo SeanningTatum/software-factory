@@ -91,7 +91,9 @@ describe("generateFiles", () => {
     expect(text).toContain('import * as billingTables from "../features/billing/schema.ts";');
     expect(text).toContain("export const featureAuthTables = { ...billingTables };");
     // A feature with plugins and no tables, and a project with no such feature, give it nothing.
-    const none = generateFiles(project(both.slice(0, 1)), withBilling).get("src/gen/auth-plugins.ts");
+    const none = generateFiles(project(both.slice(0, 1)), withBilling).get(
+      "src/gen/auth-plugins.ts",
+    );
     expect(none).toContain("export const featureAuthTables = {};");
   });
 
