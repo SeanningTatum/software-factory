@@ -143,24 +143,32 @@ const rename = (dir: string, name: string) => {
   edit(join(dir, "README.md"), (text) => text.replace(/^# .*$/m, `# ${titleCase(name)}`));
 };
 
+const LIMITER_SCOPES = [[], ["env", "staging"]];
+
+/** Every rate-limit namespace id in wrangler.jsonc, production's and staging's. */
+export const namespaceIds = (dir: string): ReadonlySet<string> => {
+  const json = parse(readFileSync(join(dir, "wrangler.jsonc"), "utf8"));
+  const limiters = LIMITER_SCOPES.flatMap((path) => at(json, path)?.ratelimits ?? []);
+  return new Set(limiters.map((l) => (l as { namespace_id: string }).namespace_id));
+};
+
 /**
  * Rate-limit namespace ids are account-wide on Cloudflare, so two projects with the manifests'
- * ids would share counters. Gives every limiter, in production and staging, its own random id.
+ * ids would share counters. Gives every limiter, in production and staging, its own random id,
+ * except those in `keep`: the ids a project had before `add`, which its deployed limiters use.
  */
-const uniqueNamespaceIds = (dir: string) =>
+export const uniqueNamespaceIds = (dir: string, keep: ReadonlySet<string> = new Set()) =>
   edit(join(dir, "wrangler.jsonc"), (text) => {
-    const used = new Set<number>();
+    const used = new Set(keep);
     let out = text;
-    for (const path of [[], ["env", "staging"]]) {
+    for (const path of LIMITER_SCOPES) {
       const limiters = at(parse(out), path)?.ratelimits ?? [];
       for (let i = 0; i < limiters.length; i++) {
-        let id = randomInt(1_000_000, 2 ** 31);
-        while (used.has(id)) id = randomInt(1_000_000, 2 ** 31);
+        if (keep.has((limiters[i] as { namespace_id: string }).namespace_id)) continue;
+        let id = String(randomInt(1_000_000, 2 ** 31));
+        while (used.has(id)) id = String(randomInt(1_000_000, 2 ** 31));
         used.add(id);
-        out = applyEdits(
-          out,
-          modify(out, [...path, "ratelimits", i, "namespace_id"], String(id), {}),
-        );
+        out = applyEdits(out, modify(out, [...path, "ratelimits", i, "namespace_id"], id, {}));
       }
     }
     return out;

@@ -30,15 +30,17 @@ import {
   packageManagers,
   runCommand,
 } from "./pm.ts";
-import { capture, gitIdentity, projectWrangler, run } from "./run.ts";
+import { capture, gitIdentity, hasWrangler, projectWrangler, run } from "./run.ts";
 import {
   type BlankSetting,
   blankSettings,
   hasTables,
   isEmptyDir,
   nameFromDir,
+  namespaceIds,
   parseFeatures,
   scaffold,
+  uniqueNamespaceIds,
   validateName,
 } from "./scaffold.ts";
 import {
@@ -370,7 +372,7 @@ const offerCloudflare = async (
   );
   if (!go) return undefined;
   // Only the project's pinned wrangler gets the keys, never whatever `npx` downloads today.
-  if (!existsSync(join(plan.targetDir, "node_modules/.bin/wrangler"))) {
+  if (!hasWrangler(plan.targetDir)) {
     p.log.warn(`Packages aren't installed. ${SETUP_LATER}`);
     return undefined;
   }
@@ -464,26 +466,32 @@ const offerGithub = async (plan: CreatePlan) => {
   }
 };
 
-/** One feature name from the command line, with old block names mapped and noted. */
-const featureArg = (arg: string) => {
-  const { features, notes } = parseFeatures([arg]);
+/** Feature names from the command line (`kv workflows` or `kv,workflows`), old block names mapped and noted. */
+const featureArgs = (args: ReadonlyArray<string>) => {
+  const { features, notes } = parseFeatures(args.flatMap((arg) => arg.split(",")));
   for (const note of notes) console.log(note);
-  const [feature] = features;
-  if (!feature) throw new Error("Name a feature.");
-  return feature;
+  if (!features.length) throw new Error("Name a feature.");
+  return features;
 };
 
-export const add = (arg: string) => {
-  const feature = featureArg(arg);
+export const add = (...names: ReadonlyArray<string>) => {
+  const features = featureArgs(names);
   const root = process.cwd();
   readProject(root);
+  // Checked before the first one is copied, so a mistyped name leaves nothing half added.
+  const known = loadManifests(templateDir());
+  const unknown = features.filter((f) => !known.has(f));
+  if (unknown.length) throw new Error(`Unknown feature(s): ${unknown.join(", ")}`);
   const git = capture("git", root);
   const before = git(["status", "--porcelain"]);
   const hooked = existsSync(join(root, ".husky/pre-commit"));
-  const added = addBlock(root, templateDir(), feature);
+  const ids = namespaceIds(root);
+  const added = features.flatMap((f) => addBlock(root, templateDir(), f));
+  // A new limiter arrives with its manifest's id, the same in every project; see `create`.
+  uniqueNamespaceIds(root, ids);
   resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
   if (!added.length) {
-    console.log(`${feature} is already on.`);
+    console.log(`Already on: ${features.join(", ")}.`);
     return;
   }
   // A feature is far over the size hook's limit, and none of it is the owner's writing. From a
@@ -510,12 +518,14 @@ const commitScaffold = (root: string, git: Cli, added: ReadonlyArray<string>) =>
   }
 };
 
-export const remove = (arg: string, force = false) => {
-  const feature = featureArg(arg);
+export const remove = (names: ReadonlyArray<string>, force = false) => {
+  const features = featureArgs(names);
   const root = process.cwd();
   readProject(root);
-  removeBlock(root, feature, { force });
-  console.log(`Removed ${feature}. Install packages to drop the ones it used.`);
+  for (const feature of features) removeBlock(root, feature, { force });
+  console.log(
+    `Removed ${features.join(", ")}. Install packages to drop the ones it used. If it had tables, the next db:generate writes DROP TABLE for them: read that migration before you apply it.`,
+  );
 };
 
 const ICON: Record<Item["state"], string> = {
