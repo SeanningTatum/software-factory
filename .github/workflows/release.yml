@@ -7,6 +7,8 @@ name: release
 on:
   push:
     branches: [staging, production]
+  # promote.yml starts this on production: its own push, made with GITHUB_TOKEN, starts nothing.
+  workflow_dispatch:
 permissions: {}
 concurrency: release-${{ github.ref_name }}
 jobs:

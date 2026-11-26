@@ -22,7 +22,7 @@ to the template alone needs a changeset for the CLI, which carries it.
 | ---- | --------------------------------------------------------- | --------------------------------------------------------------- |
 | 1    | Merge the "Version Packages" pull request into `staging`. | Versions are bumped, changelogs written, changesets spent.      |
 | 2    | Wait for `check.yml` to pass on `staging`.                | `production` takes only a commit the checks passed on.          |
-| 3    | `bun run promote`                                         | Tags `staging`'s tip, moves `production` to it; that publishes. |
+| 3    | `bun run promote`, or Actions → promote → Run workflow.   | Tags `staging`'s tip, moves `production` to it; that publishes. |
 | 4    | `npm view create-tanstack-cf-saas version`                | Shows the version you just shipped.                             |
 
 The tag is `v<the CLI's version>`, as in `v0.1.0`; `release.yml` publishes to npm and makes the
