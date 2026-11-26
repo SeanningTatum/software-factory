@@ -15,11 +15,12 @@
     "format": "biome check --write .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "check": "bun run lint && turbo run typecheck test build",
+    "check": "bun run lint && sh scripts/promote.test.sh && turbo run typecheck test build",
     "try": "bun apps/cli/scripts/try.ts",
     "teardown": "bun apps/cli/scripts/teardown.ts",
     "changeset": "changeset",
-    "release": "turbo run build --filter=./packages/* --filter=create-tanstack-cf-saas && changeset publish"
+    "release": "turbo run build --filter=./packages/* --filter=create-tanstack-cf-saas && changeset publish",
+    "promote": "sh scripts/promote.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",

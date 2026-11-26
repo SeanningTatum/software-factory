@@ -1,0 +1,1 @@
+Release this repo: follow "Ship a release" in `RELEASING.md`, and its "When it goes wrong" table if a step fails. Stop and report at the first failure you cannot fix from that table. Never squash into `production`, never force-push, and ask before each merge. Before the first merge, show me the version bumps. At the end, report which packages were published and at what versions.
