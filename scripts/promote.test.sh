@@ -48,11 +48,11 @@ git push -q origin staging
 expect fail "must start with v" 9.9.9
 [ -z "$(tags)" ]
 
-head() { git ls-remote origin "refs/heads/$1" | cut -f1; }
+at() { git ls-remote origin "refs/heads/$1" | cut -f1; }
 
 expect ok "Promoted v1.2.3"
 [ "$(tags)" = v1.2.3 ]
-[ "$(head production)" = "$(head staging)" ]
+[ "$(at production)" = "$(at staging)" ]
 expect fail "Nothing to release"
 
 # The tip moves and the CLI's version does not: the name is taken, another tags the new tip.
@@ -66,13 +66,21 @@ expect ok "Promoted v1.2.4" v1.2.4
 git commit -q --allow-empty -m next
 git push -q origin staging
 git push -q origin "$(git commit-tree -p origin/production -m stray 'HEAD^{tree}'):refs/heads/production"
-stray=$(head production)
+stray=$(at production)
 expect fail "production did not move" v9
-[ "$(head production)" = "$stray" ]
+[ "$(at production)" = "$stray" ]
 
 # With production gone, the next run reuses the tag the refused one left and makes the branch.
 git push -q origin --delete production
 expect ok "Promoted v9"
-[ "$(head production)" = "$(head staging)" ]
+[ "$(at production)" = "$(at staging)" ]
+
+# A tag whose push failed is only local: the next run sends it before production moves.
+git commit -q --allow-empty -m again
+git push -q origin staging
+git tag v10 origin/staging
+expect ok "Promoted v10"
+tags | grep -qx v10
+[ "$(at production)" = "$(at staging)" ]
 
 echo "promote.sh: ok"

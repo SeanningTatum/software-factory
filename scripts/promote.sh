@@ -26,13 +26,15 @@ tag=$(git tag --points-at "$tip" --list 'v*' | head -n 1)
 if [ -z "$tag" ]; then
   tag=${1:-v$(git show "$tip:apps/cli/package.json" | sed -n 's/^  "version": "\(.*\)",*$/\1/p')}
   case $tag in
-    v*) ;;
+    v?*) ;;
     *) echo "The tag must start with v: release.yml looks for v*." >&2; exit 1 ;;
   esac
   # Fails when the name is taken, as when a release leaves the CLI's version alone: pass another.
   git tag "$tag" "$tip"
-  git push origin "$tag"
 fi
+# Every run, not only when the tag is new: one whose push failed is still only on this machine,
+# and release.yml refuses a commit whose tag never reached GitHub.
+git push origin "$tag"
 
 # No --force, ever: a refused push means a check has not passed or production has its own commit.
 if ! git push origin "$tip:refs/heads/production"; then
