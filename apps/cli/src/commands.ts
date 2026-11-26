@@ -435,7 +435,7 @@ const offerGithub = async (plan: CreatePlan) => {
   const visibility = cancelled(
     await p.select({
       message:
-        "Create a GitHub repository with branch rules? staging is the default branch; production takes only a tagged pull request from staging.",
+        "Create a GitHub repository with branch rules? staging is the default branch; production moves only to a commit of staging, and deploys it once tagged.",
       options: [
         {
           value: "private" as const,
@@ -644,7 +644,7 @@ export const github = async (isPublic: boolean) => {
   });
   printMissing(missing);
   console.log(
-    "\nTo ship: git tag v0.1.0 origin/staging && git push origin v0.1.0, then open a pull request from staging into production.",
+    "\nTo ship: git fetch origin && git push --atomic origin origin/staging:refs/tags/v0.1.0 origin/staging:refs/heads/production (docs/branches.md says why).",
   );
 };
 

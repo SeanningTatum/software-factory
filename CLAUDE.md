@@ -92,7 +92,8 @@ here. Start sessions there.
 `bun run promote` tags `staging`'s tip `v*` and fast-forwards `production` to it, so both branches
 share one head (`.github/rulesets/`; the checks must have passed on that commit). Stack small pull
 requests on each other: they get `pr.yml`; the one into `staging` gets `check.yml`. The template
-still promotes by pull request: `templates/saas-starter/docs/branches.md` draws that flow.
+ships the same model to new projects, as one tagged push in place of the script:
+`templates/saas-starter/docs/branches.md` draws that flow.
 
 `bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
 pull request; on `production` it publishes `packages/*` and the CLI under the `@tanstack-cf-saas`

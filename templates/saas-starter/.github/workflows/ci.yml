@@ -1,12 +1,13 @@
-# The full checks: every pull request into staging or production, and every push to staging.
+# The full checks: every pull request into staging, and every push to staging. Production gets
+# no pull requests: it takes a staging commit these jobs already passed on.
 # A pull request stacked on another branch gets the short checks in pr.yml instead, until it is
 # rolled up into staging. .github/rulesets/ makes these jobs required; keep a job's name and its
 # ruleset entry the same. A job that can skip (timeline, on a push) is required on staging only:
-# see promote.yml.
+# GitHub counts a skipped job as passed.
 name: ci
 on:
   pull_request:
-    branches: [staging, production]
+    branches: [staging]
     # labeled/unlabeled re-run the timeline gate when someone adds or drops `no-timeline`.
     # When a stacked pull request's parent merges, GitHub points it at staging but starts nothing:
     # push to it (a rebase does) or close and reopen it. `edited` would catch the retarget, and

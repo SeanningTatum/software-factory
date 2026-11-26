@@ -49,7 +49,7 @@ describe("branch rules", () => {
       .parameters.required_status_checks.map((c: { context: string }) => c.context);
 
   it("requires only checks a workflow runs, and the short checks share none of their names", () => {
-    const sources = ["ci", "promote", "deploy", "title"].map(workflow).join("\n");
+    const sources = ["ci", "deploy", "title"].map(workflow).join("\n");
     for (const context of [...required("staging"), ...required("production")]) {
       expect(sources).toMatch(job(context));
       expect(workflow("pr")).not.toMatch(job(context));
@@ -66,17 +66,19 @@ describe("branch rules", () => {
     expect(workflow("title")).toMatch(/types: \[.*\bedited\b.*\]/);
   });
 
-  it("lets production move only by a tagged pull request from staging", () => {
-    const promote = workflow("promote");
-    expect(required("production")).toContain("promote");
-    expect(promote).toMatch(/"\$HEAD" != staging/);
-    expect(promote).toMatch(/git tag --points-at HEAD --list 'v\*'/);
-    // GitHub counts a skipped job as passed, and a push to staging runs ci.yml on the commit a
-    // promotion starts from: the gate must run on nothing else and never skip.
-    expect(promote).toMatch(/pull_request:\n\s+branches: \[production\]/);
-    expect(promote).not.toMatch(/^\s+if:/m);
-    expect(workflow("ci")).not.toMatch(job("promote"));
+  it("moves production by fast-forward only, and deploys it only at a tagged commit of staging", () => {
+    const { rules } = JSON.parse(read(".github/rulesets/production.json"));
+    const types = rules.map((r: { type: string }) => r.type);
+    // A merged pull request would give production a commit staging lacks.
+    expect(types).not.toContain("pull_request");
+    expect(types).toEqual(expect.arrayContaining(["deletion", "non_fast_forward"]));
+    expect(workflow("ci")).toMatch(/pull_request:\n\s+branches: \[staging\]/);
+    // GitHub counts a skipped job as passed, and timeline skips on the push a promotion starts from.
     expect(required("production")).not.toContain("timeline");
+    // A ruleset cannot ask for a tag, so the production job does, before it touches anything.
+    expect(workflow("deploy")).toMatch(
+      / {2}production:\n[\s\S]*merge-base --is-ancestor HEAD origin\/staging[\s\S]*git tag --points-at HEAD --list 'v\*'[\s\S]*name: Migrate and deploy/,
+    );
   });
 
   it("deploys production only from its branch, after the same commit's staging deploy", () => {

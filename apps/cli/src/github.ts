@@ -186,11 +186,9 @@ export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOpti
       // title.yml checks the pull request's title; this makes it the squash commit's.
       "-f",
       "squash_merge_commit_title=PR_TITLE",
-      // The rulesets take squashes into staging and merge commits into production: allow both.
+      // The staging ruleset takes squashes only. Production takes no merge: it moves by a push.
       "-F",
       "allow_squash_merge=true",
-      "-F",
-      "allow_merge_commit=true",
     ]),
     "Setting the default branch and the merge methods",
   );

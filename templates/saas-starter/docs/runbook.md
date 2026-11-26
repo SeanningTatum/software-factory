@@ -62,8 +62,8 @@ run `bunx wrangler tail --search <request id>` while it happens again.
    rollback fails too.
 2. If the damage shows later, roll back by hand: `bunx wrangler rollback -y`. This puts back the
    previous code only. The database stays as the new code left it.
-3. Revert the commit on `staging`, so the next release does not ship it again, then tag and
-   promote the revert.
+3. Revert the commit on `staging`, so the next release does not ship it again, then release
+   the revert (`docs/branches.md`).
 
 ## A failed migration (`db`)
 

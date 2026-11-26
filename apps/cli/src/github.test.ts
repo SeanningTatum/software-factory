@@ -46,7 +46,7 @@ describe("setupGithub", () => {
     expect(fake.calls).toContain("git push --set-upstream origin staging");
     expect(fake.calls).toContain("git push origin FETCH_HEAD:refs/heads/production");
     expect(fake.calls).toContain(
-      "gh api --method PATCH repos/{owner}/{repo} -f default_branch=staging -f squash_merge_commit_title=PR_TITLE -F allow_squash_merge=true -F allow_merge_commit=true",
+      "gh api --method PATCH repos/{owner}/{repo} -f default_branch=staging -f squash_merge_commit_title=PR_TITLE -F allow_squash_merge=true",
     );
     expect(fake.state.rulesets).toEqual(["production", "staging"]);
     expect(fake.bodies.map((b) => b.name)).toEqual(["production", "staging"]);
