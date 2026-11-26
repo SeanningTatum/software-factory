@@ -86,6 +86,34 @@ describe("scaffold", () => {
     );
   });
 
+  test("leaves out the GitHub workflows, rules and their docs only when told to", () => {
+    const make = (github?: boolean) => {
+      const dir = target();
+      const options = { templateDir: TEMPLATE, harnessDir: undefined, targetDir: dir };
+      scaffold({ ...options, name: "a", features: [], github });
+      return { dir, readme: readFileSync(join(dir, "README.md"), "utf8") };
+    };
+    const kept = make();
+    expect(readdirSync(join(kept.dir, ".github/workflows")).sort()).toEqual(
+      ["ci.yml", "deploy.yml", "pr.yml", "promote.yml", "title.yml"], // the README says five
+    );
+    expect(readdirSync(join(kept.dir, ".github/rulesets")).sort()).toEqual([
+      "production.json",
+      "staging.json",
+    ]);
+    expect(kept.readme).toContain("docs/branches.md");
+
+    const without = make(false);
+    for (const path of [".github", "docs/branches.md"])
+      expect([path, existsSync(join(without.dir, path))]).toEqual([path, false]);
+    expect(without.readme).not.toMatch(/\.github|branches\.md|github:(start|end)/);
+    // The `github` command applies rulesets, and this project has none.
+    expect(kept.readme).toContain("bunx create-tanstack-cf-saas github ");
+    expect(without.readme).not.toContain("create-tanstack-cf-saas github");
+    // Nothing left in the project points at a file that is gone.
+    expect(readFileSync(join(without.dir, "docs/runbook.md"), "utf8")).not.toContain("branches.md");
+  });
+
   test("pins this repo's Bun in a Bun project, and no package manager in any other", () => {
     const pinned = (pm?: string) => {
       const dir = target();

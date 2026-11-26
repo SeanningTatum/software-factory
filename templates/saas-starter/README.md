@@ -30,9 +30,11 @@ so after `bun install` these run that copy and fetch nothing:
 bun run setup                        # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
 bun run setup --check                # what is still missing, and the command that fixes each
 bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, and what CI deploys with
-bun run deploy:staging               # by hand; CI does both once the repository variables are set
+bun run deploy:staging               # by hand
 bun run deploy
 ```
+
+<!-- github:start -->
 
 Two branches deploy. `staging` is the default branch, and a push to it deploys staging.
 `production` deploys production. It takes no pull requests: a release tags `staging`'s tip and
@@ -43,12 +45,16 @@ git fetch origin
 git push --atomic origin origin/staging:refs/tags/v1.2.0 origin/staging:refs/heads/production
 ```
 
+The same release is a button on GitHub: Actions → promote → Run workflow, with the tag.
+
 Work in small pull requests stacked on each other. One whose base is another branch gets the short
 checks in `pr.yml` (lint, types, unit tests, a scan for keys). The pull request that rolls the
 stack up into `staging` gets all of `ci.yml`, the same checks production requires. The rules live
 in `.github/rulesets/`; change a file and run `github` again to apply it. Add your own workflows
-beside the four in `.github/workflows/`. `docs/branches.md` draws the whole flow and says why each
+beside the five in `.github/workflows/`. `docs/branches.md` draws the whole flow and says why each
 rule is there.
+
+<!-- github:end -->
 
 ## Layout
 
@@ -91,5 +97,6 @@ before changing a feature, and add a line to its timeline with the change.
 `bun run check` runs Biome, the house rules (`cf-saas-lint`), the feature boundary check, the type
 checker, the unit tests (including the state machine gate) and knip. `bun run machines:print`
 writes each machine's Mermaid diagram into its feature's `TIMELINE.md`; the tests fail when one is
-out of date. On pull requests CI also runs `cf-saas-lint timeline`, which fails when a feature
-changed without a new line in its `TIMELINE.md`; the `no-timeline` label skips it.
+out of date. With the GitHub workflows, CI also runs `cf-saas-lint timeline` on pull requests,
+which fails when a feature changed without a new line in its `TIMELINE.md`; the `no-timeline`
+label skips it.

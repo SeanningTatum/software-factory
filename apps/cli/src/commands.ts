@@ -18,6 +18,7 @@ import {
   DEPLOY_SECRET,
   DEPLOY_SWITCH,
   hasSecret,
+  readRulesets,
   requireGh,
   setupGithub,
 } from "./github.ts";
@@ -77,6 +78,7 @@ export interface CreateArgs {
   readonly yes: boolean;
   readonly claude: boolean;
   readonly husky: boolean;
+  readonly github: boolean;
   readonly install: boolean;
   readonly git: boolean;
 }
@@ -154,6 +156,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
           await p.confirm({ message: "Add the Claude workflows (.claude/)?", initialValue: true }),
         );
   const husky = await askHusky(args);
+  const github = await askGithub(args);
   const devVars = args.yes ? {} : await askBlankSettings(blankSettings(templateDir(), features));
   return {
     name,
@@ -161,6 +164,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
     features,
     claude,
     husky,
+    github,
     install: args.install,
     git: args.git,
     devVars,
@@ -174,6 +178,18 @@ const askHusky = async (args: CreateArgs) =>
     : cancelled(
         await p.confirm({
           message: "Add husky commit hooks (conventional messages, small commits)?",
+          initialValue: true,
+        }),
+      );
+
+/** Whether to keep `.github/`: the workflows, the rulesets and Dependabot's settings. */
+const askGithub = async (args: CreateArgs) =>
+  args.yes || !args.github
+    ? args.github
+    : cancelled(
+        await p.confirm({
+          message:
+            "Add the GitHub workflows and branch rules (.github/: CI, deploys, the promote button)?",
           initialValue: true,
         }),
       );
@@ -242,6 +258,7 @@ export const create = async (args: CreateArgs) => {
               templateDir: templateDir(),
               harnessDir: input.claude ? harnessDir() : undefined,
               huskyDir: input.husky ? huskyDir() : undefined,
+              github: input.github,
               targetDir: input.targetDir,
               name: input.name,
               features: input.features,
@@ -327,7 +344,8 @@ export const create = async (args: CreateArgs) => {
         .join(", ")} in .dev.vars.`,
     );
   const cloudflare = args.yes ? undefined : await offerCloudflare(plan, context.features, pm);
-  if (!args.yes && plan.git) await offerGithub(plan);
+  // The offer applies the rulesets in .github/, so without them there is nothing to offer.
+  if (!args.yes && plan.git && plan.github) await offerGithub(plan);
   p.note(steps.join("\n"), "Next");
   p.outro(closingLine(cloudflare, pm));
 };
@@ -651,7 +669,9 @@ export const github = async (isPublic: boolean) => {
   const root = process.cwd();
   const gh = capture("gh", root);
   const git = capture("git", root);
-  requireGh(gh); // before the token question, so a typed token is never thrown away
+  // Both before the token question, so a typed token is never thrown away.
+  readRulesets(root);
+  requireGh(gh);
   const missing = setupGithub(root, gh, git, {
     name: () => readProject(root).name,
     visibility: isPublic ? "public" : "private",

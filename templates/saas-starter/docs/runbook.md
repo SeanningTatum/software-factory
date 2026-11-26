@@ -57,18 +57,20 @@ run `bunx wrangler tail --search <request id>` while it happens again.
 
 ## A bad deploy
 
-1. Production's smoke test calls `/api/health` and rolls back on its own when it fails, then
-   posts to `ALERT_WEBHOOK_URL` first if that repo secret is set, so the alert goes out even if the
-   rollback fails too.
+1. When GitHub Actions deploys (`deploy.yml`), production's smoke test calls `/api/health` and
+   rolls back on its own when it fails. It posts to `ALERT_WEBHOOK_URL` first if that repo secret
+   is set, so the alert goes out even if the rollback fails too. A deploy by hand runs no smoke
+   test: call `/api/health` yourself.
 2. If the damage shows later, roll back by hand: `bunx wrangler rollback -y`. This puts back the
    previous code only. The database stays as the new code left it.
 3. Revert the commit on `staging`, so the next release does not ship it again, then release
-   the revert (`docs/branches.md`).
+   the revert.
 
 ## A failed migration (`db`)
 
 1. Migrations run before the new code goes out, so a failed one stops the deploy and the old code
-   keeps running. Read the error in the GitHub Actions log.
+   keeps running. Read the error in the GitHub Actions log, or in your terminal after a deploy by
+   hand.
 2. Fix the migration in a new commit. Never edit one that has already run anywhere.
 3. If a migration ran and damaged data, restore D1 to a minute before it:
    `bunx wrangler d1 time-travel restore DB --timestamp=<unix seconds>`. Roll back the code first

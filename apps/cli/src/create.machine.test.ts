@@ -9,6 +9,7 @@ const plan: CreatePlan = {
   features: [],
   claude: true,
   husky: true,
+  github: true,
   install: true,
   git: true,
 };

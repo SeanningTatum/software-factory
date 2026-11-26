@@ -41,6 +41,16 @@ describe("create", () => {
     expect(nameFromDir("/x/_Weird.Name__")).toBe("weird-name");
   }, 20_000); // two full scaffolds: over 5 s on a busy CI runner
 
+  test("--no-github reaches the scaffold, and `github` there says why it has nothing to do", () => {
+    const dir = scratch();
+    expect(cli(["app", ...QUICK, "--no-github"], dir).status).toBe(0);
+    expect(existsSync(join(dir, "app/.github"))).toBe(false);
+    expect(existsSync(join(dir, "app/src"))).toBe(true);
+    const result = cli(["github"], join(dir, "app"));
+    expect(result.status).toBe(1);
+    expect(result.out).toContain("made with --no-github");
+  }, 20_000);
+
   test("a failed scaffold stops the spinner and exits non-zero instead of hanging", () => {
     const dir = scratch();
     const empty = scratch();
