@@ -1,5 +1,6 @@
 /**
- * Copies the template and the Claude harness into this package so they ship with the CLI.
+ * Copies the template, the Claude harness and the commit hooks into this package so they ship with
+ * the CLI.
  * Only files git would commit are copied, and never local secrets (.dev.vars.*, .env) or
  * settings. Rewrites `workspace:*` to the versions published from this repo and stores .gitignore as
  * _gitignore, because npm drops .gitignore files from packages.
@@ -22,6 +23,8 @@ const source = join(repo, "templates/saas-starter");
 const target = join(import.meta.dirname, "../template");
 const harnessSource = join(repo, "claude");
 const harnessTarget = join(import.meta.dirname, "../harness");
+const huskySource = join(repo, ".husky");
+const huskyTarget = join(import.meta.dirname, "../husky");
 
 const SKIP = new Set([
   "node_modules",
@@ -130,6 +133,10 @@ if (existsSync(harnessSource)) {
     `${JSON.stringify({ repo: "claude", commit }, null, 2)}\n`,
   );
 }
+
+// New projects get the hooks this repo commits under; husky's own `_` folder is ignored by git.
+rmSync(huskyTarget, { recursive: true, force: true });
+if (existsSync(huskySource)) copyTree(huskySource, huskyTarget, () => false);
 
 console.log(
   `Bundled the template into ${relative(repo, target)} and the harness into ${relative(repo, harnessTarget)}.`,

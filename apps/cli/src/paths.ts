@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-/** The template and harness shipped next to the built CLI (dist/../template). */
+/** The template, harness and commit hooks shipped next to the built CLI (dist/../template). */
 const shipped = (name: string) => fileURLToPath(new URL(`../${name}`, import.meta.url));
 
 /**
@@ -16,3 +16,4 @@ export const templateDir = () => {
 };
 
 export const harnessDir = () => shipped("harness");
+export const huskyDir = () => shipped("husky");

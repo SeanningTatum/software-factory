@@ -10,7 +10,8 @@
   "files": [
     "dist",
     "template",
-    "harness"
+    "harness",
+    "husky"
   ],
   "engines": {
     "node": ">=20.19"
