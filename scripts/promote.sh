@@ -38,7 +38,7 @@ git push origin "$tag"
 
 # No --force, ever: a refused push means a check has not passed or production has its own commit.
 if ! git push origin "$tip:refs/heads/production"; then
-  echo "Tagged $tag, but production did not move. If check.yml is still running on staging, wait and run this again. Otherwise see RELEASING.md." >&2
+  echo "Tagged $tag, but production did not move. If check.yml or blocks.yml is still running on staging, wait and run this again. Otherwise see RELEASING.md." >&2
   exit 1
 fi
 echo "Promoted $tag: production and staging are both at $(git rev-parse --short "$tip"). release.yml is publishing."

@@ -60,13 +60,15 @@ export const makeAuth = (
   db: Db,
   plugins: ReadonlyArray<BetterAuthPlugin>,
   log: AuthLog,
+  /** The plugins' own tables (billing's `subscription`): the adapter refuses one it was not given. */
+  tables: Record<string, unknown> = {},
 ) =>
   betterAuth({
     secret: config.secret,
     baseURL: config.baseURL,
     basePath: "/api/auth",
     trustedOrigins: [...config.trustedOrigins],
-    database: drizzleAdapter(db, { provider: "sqlite", schema: authSchema }),
+    database: drizzleAdapter(db, { provider: "sqlite", schema: { ...authSchema, ...tables } }),
     emailAndPassword: { enabled: true, minPasswordLength: 10 },
     session: {
       expiresIn: SESSION_DAYS * DAY_SECONDS,

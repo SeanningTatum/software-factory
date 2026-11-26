@@ -96,10 +96,16 @@ const listFile = (
 
 const authPluginsFile = (root: string, order: Order) => {
   const features = order.filter((f) => has(root, f, "auth-plugins"));
-  const imports = features.map(
-    (f) => `import { authPlugins as ${camel(f.name)} } from "${importPath(f, "auth-plugins")}";`,
-  );
-  return `${HEADER}${imports.join("\n")}\n\n/** Better Auth plugin factories from every feature that extends auth. */\nexport const featureAuthPlugins = [${features.map((f) => camel(f.name)).join(", ")}] as const;\n`;
+  // Better Auth's adapter refuses a table it was not given, so a plugin's own tables go with it.
+  const withTables = features.filter((f) => existsSync(join(root, f.dir, "schema.ts")));
+  const imports = [
+    ...features.map(
+      (f) => `import { authPlugins as ${camel(f.name)} } from "${importPath(f, "auth-plugins")}";`,
+    ),
+    ...withTables.map((f) => `import * as ${camel(f.name)}Tables from "${fromSrc(f)}/schema.ts";`),
+  ];
+  const tables = withTables.map((f) => `...${camel(f.name)}Tables`).join(", ");
+  return `${HEADER}${imports.join("\n")}\n\n/** Better Auth plugin factories from every feature that extends auth. */\nexport const featureAuthPlugins = [${features.map((f) => camel(f.name)).join(", ")}] as const;\n\n/** Those features' tables, which Better Auth's database adapter must be given to write them. */\nexport const featureAuthTables = ${tables ? `{ ${tables} }` : "{}"};\n`;
 };
 
 const workflowsFile = (order: Order) => {
