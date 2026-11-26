@@ -3,14 +3,18 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Wrangler } from "./setup.ts";
 
+/**
+ * On Windows npm, pnpm and yarn are .cmd files, which only a shell can start. A shell joins the
+ * arguments without quoting them, so git and gh, whose arguments hold spaces (a commit message),
+ * never get one: they are real programs and start without it.
+ */
+export const usesShell = (cmd: string, platform: string = process.platform) =>
+  platform === "win32" && cmd !== "git" && cmd !== "gh";
+
 /** Runs a command, streaming its output, and rejects when it fails. */
 export const run = (cmd: string, args: ReadonlyArray<string>, cwd: string) =>
   new Promise<void>((resolve, reject) => {
-    const result = spawnSync(cmd, args, {
-      cwd,
-      stdio: "inherit",
-      shell: process.platform === "win32",
-    });
+    const result = spawnSync(cmd, args, { cwd, stdio: "inherit", shell: usesShell(cmd) });
     if (result.status === 0) resolve();
     else
       reject(new Error(`${cmd} ${args.join(" ")} exited with ${result.status ?? result.signal}`));
@@ -34,11 +38,16 @@ export const projectWrangler =
     return { ok: result.status === 0, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   };
 
-/** Runs `cmd` (gh, git) in `cwd` and captures its output; `input` goes to stdin. */
+/** Runs `cmd` (gh, git, a package manager) in `cwd` and captures its output; `input` goes to stdin. */
 export const capture =
   (cmd: string, cwd: string): Wrangler =>
   (args, input) => {
-    const result = spawnSync(cmd, [...args], { cwd, input, encoding: "utf8" });
+    const result = spawnSync(cmd, [...args], {
+      cwd,
+      input,
+      encoding: "utf8",
+      shell: usesShell(cmd),
+    });
     return { ok: result.status === 0, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   };
 

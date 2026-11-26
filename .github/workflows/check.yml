@@ -104,6 +104,8 @@ jobs:
       - run: bun run --cwd packages/lint build
       - run: bun run --cwd packages/lint test
       - run: bun run --cwd packages/blocks test
+      # How the CLI starts git and the package managers differs on Windows; the rest of it does not.
+      - run: bun test apps/cli/src/run.test.ts
 
   # A pull request's own commits must hold no keys; a push to staging checks the files as they stand.
   # Build a test value that looks like a key from parts, as redact.test.ts does. An allow comment
