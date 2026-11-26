@@ -35,8 +35,9 @@ describe("posthogAdapter", () => {
       app_version: "v1.2.0",
     });
     const identify = {
-      ...batch[0],
       event: { _tag: "user_identified" as const, anonId: "anon:a1" },
+      distinctId: "u1",
+      timestamp: "2026-01-01T00:00:00Z",
     };
     await Effect.runPromise(posthogAdapter("k", "https://ph.example", "v1.2.0").send([identify]));
     const [, sent] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
