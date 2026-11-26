@@ -1,6 +1,6 @@
 # @tanstack-cf-saas/blocks
 
-## 0.2.0
+## 0.1.0
 
 ### Minor Changes
 
@@ -35,4 +35,4 @@
 - Updated dependencies [60d28cb]
 - Updated dependencies [0408a75]
 - Updated dependencies [7fe29b2]
-  - @tanstack-cf-saas/lint@0.2.0
+  - @tanstack-cf-saas/lint@0.1.0
