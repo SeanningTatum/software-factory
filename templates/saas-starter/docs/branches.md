@@ -91,16 +91,16 @@ The rules are files: `.github/rulesets/staging.json` and `production.json`. Appl
 `bunx create-tanstack-cf-saas github`, and run it again after you change one. GitHub can also
 import them by hand (Settings → Rules → Rulesets → Import).
 
-| Rule                                 | On                      | Why                                                                                                |
-| ------------------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------- |
-| Changes come by pull request         | `staging`               | Nothing lands on `staging` without its checks.                                                     |
-| No pull-request rule                 | `production`            | A merge would add a commit `staging` never had. A push of `staging`'s own commit keeps one head.   |
-| No force push, no delete             | `staging`, `production` | History that has been deployed stays.                                                              |
-| `check`, `secrets`, `e2e` must pass  | `staging`, `production` | The full checks in `ci.yml`. `production` takes a commit only once they passed on it.              |
-| `timeline` must pass                 | `staging`               | Every changed feature gets a line in its `TIMELINE.md`.                                            |
-| `staging` (the deploy job) must pass | `production`            | The commit you promote has already been migrated, deployed and smoke-tested on staging.            |
-| Squash merges only                   | `staging`               | One pull request is one commit on `staging`, named by the pull request's title.                    |
-| `title` must pass                    | `staging`               | With the commit hooks, the title must be a conventional commit, like `fix(auth): expire sessions`. |
+| Rule                                 | On                      | Why                                                                                              |
+| ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------ |
+| Changes come by pull request         | `staging`               | Nothing lands on `staging` without its checks.                                                   |
+| No pull-request rule                 | `production`            | A merge would add a commit `staging` never had. A push of `staging`'s own commit keeps one head. |
+| No force push, no delete             | `staging`, `production` | History that has been deployed stays.                                                            |
+| `check`, `secrets`, `e2e` must pass  | `staging`, `production` | The full checks in `ci.yml`. `production` takes a commit only once they passed on it.            |
+| `timeline` must pass                 | `staging`               | Every changed feature gets a line in its `TIMELINE.md`.                                          |
+| `staging` (the deploy job) must pass | `production`            | The commit you promote has already been migrated, deployed and smoke-tested on staging.          |
+| Squash merges only                   | `staging`               | One pull request is one commit on `staging`, named by the pull request's title.                  |
+| `title` must pass                    | `staging`               | With the hooks, the title is a scoped conventional commit, like `fix(auth): expire sessions`.    |
 
 One gate is not a rule, because a ruleset cannot ask for a tag. The production job in `deploy.yml`
 starts by checking that the commit is on `staging` and has a `v*` tag, and deploys nothing

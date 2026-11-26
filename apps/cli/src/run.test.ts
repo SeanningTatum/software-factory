@@ -14,7 +14,7 @@ test("only package managers on Windows go through a shell", () => {
 // check.yml runs this file on Windows too, where a shell would split the message at its spaces.
 test("a commit message with spaces reaches git whole", async () => {
   const dir = mkdtempSync(join(tmpdir(), "cli-run-"));
-  const message = "chore: create project with create-tanstack-cf-saas 0.1.0";
+  const message = "chore(scaffold): create project with create-tanstack-cf-saas 0.1.0";
   await run("git", ["init", "--quiet"], dir);
   const commit = ["commit", "--quiet", "--allow-empty", "--no-verify", "-m", message];
   await run("git", [...gitIdentity(dir), ...commit], dir);

@@ -65,10 +65,11 @@ Husky runs two hooks from `.husky/` on every commit. `bun install` turns them on
 in a fresh clone or worktree. The CLI's bundle ships the same two files to each new project that
 asks for them, so a change to a hook is a change to what `create` hands out.
 
-- **The message is a conventional commit:** `type(scope): subject`, with the scope optional and the
-  type one of `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`,
-  `revert`. The subject says what changed, as in `fix(billing): keep Stripe's status after a late
-  webhook`.
+- **The message is a conventional commit:** `type(scope): subject`, with the type one of `feat`,
+  `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. The scope is
+  required and names the part that changed: `template`, `cli`, a package or a feature, or `global`
+  for a change across them. The subject says what changed, as in `fix(billing): keep Stripe's
+  status after a late webhook`.
 - **A commit does one thing and adds at most 400 lines of code.** Markdown, lockfiles, `src/gen/`
   and `drizzle/` do not count. Commit each step of a feature as soon as it works (the schema, then
   the service, then the page), each with its tests, instead of one commit at the end.
