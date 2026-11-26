@@ -78,3 +78,6 @@ small pull requests on each other: they get `pr.yml`; the one into `staging` get
 `bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
 pull request; on `production` it publishes `packages/*` and the CLI under the `@tanstack-cf-saas`
 npm scope (claim it before the first publish).
+
+`RELEASING.md` has the steps: merge the version pull request, `bun run promote`, merge the promotion
+with a merge commit. `/release` has Claude follow it.
