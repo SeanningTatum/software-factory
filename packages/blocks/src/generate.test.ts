@@ -83,6 +83,18 @@ describe("generateFiles", () => {
     expect(text).toContain('export const routes = rootRoute("__root.tsx", []);');
   });
 
+  test("hands Better Auth the tables of a feature that adds auth plugins", () => {
+    const billing = feature("billing", { requires: ["auth"] });
+    const withBilling = new Map([...manifests, ["billing", billing]]);
+    const both = ["src/features/billing/auth-plugins.ts", "src/features/billing/schema.ts"];
+    const text = generateFiles(project(both), withBilling).get("src/gen/auth-plugins.ts");
+    expect(text).toContain('import * as billingTables from "../features/billing/schema.ts";');
+    expect(text).toContain("export const featureAuthTables = { ...billingTables };");
+    // A feature with plugins and no tables, and a project with no such feature, give it nothing.
+    const none = generateFiles(project(both.slice(0, 1)), withBilling).get("src/gen/auth-plugins.ts");
+    expect(none).toContain("export const featureAuthTables = {};");
+  });
+
   test("gathers contributions from feature folders and core modules", () => {
     expect(files.get("src/gen/layers.ts")).toContain(
       'import { layer as db } from "../features/core/db/layer.ts";',

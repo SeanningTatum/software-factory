@@ -9,7 +9,7 @@ import { clearAnonIdCookie, readAnonId } from "#/features/core/analytics/lib/bro
 import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
-import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
+import { featureAuthPlugins, featureAuthTables } from "#/gen/auth-plugins.ts";
 import { authEvents, SIGN_OUT } from "../lib/auth-events.ts";
 import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
@@ -59,8 +59,11 @@ export class Auth extends Context.Service<
       requireUser: Effect.fail(new NotConfigured({ setting })),
     });
 
-  /** Auth with the given plugin factories; `layer` uses every enabled feature's. */
-  static readonly layerWith = (factories: ReadonlyArray<AuthPluginFactory>) =>
+  /** Auth with the given plugin factories and their tables; `layer` uses every enabled feature's. */
+  static readonly layerWith = (
+    factories: ReadonlyArray<AuthPluginFactory>,
+    tables: Record<string, unknown> = {},
+  ) =>
     Layer.effect(
       Auth,
       Effect.gen(function* () {
@@ -92,7 +95,7 @@ export class Auth extends Context.Service<
           } else if (level === "warn") warnings.push([message, {}]);
         };
         const plugins = [captchaPlugin, ...factories].flatMap((factory) => factory(deps));
-        const instance = makeAuth(config, database.db, plugins, log);
+        const instance = makeAuth(config, database.db, plugins, log, tables);
 
         /** Writes one audit row. A failed write is logged, never the user's problem. */
         const audit = Effect.fn("Auth.audit")(function* (event: AnalyticsEvent, actorId?: string) {
@@ -304,5 +307,8 @@ export class Auth extends Context.Service<
       }),
     );
 
-  static readonly layer = Auth.layerWith(featureAuthPlugins as ReadonlyArray<AuthPluginFactory>);
+  static readonly layer = Auth.layerWith(
+    featureAuthPlugins as ReadonlyArray<AuthPluginFactory>,
+    featureAuthTables,
+  );
 }

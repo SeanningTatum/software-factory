@@ -3,6 +3,10 @@ import type { AuthContext } from "better-auth";
 import Stripe from "stripe";
 import { describe, expect, it, vi } from "vitest";
 import type { AppEnv } from "#/app/env.ts";
+import { makeAuth } from "#/features/auth/api/auth.ts";
+import { authSchema } from "#/features/auth/schema.ts";
+import { makeTestDb } from "#/features/core/db/api/test-database.ts";
+import { featureAuthTables } from "#/gen/auth-plugins.ts";
 import { authPlugins, billingPlugins, webhookRetry } from "./auth-plugins.ts";
 
 const deps = (env: Record<string, string>) => ({
@@ -45,8 +49,32 @@ describe("webhookRetry", () => {
     expect(await answer("/sign-up/email", 1)).toBe(200));
 });
 
-// shortcut: calls the hook directly; a webhook end to end needs the subscription table in Better
-// Auth's Drizzle schema, which auth does not pass yet.
+describe("the subscription table", () => {
+  it("is one Better Auth can write, so a checkout or a webhook can store a plan", async () => {
+    const db = await makeTestDb({ ...authSchema, ...featureAuthTables });
+    const auth = makeAuth(
+      { secret: "x".repeat(32), baseURL: "https://x.dev", trustedOrigins: [] },
+      db,
+      billingPlugins(new Stripe("sk_test_x"), "whsec_x", deps({})),
+      () => undefined,
+      featureAuthTables,
+    );
+    const { adapter } = await auth.$context;
+    const row = await adapter.create<Record<string, unknown>, { id: string }>({
+      model: "subscription",
+      data: { plan: "pro", referenceId: "u1", status: "incomplete" },
+    });
+    const where = [{ field: "id", value: row.id }];
+    await adapter.update({ model: "subscription", where, update: { status: "active" } });
+    expect(await adapter.findOne({ model: "subscription", where })).toMatchObject({
+      plan: "pro",
+      referenceId: "u1",
+      status: "active",
+    });
+  });
+});
+
+// shortcut: calls the hook directly, not through a signed webhook; B-07 runs one end to end.
 describe("a late subscription update", () => {
   type UpdateData = Parameters<NonNullable<SubscriptionOptions["onSubscriptionUpdate"]>>[0];
   const run = async (written: string, inStripe: string) => {
