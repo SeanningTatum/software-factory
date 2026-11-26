@@ -423,9 +423,9 @@ const offerCloudflare = async (
 /** Commits wrangler.jsonc when setup changed it; CI deploys from what is committed. */
 const commitWrangler = async (dir: string) => {
   if (!capture("git", dir)(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) return;
-  await run("git", ["add", WRANGLER_FILE], dir);
+  // Only this file: whatever else is staged is the owner's own work, and not for this commit.
   const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
-  await run("git", [...gitIdentity(dir), ...commit], dir);
+  await run("git", [...gitIdentity(dir), ...commit, "--", WRANGLER_FILE], dir);
 };
 
 const GITHUB = "create-tanstack-cf-saas github";
