@@ -98,6 +98,8 @@ for (const [name, features] of Object.entries(combos)) {
     targetDir: dir,
     name: `matrix-${name}`,
     features,
+    // One combination runs every gate without .github/, as a project made with --no-github does.
+    github: name !== "required",
   }).features;
   console.log(`\n${name}: ${kept.length ? kept.join(", ") : "required features only"}`);
   linkLocal(dir, tarballs);

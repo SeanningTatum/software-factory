@@ -1,0 +1,38 @@
+# The button for a release: Actions → promote → Run workflow. It tags staging's tip and moves
+# production to it in one push, under the same ruleset as that push from a laptop
+# (docs/branches.md has the command).
+name: promote
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The version tag, such as v1.2.0
+        required: true
+permissions: {}
+concurrency: promote
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    # contents pushes the tag and the branch; actions starts deploy.yml.
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: staging # staging's tip, whichever branch the button was pressed on
+          fetch-depth: 0 # a push from a shallow clone can be refused
+      - name: Tag staging's tip and move production to it
+        env:
+          TAG: ${{ inputs.tag }}
+        # No --force, ever: a refused push means a check has not passed on this commit yet.
+        run: |
+          case $TAG in
+            v?*) ;;
+            *) echo "::error::The tag must start with v: deploy.yml looks for v*."; exit 1 ;;
+          esac
+          git push --atomic origin "HEAD:refs/tags/$TAG" HEAD:refs/heads/production
+      # A push made with GITHUB_TOKEN starts no workflow, so deploy.yml is started by hand.
+      - run: gh workflow run deploy.yml --ref production
+        env:
+          GH_TOKEN: ${{ github.token }}

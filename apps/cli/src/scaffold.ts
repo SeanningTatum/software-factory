@@ -6,6 +6,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -21,6 +22,8 @@ export interface ScaffoldOptions {
   readonly harnessDir: string | undefined;
   /** The commit hooks to add; undefined leaves husky out. */
   readonly huskyDir?: string | undefined;
+  /** False leaves out the GitHub workflows, the rulesets and the doc that draws them. */
+  readonly github?: boolean;
   readonly targetDir: string;
   readonly name: string;
   /** Optional features and core modules to keep; required ones are always kept. */
@@ -221,6 +224,16 @@ const installHusky = (huskyDir: string, dir: string) => {
   });
 };
 
+/** What only the GitHub side uses. The README's part on it sits between `github` markers. */
+const GITHUB_FILES = [".github", "docs/branches.md"];
+const GITHUB_README = /<!-- github:start -->[\s\S]*?<!-- github:end -->\n*/g;
+
+/** Takes out the workflows, the rulesets, their doc and the README's words about them. */
+const removeGithub = (dir: string) => {
+  for (const path of GITHUB_FILES) rmSync(join(dir, path), { recursive: true, force: true });
+  edit(join(dir, "README.md"), (text) => text.replace(GITHUB_README, ""));
+};
+
 /**
  * Copies the template, keeps the required features and the chosen ones (and what they require), names
  * the project, starts each feature's History, and adds the Claude harness and the commit hooks.
@@ -266,5 +279,6 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
 
   if (harnessDir && existsSync(harnessDir)) installHarness(harnessDir, targetDir);
   if (huskyDir && existsSync(huskyDir)) installHusky(huskyDir, targetDir);
+  if (options.github === false) removeGithub(targetDir);
   return { features: kept };
 };

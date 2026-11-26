@@ -77,7 +77,8 @@ way down.
 └
 ```
 
-After the features it asks about the Claude workflows and the commit hooks, then builds the
+After the features it asks about the Claude workflows, the commit hooks and the GitHub workflows,
+then builds the
 project: it copies the template, installs packages, writes the first migration, applies it to the
 local database, and makes the first commit.
 
@@ -86,6 +87,9 @@ local database, and makes the first commit.
 │  Yes
 │
 ◇  Add husky commit hooks (conventional messages, small commits)?
+│  Yes
+│
+◇  Add the GitHub workflows and branch rules (.github/: CI, deploys, the promote button)?
 │  Yes
 │
 ◇  Created my-saas with db, auth
@@ -130,6 +134,7 @@ create-tanstack-cf-saas my-saas --features db,auth,uploads --yes
 | `--name my-saas`            | The project name, if it differs from the folder.         |
 | `--pm bun`                  | The package manager: `bun`, `pnpm`, `npm` or `yarn`.     |
 | `--no-claude`, `--no-husky` | Leave out the Claude workflows or the commit hooks.      |
+| `--no-github`               | Leave out `.github/`: CI, deploys and the branch rules.  |
 | `--no-install`, `--no-git`  | Don't install packages, or don't make a git repository.  |
 
 `create-tanstack-cf-saas --help` lists every command.

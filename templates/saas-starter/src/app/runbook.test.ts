@@ -1,8 +1,10 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /** The runbook promises logs, an export and two alerts. This fails when the config behind them is gone. */
 const read = (path: string) => readFileSync(path, "utf8");
+/** A project made with --no-github has no workflows or rulesets to hold to these. */
+const noGithub = !existsSync(".github");
 
 describe("runbook config", () => {
   it("keeps Workers Logs on and marks the Worker for Logpush", () => {
@@ -16,7 +18,7 @@ describe("runbook config", () => {
     expect(feature.secrets).toHaveProperty("ALERT_WEBHOOK_URL");
   });
 
-  it("posts to the webhook when the production smoke test fails", () => {
+  it.skipIf(noGithub)("posts to the webhook when the production smoke test fails", () => {
     const deploy = read(".github/workflows/deploy.yml");
     expect(deploy).toMatch(/ALERT_WEBHOOK_URL: \$\{\{ secrets\.ALERT_WEBHOOK_URL \}\}/);
     // The alert goes before the rollback, so a failed rollback still alerts.
@@ -40,7 +42,7 @@ describe("migrations", () => {
 });
 
 /** The rulesets name workflow jobs as required checks; a renamed job would block every merge. */
-describe("branch rules", () => {
+describe.skipIf(noGithub)("branch rules", () => {
   const workflow = (name: string) => read(`.github/workflows/${name}.yml`);
   const job = (name: string) => new RegExp(`^  ${name}:$`, "m");
   const required = (branch: string): Array<string> =>
@@ -86,5 +88,15 @@ describe("branch rules", () => {
     expect(workflow("deploy")).toMatch(
       /production:\n(\s+#.*\n)*\s+if: \$\{\{ github\.ref_name == 'production' && !github\.event\.created/,
     );
+  });
+
+  it("promotes by one unforced push, then starts the deploy that push cannot", () => {
+    const promote = workflow("promote");
+    expect(promote).toMatch(
+      /git push --atomic origin "HEAD:refs\/tags\/\$TAG" HEAD:refs\/heads\/production/,
+    );
+    expect(promote).not.toMatch(/^\s*git push.*(--force|-f\b)/m);
+    expect(promote).toMatch(/gh workflow run deploy\.yml --ref production/);
+    expect(workflow("deploy")).toMatch(/^ {2}workflow_dispatch:$/m);
   });
 });

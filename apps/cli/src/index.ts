@@ -42,6 +42,12 @@ const createCommand = defineCommand({
       default: true,
       description: "Add husky hooks for conventional, small commits (--no-husky to skip)",
     },
+    github: {
+      type: "boolean",
+      default: true,
+      description:
+        "Add the GitHub workflows and branch rules: CI, deploys and the promote button (--no-github to skip)",
+    },
     install: {
       type: "boolean",
       default: true,
@@ -58,6 +64,7 @@ const createCommand = defineCommand({
       yes: args.yes,
       claude: args.claude,
       husky: args.husky,
+      github: args.github,
       install: args.install,
       git: args.git,
     }),

@@ -85,6 +85,10 @@ git push --atomic origin origin/staging:refs/tags/v1.2.0 origin/staging:refs/hea
 The one push makes the tag and moves `production` to the commit `staging` is on, or does neither.
 It adds no commit, so nothing merges and the tag names exactly what is live. Never add `--force`.
 
+The same release is a button: on GitHub, Actions → promote → Run workflow, and type the tag.
+`promote.yml` makes that one push from `staging`'s tip, under the same rules, then starts
+`deploy.yml` on `production` itself, because a push made by a workflow starts no other workflow.
+
 ## The rules, and why each is there
 
 The rules are files: `.github/rulesets/staging.json` and `production.json`. Apply them with
@@ -161,5 +165,5 @@ nothing deploys. `runbook.test.ts` fails if either drifts.
 
 ## Add your own workflows
 
-Put them beside the four in `.github/workflows/`. To make a new job a required check, add its name
+Put them beside the five in `.github/workflows/`. To make a new job a required check, add its name
 to the ruleset file and run `github` again. Never require a job that an `if` can skip.

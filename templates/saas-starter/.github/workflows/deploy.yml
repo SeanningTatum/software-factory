@@ -17,6 +17,8 @@ name: deploy
 on:
   push:
     branches: [staging, production]
+  # promote.yml starts this on production: the push it makes with GITHUB_TOKEN starts no workflow.
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency: deploy-${{ github.ref_name }}

@@ -7,6 +7,8 @@ export interface CreatePlan {
   readonly claude: boolean;
   /** Commit hooks: conventional messages and a cap on lines added. Needs git. */
   readonly husky: boolean;
+  /** The GitHub workflows and branch rules in `.github/`. */
+  readonly github: boolean;
   readonly install: boolean;
   readonly git: boolean;
   /** Values for .dev.vars, asked for when a chosen feature can't work without them. */

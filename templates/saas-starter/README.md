@@ -34,6 +34,8 @@ bun run deploy:staging               # by hand; CI does both once the repository
 bun run deploy
 ```
 
+<!-- github:start -->
+
 Two branches deploy. `staging` is the default branch, and a push to it deploys staging.
 `production` deploys production. It takes no pull requests: a release tags `staging`'s tip and
 moves `production` to that same commit in one push, so both branches share one head:
@@ -43,12 +45,16 @@ git fetch origin
 git push --atomic origin origin/staging:refs/tags/v1.2.0 origin/staging:refs/heads/production
 ```
 
+The same release is a button on GitHub: Actions → promote → Run workflow, with the tag.
+
 Work in small pull requests stacked on each other. One whose base is another branch gets the short
 checks in `pr.yml` (lint, types, unit tests, a scan for keys). The pull request that rolls the
 stack up into `staging` gets all of `ci.yml`, the same checks production requires. The rules live
 in `.github/rulesets/`; change a file and run `github` again to apply it. Add your own workflows
-beside the four in `.github/workflows/`. `docs/branches.md` draws the whole flow and says why each
+beside the five in `.github/workflows/`. `docs/branches.md` draws the whole flow and says why each
 rule is there.
+
+<!-- github:end -->
 
 ## Layout
 
