@@ -1,18 +1,12 @@
 #!/bin/sh
-# Self-check for promote.sh, run by `bun run check`. It uses a throwaway origin and a stub gh, so
-# nothing leaves this machine.
+# Self-check for promote.sh, run by `bun run check`. It uses a throwaway origin, so nothing leaves
+# this machine.
 set -eu
 script=$(cd "$(dirname "$0")" && pwd)/promote.sh
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-mkdir "$tmp/bin"
-cat > "$tmp/bin/gh" <<'STUB'
-#!/bin/sh
-if [ "$2" = list ]; then echo "${OPEN_PR:-}"; else echo "gh $1 $2"; fi
-STUB
-chmod +x "$tmp/bin/gh"
-export PATH="$tmp/bin:$PATH" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
   GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
 
 cd "$tmp"
@@ -20,8 +14,9 @@ git init -q --bare origin.git
 git init -q -b staging work
 cd work
 git remote add origin ../origin.git
-mkdir .changeset
+mkdir -p .changeset apps/cli
 echo readme > .changeset/README.md
+printf '{\n  "name": "cli",\n  "version": "1.2.3",\n  "private": true\n}\n' > apps/cli/package.json
 git add .
 git commit -qm init
 git push -q origin staging staging:production
@@ -53,19 +48,31 @@ git push -q origin staging
 expect fail "must start with v" 9.9.9
 [ -z "$(tags)" ]
 
-expect ok "gh pr create"
-tag=$(tags)
-case $tag in v20*) ;; *) echo "wanted a date tag, got '$tag'" >&2; exit 1 ;; esac
+head() { git ls-remote origin "refs/heads/$1" | cut -f1; }
 
-# From here the promotion is open. A second run reuses the tag and opens nothing.
-export OPEN_PR=https://example.test/pull/1
-expect ok "Tagged $tag. The promotion is already open"
+expect ok "Promoted v1.2.3"
+[ "$(tags)" = v1.2.3 ]
+[ "$(head production)" = "$(head staging)" ]
+expect fail "Nothing to release"
 
-# The tip moves: the old name is refused, a new one tags the new tip.
+# The tip moves and the CLI's version does not: the name is taken, another tags the new tip.
 git commit -q --allow-empty -m late
 git push -q origin staging
-expect fail "already exists" "$tag"
-expect ok "Tagged $tag.2. The promotion is already open" "$tag.2"
+expect fail "already exists"
+expect ok "Promoted v1.2.4" v1.2.4
 [ "$(tags | wc -l)" -eq 2 ]
+
+# Production with a commit of its own cannot fast-forward: the push is refused, never forced.
+git commit -q --allow-empty -m next
+git push -q origin staging
+git push -q origin "$(git commit-tree -p origin/production -m stray 'HEAD^{tree}'):refs/heads/production"
+stray=$(head production)
+expect fail "production did not move" v9
+[ "$(head production)" = "$stray" ]
+
+# With production gone, the next run reuses the tag the refused one left and makes the branch.
+git push -q origin --delete production
+expect ok "Promoted v9"
+[ "$(head production)" = "$(head staging)" ]
 
 echo "promote.sh: ok"

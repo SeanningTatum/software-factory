@@ -2,7 +2,9 @@
 
 A release publishes five packages to npm: `create-tanstack-cf-saas` and the four under
 `@tanstack-cf-saas/` (`biome-config`, `tsconfig`, `lint`, `blocks`). The template ships inside the
-CLI. Code moves `staging` → `production`; only `production` publishes.
+CLI. Code moves `staging` → `production`; only `production` publishes. A release adds no commit:
+`production` moves to the commit `staging` is on, so both branches share one head and every tag of
+a release sits on it.
 
 ## With every change
 
@@ -16,14 +18,16 @@ to the template alone needs a changeset for the CLI, which carries it.
 
 ## Ship a release
 
-| Step | Do                                                        | What happens                                               |
-| ---- | --------------------------------------------------------- | ---------------------------------------------------------- |
-| 1    | Merge the "Version Packages" pull request into `staging`. | Versions are bumped, changelogs written, changesets spent. |
-| 2    | `bun run promote`                                         | Tags `staging`'s tip `v<date>`, opens the promotion.       |
-| 3    | Merge the promotion with a **merge commit**.              | `release.yml` publishes and makes the GitHub releases.     |
-| 4    | `npm view create-tanstack-cf-saas version`                | Shows the version you just shipped.                        |
+| Step | Do                                                        | What happens                                                    |
+| ---- | --------------------------------------------------------- | --------------------------------------------------------------- |
+| 1    | Merge the "Version Packages" pull request into `staging`. | Versions are bumped, changelogs written, changesets spent.      |
+| 2    | Wait for `check.yml` to pass on `staging`.                | `production` takes only a commit the checks passed on.          |
+| 3    | `bun run promote`                                         | Tags `staging`'s tip, moves `production` to it; that publishes. |
+| 4    | `npm view create-tanstack-cf-saas version`                | Shows the version you just shipped.                             |
 
-`/release` has Claude do all four and ask before each merge.
+The tag is `v<the CLI's version>`, as in `v0.1.0`; `release.yml` publishes to npm and makes the
+GitHub releases. Nothing merges into `production`: no pull request, no merge commit, never a
+force-push. `/release` has Claude do all four and ask before the merge and before the promotion.
 
 ## Set up once
 
@@ -40,12 +44,20 @@ to the template alone needs a changeset for the CLI, which carries it.
 
 ## When it goes wrong
 
-| You see                                                 | Do this                                                                                |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| The version pull request's checks are missing or stale. | Close and reopen it. A push by Actions starts no checks.                               |
-| `promote` says "unversioned changesets".                | Do step 1 first.                                                                       |
-| The `promote` check says "No version tag".              | Something merged after you tagged. Run `bun run promote` again, then re-run the check. |
-| `git tag` says the tag exists.                          | Today's name is taken. Pass another: `bun run promote v2026.11.25.2`.                  |
-| Publish fails with 401 or 403.                          | The token expired or lacks the scope. Replace `NPM_TOKEN`, re-run the job.             |
-| Publish failed part way.                                | Re-run the job. It skips versions already on npm.                                      |
-| A bad version is live.                                  | Fix forward with a new release. `npm deprecate` the bad one; never unpublish.          |
+| You see                                                  | Do this                                                                             |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| The version pull request's checks are missing or stale.  | Close and reopen it. A push by Actions starts no checks.                            |
+| `promote` says "unversioned changesets".                 | Do step 1 first.                                                                    |
+| `promote` says "production did not move".                | `check.yml` has not passed on `staging`'s tip: wait, then run it again.             |
+| The same, and git says "non-fast-forward".               | `production` has a commit `staging` lacks. Rebuild it: see below.                   |
+| `git tag` says the tag exists.                           | The CLI's version did not change. Pass a name: `bun run promote v0.1.1`.            |
+| `release.yml` fails at "On staging, with a version tag". | `production` moved without `bun run promote`. Tag that commit `v…`, re-run the job. |
+| npm refuses `create-tanstack-cf-saas@0.2.0`.             | That number was used and withdrawn on 2026-11-26; npm never frees one. Use `0.2.1`. |
+| Publish fails with 401 or 403.                           | The token expired or lacks the scope. Replace `NPM_TOKEN`, re-run the job.          |
+| Publish failed part way.                                 | Re-run the job. It skips versions already on npm.                                   |
+| A bad version is live.                                   | Fix forward with a new release. `npm deprecate` the bad one; never unpublish.       |
+
+**Rebuilding `production`.** If a commit ever lands on `production` first, the branches cannot share
+a head again until it is gone. In the `production` ruleset turn off "Restrict deletions", delete the
+branch, run `bun run promote` (it makes the branch at `staging`'s tip), and send the ruleset again as
+"Branch rules" above says.
