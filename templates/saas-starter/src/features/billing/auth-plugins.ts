@@ -8,6 +8,10 @@ import { unexpectedChange } from "./lib/subscription-change.ts";
 
 const WEBHOOK_PATH = "/stripe/webhook";
 const SERVER_ERROR = 500;
+const MS_PER_SECOND = 1000;
+
+/** Stripe gives times in seconds, and null for one that has not happened. */
+const dateOf = (seconds: number | null) => (seconds ? new Date(seconds * MS_PER_SECOND) : null);
 
 /**
  * The Stripe plugin catches a failed webhook (a D1 error, say), logs it and still answers 200, so
@@ -83,15 +87,29 @@ export const billingPlugins = (
               ...change,
               subscriptionId: subscription.id,
             });
-          // The plugin copies each event's status without comparing times, so a late or retried
-          // event can undo a newer one (bring a canceled subscription back). Stripe's status wins.
+          // The plugin copies each event without comparing times, so a late or retried event can
+          // undo a newer one: bring a canceled subscription back, or drop a cancel at period end.
+          // Whatever the event said, write what Stripe says now.
           const current = await stripeClient.subscriptions.retrieve(stripeSubscription.id);
-          if (current.status !== subscription.status)
-            await adapter?.update({
-              model: "subscription",
-              where: [{ field: "id", value: subscription.id }],
-              update: { status: current.status },
-            });
+          // shortcut: the first item's period; with several items a subscription, find the plan's as the plugin does.
+          const item = current.items.data[0];
+          await adapter?.update({
+            model: "subscription",
+            where: [{ field: "id", value: subscription.id }],
+            update: {
+              status: current.status,
+              cancelAtPeriodEnd: current.cancel_at_period_end,
+              cancelAt: dateOf(current.cancel_at),
+              canceledAt: dateOf(current.canceled_at),
+              endedAt: dateOf(current.ended_at),
+              ...(item
+                ? {
+                    periodStart: dateOf(item.current_period_start),
+                    periodEnd: dateOf(item.current_period_end),
+                  }
+                : {}),
+            },
+          });
         },
       },
     }),
