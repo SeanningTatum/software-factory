@@ -75,7 +75,11 @@ describe("pre-commit", () => {
   test("lets a merge, a revert and a cherry-pick through", () => {
     for (const head of ["MERGE_HEAD", "REVERT_HEAD", "CHERRY_PICK_HEAD"]) {
       const dir = staged(401, "a.ts");
-      git(dir, "update-ref", head, "HEAD");
+      // Newer git refuses update-ref on MERGE_HEAD, which it keeps as a plain file.
+      if (head === "MERGE_HEAD")
+        writeFileSync(join(dir, ".git", head), git(dir, "rev-parse", "HEAD").stdout);
+      else git(dir, "update-ref", head, "HEAD");
+      expect([head, git(dir, "rev-parse", "--verify", head).status]).toEqual([head, 0]);
       expect([head, passes("pre-commit", dir)]).toEqual([head, true]);
     }
   });
