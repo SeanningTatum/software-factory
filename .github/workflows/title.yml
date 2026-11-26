@@ -23,5 +23,13 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
+          # The hook passes the lines git writes itself. A title is written by a person, and
+          # squashing makes it the commit, so here those are refused.
+          case "$TITLE" in
+            "Merge "* | 'Revert "'* | "fixup! "* | "squash! "*)
+              echo "title: \"$TITLE\" is not a conventional commit. Write it as type(scope): subject." >&2
+              exit 1
+              ;;
+          esac
           printf '%s\n' "$TITLE" > "$RUNNER_TEMP/title"
           sh .husky/commit-msg "$RUNNER_TEMP/title"

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -34,6 +34,27 @@ describe("commit-msg", () => {
   test("refuses anything else", () => {
     for (const message of ["Add husky", "feat add husky", "feat:no space", "Feat: x", "feat: "])
       expect([message, accepts(message)]).toEqual([message, false]);
+  });
+});
+
+// A squashed pull request's title becomes the commit, so title.yml runs the hook on it.
+describe.each([
+  ["this repo's", join(import.meta.dirname, "../../../.github/workflows/title.yml")],
+  ["a new project's", join(import.meta.dirname, "../template/.github/workflows/title.yml")],
+])("%s title.yml", (_, workflow) => {
+  /** The step's script, run as the runner would: in a checkout that holds `.husky`. */
+  const accepts = (title: string) => {
+    const dir = temp();
+    cpSync(HOOKS, join(dir, ".husky"), { recursive: true });
+    const script = (readFileSync(workflow, "utf8").split("run: |\n")[1] ?? "").replace(/^ +/gm, "");
+    const env = { ...process.env, TITLE: title, RUNNER_TEMP: dir };
+    return spawnSync("sh", ["-e", "-c", script], { cwd: dir, env }).status === 0;
+  };
+
+  test("takes a conventional title and refuses the lines only git writes", () => {
+    expect(accepts("fix(billing): keep Stripe's status")).toBe(true);
+    for (const title of ["Merge everything", 'Revert "feat: add husky"', "fixup! x", "Add husky"])
+      expect([title, accepts(title)]).toEqual([title, false]);
   });
 });
 
