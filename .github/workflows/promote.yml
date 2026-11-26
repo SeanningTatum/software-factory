@@ -1,0 +1,30 @@
+# The button for `bun run promote`: Actions → promote → Run workflow. It tags staging's tip and
+# moves production to it by a fast-forward, under the same ruleset as a push from a laptop.
+name: promote
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag, when it is not v<the CLI's version>
+        required: false
+permissions: {}
+concurrency: promote
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    # contents pushes the tag and the branch; actions starts release.yml.
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: staging # the script is staging's, whichever branch the button was pressed on
+          fetch-depth: 0
+      - run: sh scripts/promote.sh "$TAG"
+        env:
+          TAG: ${{ inputs.tag }}
+      # A push made with GITHUB_TOKEN starts no workflow, so release.yml is started by hand.
+      - run: gh workflow run release.yml --ref production
+        env:
+          GH_TOKEN: ${{ github.token }}
