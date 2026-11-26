@@ -101,6 +101,8 @@ import them by hand (Settings → Rules → Rulesets → Import).
 | `timeline` must pass                 | `staging`               | Every changed feature gets a line in its `TIMELINE.md`.                                             |
 | `promote` must pass                  | `production`            | Only `staging` merges in, and only at a tagged commit: the tag names what you shipped.              |
 | `staging` (the deploy job) must pass | `production`            | The commit you promote has already been migrated, deployed and smoke-tested on staging.             |
+| Squash merges only                   | `staging`               | One pull request is one commit on `staging`, named by the pull request's title.                     |
+| `title` must pass                    | `staging`               | With the commit hooks, the title must be a conventional commit, like `fix(auth): expire sessions`.  |
 | Merge commits only                   | `production`            | A squash would give `production` a commit `staging` never had, and the next release would conflict. |
 
 No rule asks for an approving review, so one person can run the whole flow. Add reviewers in the

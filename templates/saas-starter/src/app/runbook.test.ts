@@ -49,11 +49,21 @@ describe("branch rules", () => {
       .parameters.required_status_checks.map((c: { context: string }) => c.context);
 
   it("requires only checks a workflow runs, and the short checks share none of their names", () => {
-    const sources = ["ci", "promote", "deploy"].map(workflow).join("\n");
+    const sources = ["ci", "promote", "deploy", "title"].map(workflow).join("\n");
     for (const context of [...required("staging"), ...required("production")]) {
       expect(sources).toMatch(job(context));
       expect(workflow("pr")).not.toMatch(job(context));
     }
+  });
+
+  it("lets staging move only by a squash whose title was checked", () => {
+    const { parameters } = JSON.parse(read(".github/rulesets/staging.json")).rules.find(
+      (r: { type: string }) => r.type === "pull_request",
+    );
+    expect(parameters.allowed_merge_methods).toEqual(["squash"]);
+    expect(required("staging")).toContain("title");
+    // A fixed title must clear the check without a push.
+    expect(workflow("title")).toMatch(/types: \[.*\bedited\b.*\]/);
   });
 
   it("lets production move only by a tagged pull request from staging", () => {
