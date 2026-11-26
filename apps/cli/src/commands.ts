@@ -477,13 +477,37 @@ export const add = (arg: string) => {
   const feature = featureArg(arg);
   const root = process.cwd();
   readProject(root);
+  const git = capture("git", root);
+  const before = git(["status", "--porcelain"]);
+  const hooked = existsSync(join(root, ".husky/pre-commit"));
   const added = addBlock(root, templateDir(), feature);
   resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
+  if (!added.length) {
+    console.log(`${feature} is already on.`);
+    return;
+  }
+  // A feature is far over the size hook's limit, and none of it is the owner's writing. From a
+  // clean tree the commit holds the scaffolding and nothing else, so it alone may skip the hook.
+  const clean = before.ok && !before.stdout.trim();
+  if (hooked && clean) commitScaffold(root, git, added);
   console.log(
-    added.length
-      ? `Added ${added.join(", ")}. Install packages, then run db:generate <name> (say, add_${added[0]}) if a feature has tables.`
-      : `${feature} is already on.`,
+    `Added ${added.join(", ")}${hooked && clean ? ", in a commit of its own" : ""}. Install packages, then run db:generate <name> (say, add_${added[0]}) if a feature has tables.`,
   );
+  if (hooked && !clean)
+    console.log(
+      "Not committed: other work was uncommitted. The size hook counts this scaffolding, so commit it in steps; from a clean tree, `add` commits it for you.",
+    );
+};
+
+const commitScaffold = (root: string, git: Cli, added: ReadonlyArray<string>) => {
+  const message = `feat: add ${added.join(", ")} with create-tanstack-cf-saas ${VERSION}`;
+  for (const args of [
+    ["add", "-A"],
+    [...gitIdentity(root), "commit", "--quiet", "--no-verify", "-m", message],
+  ]) {
+    const result = git(args);
+    if (!result.ok) throw new Error(`git ${args[0]} failed:\n${result.stderr.trim()}`);
+  }
 };
 
 export const remove = (arg: string, force = false) => {

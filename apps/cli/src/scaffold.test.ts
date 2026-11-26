@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadManifests } from "@tanstack-cf-saas/blocks";
@@ -246,6 +246,37 @@ describe("scaffold", () => {
       process.chdir(cwd);
     }
     expect(git("status", "--porcelain").stdout).toBe("");
+  });
+
+  test("add commits its scaffolding in a project with the hooks, from a clean tree only", () => {
+    const dir = target();
+    const options = { templateDir: TEMPLATE, harnessDir: undefined, huskyDir: HUSKY };
+    scaffold({ ...options, targetDir: dir, name: "hooked", features: [] });
+    const git = (...args: Array<string>) =>
+      spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+        cwd: dir,
+        encoding: "utf8",
+      }).stdout.trim();
+    git("init", "--quiet");
+    git("add", "-A");
+    git("commit", "--quiet", "-m", "chore: start");
+    const cwd = process.cwd();
+    process.chdir(dir);
+    try {
+      add("kv");
+      expect(git("status", "--porcelain")).toBe("");
+      expect(git("log", "-1", "--format=%s")).toMatch(
+        /^feat: add kv with create-tanstack-cf-saas /,
+      );
+
+      // With the owner's work in the tree, the commit would hold more than scaffolding.
+      writeFileSync(join(dir, "mine.ts"), "export {};\n");
+      add("db");
+      expect(git("status", "--porcelain")).toContain("mine.ts");
+      expect(git("log", "-1", "--format=%s")).toMatch(/^feat: add kv /);
+    } finally {
+      process.chdir(cwd);
+    }
   });
 
   test("accepts the old block names d1 and r2", () => {
