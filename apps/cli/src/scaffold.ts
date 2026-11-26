@@ -19,6 +19,8 @@ import { VERSION } from "./version.ts";
 export interface ScaffoldOptions {
   readonly templateDir: string;
   readonly harnessDir: string | undefined;
+  /** The commit hooks to add; undefined leaves husky out. */
+  readonly huskyDir?: string | undefined;
   readonly targetDir: string;
   readonly name: string;
   /** Optional features and core modules to keep; required ones are always kept. */
@@ -188,13 +190,34 @@ const writeDevVars = (dir: string, values: Readonly<Record<string, string>>) => 
   );
 };
 
+/** The husky a project gets; keep it in step with this repo's own. */
+const HUSKY_VERSION = "^9.1.7";
+
+/**
+ * Copies the commit hooks and adds husky, which `install` turns on through the `prepare` script.
+ * shortcut: Yarn 2 and later never run `prepare`, so there `yarn husky` is a step by hand; move it to `postinstall` if Yarn users ask.
+ */
+const installHusky = (huskyDir: string, dir: string) => {
+  cpSync(huskyDir, join(dir, ".husky"), { recursive: true });
+  edit(join(dir, "package.json"), (text) => {
+    const pkg = JSON.parse(text);
+    pkg.scripts.prepare = "husky";
+    pkg.devDependencies = Object.fromEntries(
+      Object.entries({ ...pkg.devDependencies, husky: HUSKY_VERSION }).sort(([a], [b]) =>
+        a < b ? -1 : 1,
+      ),
+    );
+    return `${JSON.stringify(pkg, null, 2)}\n`;
+  });
+};
+
 /**
  * Copies the template, keeps the required features and the chosen ones (and what they require), names
- * the project, starts each feature's History, and adds the Claude harness. Installing packages and
- * generating migrations are left to the caller.
+ * the project, starts each feature's History, and adds the Claude harness and the commit hooks.
+ * Installing packages and generating migrations are left to the caller.
  */
 export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
-  const { templateDir, harnessDir, targetDir, name } = options;
+  const { templateDir, harnessDir, huskyDir, targetDir, name } = options;
   const problem = validateName(name);
   if (problem) throw new Error(problem);
   if (!isEmptyDir(targetDir)) throw new Error(`${targetDir} is not empty.`);
@@ -228,5 +251,6 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
   writeDevVars(targetDir, options.devVars ?? {});
 
   if (harnessDir && existsSync(harnessDir)) installHarness(harnessDir, targetDir);
+  if (huskyDir && existsSync(huskyDir)) installHusky(huskyDir, targetDir);
   return { features: kept };
 };
