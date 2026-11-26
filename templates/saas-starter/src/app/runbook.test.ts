@@ -100,3 +100,64 @@ describe.skipIf(noGithub)("branch rules", () => {
     expect(workflow("deploy")).toMatch(/^ {2}workflow_dispatch:$/m);
   });
 });
+
+/** A gradual rollout leaves two versions live. These hold the order that keeps visitors off a bad one. */
+describe("gradual rollout", () => {
+  const workflow = (name: string) => read(`.github/workflows/${name}.yml`);
+
+  it("gives the Worker its version in both environments, which the smoke test reads back", () => {
+    expect(
+      read("wrangler.jsonc").match(/"version_metadata": \{ "binding": "CF_VERSION_METADATA" \}/g),
+    ).toHaveLength(2);
+  });
+
+  it.skipIf(noGithub)("passes the button's choice from promote to the deploy", () => {
+    expect(workflow("promote")).toMatch(
+      /gh workflow run deploy\.yml --ref production -f rollout="\$ROLLOUT" -f percent="\$PERCENT"/,
+    );
+    expect(workflow("deploy")).toMatch(
+      /workflow_dispatch:\n\s+inputs:\n\s+rollout:[\s\S]*options: \[full, gradual\]/,
+    );
+  });
+
+  it.skipIf(noGithub)(
+    "refuses one on workers.dev or over a running one, before it migrates",
+    () => {
+      expect(workflow("deploy")).toMatch(
+        /name: Check a gradual rollout can start[\s\S]*\*\.workers\.dev[\s\S]*'\.versions \| length'[\s\S]*name: Migrate and deploy/,
+      );
+    },
+  );
+
+  it.skipIf(noGithub)(
+    "smoke-tests the new version by id with no visitors on it, then shares traffic",
+    () => {
+      expect(workflow("deploy")).toMatch(
+        /versions deploy "\$new@0" "\$OLD@100"[\s\S]*name: Smoke test[\s\S]*Cloudflare-Workers-Version-Overrides: \$NAME=[\s\S]*'\.version\.id'[\s\S]*versions deploy "\$OLD@100"[\s\S]*name: Give the new version its share/,
+      );
+    },
+  );
+
+  it.skipIf(noGithub)("moves the share under the production deploy's lock and environment", () => {
+    const rollout = workflow("rollout");
+    expect(workflow("deploy")).toMatch(/^concurrency: deploy-\$\{\{ github\.ref_name \}\}$/m);
+    expect(rollout).toMatch(/^concurrency: deploy-production$/m);
+    expect(rollout).toMatch(/^ {4}environment: production$/m);
+    // Backing out names the old version alone, so the new one leaves the deployment.
+    expect(rollout).toMatch(/"back out"\) bunx wrangler versions deploy "\$old@100"/);
+  });
+
+  it.skipIf(noGithub)(
+    "reports each step to the run's summary, and to PostHog when it has the key",
+    () => {
+      for (const name of ["deploy", "rollout"]) {
+      expect(workflow(name)).toContain("sh .github/scripts/report-rollout.sh");
+    }
+    const report = read(".github/scripts/report-rollout.sh");
+      expect(report).toMatch(/GITHUB_STEP_SUMMARY/);
+      expect(report).toMatch(
+        /\[ -n "\$\{POSTHOG_KEY:-\}" \] \|\| exit 0[\s\S]*deployment_rolled_out/,
+      );
+    },
+  );
+});

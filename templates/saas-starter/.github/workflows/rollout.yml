@@ -1,0 +1,54 @@
+# The second button of a gradual rollout: Actions → rollout → Run workflow. promote.yml starts one
+# (rollout: gradual), which leaves two versions serving production. This moves the new version's
+# share up, to all of it, or back to none. No other gradual rollout can start until it reaches 100
+# or backs out. docs/branches.md says what to watch between steps.
+name: rollout
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: The new version's share of production traffic
+        type: choice
+        options: ["25", "50", "75", "100", back out]
+        default: "100"
+permissions:
+  contents: read
+# The group deploy.yml uses on production, so the two never move traffic at once.
+concurrency: deploy-production
+jobs:
+  rollout:
+    if: ${{ vars.CLOUDFLARE_ACCOUNT_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: production # whichever branch the button was pressed on
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+      - name: Move traffic
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          TO: ${{ inputs.to }}
+        run: |
+          live=$(bunx wrangler deployments status --json)
+          if [ "$(jq '.versions | length' <<<"$live")" != 2 ]; then
+            echo "::error::No gradual rollout is running: one version serves all of production."; exit 1
+          fi
+          # Of the two versions, the new one is the one uploaded last.
+          pair=$(for id in $(jq -r '.versions[].version_id' <<<"$live"); do
+            bunx wrangler versions view "$id" --json
+          done | jq -s 'sort_by(.metadata.created_on)')
+          old=$(jq -r '.[0].id' <<<"$pair")
+          new=$(jq -r '.[1].id' <<<"$pair")
+          tag=$(jq -r '.[1].annotations["workers/tag"] // .[1].id' <<<"$pair")
+          case $TO in
+            "back out") bunx wrangler versions deploy "$old@100" -y --message "backed out of $tag"; TO=0 ;;
+            100) bunx wrangler versions deploy "$new@100" -y --message "$tag at 100%" ;;
+            *) bunx wrangler versions deploy "$new@$TO" "$old" -y --message "$tag at $TO%" ;;
+          esac
+          sh .github/scripts/report-rollout.sh "$tag" "$TO"

@@ -1,6 +1,7 @@
 # The button for a release: Actions → promote → Run workflow. It tags staging's tip and moves
 # production to it in one push, under the same ruleset as that push from a laptop
-# (docs/branches.md has the command).
+# (docs/branches.md has the command). `rollout` chooses who gets the release: every visitor at
+# once, or a share of them first, which rollout.yml then raises or backs out.
 name: promote
 on:
   workflow_dispatch:
@@ -8,6 +9,14 @@ on:
       tag:
         description: The version tag, such as v1.2.0
         required: true
+      rollout:
+        description: "full: every visitor gets it now. gradual: a share does, and Actions → rollout moves it"
+        type: choice
+        options: [full, gradual]
+        default: full
+      percent:
+        description: The share of visitors a gradual rollout starts with, 1 to 99
+        default: "10"
 permissions: {}
 concurrency: promote
 jobs:
@@ -33,6 +42,8 @@ jobs:
           esac
           git push --atomic origin "HEAD:refs/tags/$TAG" HEAD:refs/heads/production
       # A push made with GITHUB_TOKEN starts no workflow, so deploy.yml is started by hand.
-      - run: gh workflow run deploy.yml --ref production
+      - run: gh workflow run deploy.yml --ref production -f rollout="$ROLLOUT" -f percent="$PERCENT"
         env:
           GH_TOKEN: ${{ github.token }}
+          ROLLOUT: ${{ inputs.rollout }}
+          PERCENT: ${{ inputs.percent }}
