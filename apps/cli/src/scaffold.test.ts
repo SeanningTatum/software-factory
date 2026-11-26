@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadManifests } from "@tanstack-cf-saas/blocks";
@@ -17,6 +17,7 @@ import {
 
 const TEMPLATE = join(import.meta.dirname, "../template");
 const HARNESS = join(import.meta.dirname, "../harness");
+const HUSKY = join(import.meta.dirname, "../husky");
 
 const target = () => {
   const dir = mkdtempSync(join(tmpdir(), "scaffold-"));
@@ -51,6 +52,37 @@ describe("scaffold", () => {
       'APP_NAME = "Acme App"',
     );
     expect(readFileSync(join(dir, ".dev.vars"), "utf8")).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);
+  });
+
+  test("adds the commit hooks and husky only when asked", () => {
+    const pkg = (huskyDir: string | undefined) => {
+      const dir = target();
+      scaffold({
+        templateDir: TEMPLATE,
+        harnessDir: undefined,
+        huskyDir,
+        targetDir: dir,
+        name: "a",
+        features: [],
+      });
+      return { dir, ...JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) };
+    };
+    const without = pkg(undefined);
+    expect(existsSync(join(without.dir, ".husky"))).toBe(false);
+    expect(without.scripts.prepare).toBeUndefined();
+    expect(without.devDependencies.husky).toBeUndefined();
+
+    const withHooks = pkg(HUSKY);
+    expect(readdirSync(join(withHooks.dir, ".husky")).sort()).toEqual(["commit-msg", "pre-commit"]);
+    expect(withHooks.scripts.prepare).toBe("husky");
+    // The project gets the husky this repo itself runs.
+    const root = JSON.parse(
+      readFileSync(join(import.meta.dirname, "../../../package.json"), "utf8"),
+    );
+    expect(withHooks.devDependencies.husky).toBe(root.devDependencies.husky);
+    expect(Object.keys(withHooks.devDependencies)).toEqual(
+      Object.keys(without.devDependencies).concat("husky").sort(),
+    );
   });
 
   test("gives each project its own rate-limit namespace ids", () => {
@@ -214,6 +246,37 @@ describe("scaffold", () => {
       process.chdir(cwd);
     }
     expect(git("status", "--porcelain").stdout).toBe("");
+  });
+
+  test("add commits its scaffolding in a project with the hooks, from a clean tree only", () => {
+    const dir = target();
+    const options = { templateDir: TEMPLATE, harnessDir: undefined, huskyDir: HUSKY };
+    scaffold({ ...options, targetDir: dir, name: "hooked", features: [] });
+    const git = (...args: Array<string>) =>
+      spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+        cwd: dir,
+        encoding: "utf8",
+      }).stdout.trim();
+    git("init", "--quiet");
+    git("add", "-A");
+    git("commit", "--quiet", "-m", "chore: start");
+    const cwd = process.cwd();
+    process.chdir(dir);
+    try {
+      add("kv");
+      expect(git("status", "--porcelain")).toBe("");
+      expect(git("log", "-1", "--format=%s")).toMatch(
+        /^feat: add kv with create-tanstack-cf-saas /,
+      );
+
+      // With the owner's work in the tree, the commit would hold more than scaffolding.
+      writeFileSync(join(dir, "mine.ts"), "export {};\n");
+      add("db");
+      expect(git("status", "--porcelain")).toContain("mine.ts");
+      expect(git("log", "-1", "--format=%s")).toMatch(/^feat: add kv /);
+    } finally {
+      process.chdir(cwd);
+    }
   });
 
   test("accepts the old block names d1 and r2", () => {

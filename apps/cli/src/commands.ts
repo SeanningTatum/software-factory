@@ -22,7 +22,7 @@ import {
   setupGithub,
 } from "./github.ts";
 import { harnessStatus, syncHarness } from "./harness.ts";
-import { harnessDir, templateDir } from "./paths.ts";
+import { harnessDir, huskyDir, templateDir } from "./paths.ts";
 import {
   detectPackageManager,
   installCommand,
@@ -74,6 +74,7 @@ export interface CreateArgs {
   readonly pm: string | undefined;
   readonly yes: boolean;
   readonly claude: boolean;
+  readonly husky: boolean;
   readonly install: boolean;
   readonly git: boolean;
 }
@@ -150,9 +151,30 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
       : cancelled(
           await p.confirm({ message: "Add the Claude workflows (.claude/)?", initialValue: true }),
         );
+  const husky = await askHusky(args);
   const devVars = args.yes ? {} : await askBlankSettings(blankSettings(templateDir(), features));
-  return { name, targetDir, features, claude, install: args.install, git: args.git, devVars };
+  return {
+    name,
+    targetDir,
+    features,
+    claude,
+    husky,
+    install: args.install,
+    git: args.git,
+    devVars,
+  };
 };
+
+/** Whether to add the commit hooks. They are git's, so without git there is nothing to ask. */
+const askHusky = async (args: CreateArgs) =>
+  !args.git || args.yes || !args.husky
+    ? args.git && args.husky
+    : cancelled(
+        await p.confirm({
+          message: "Add husky commit hooks (conventional messages, small commits)?",
+          initialValue: true,
+        }),
+      );
 
 /** Asks for each setting a chosen feature needs; an empty answer leaves it for .dev.vars later. */
 const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
@@ -172,14 +194,14 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
   return values;
 };
 
-type Step = "scaffold" | "install" | "migrate" | "git";
+type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
 
 const COMMIT_MESSAGE = `chore: create project with create-tanstack-cf-saas ${VERSION}`;
 const shellPath = (dir: string) => (/\s/.test(dir) ? JSON.stringify(dir) : dir);
 
 /** What is left to run by hand when `failed` broke, in order. */
 const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: boolean) => {
-  const order: ReadonlyArray<Step> = ["install", "migrate", "git"];
+  const order: ReadonlyArray<Step> = ["install", "migrate", "git", "hooks"];
   const pending = order.slice(order.indexOf(failed));
   return [
     `cd ${shellPath(plan.targetDir)}`,
@@ -193,6 +215,7 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
     ...(pending.includes("git") && plan.git
       ? [`git init -b staging && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
       : []),
+    ...(plan.husky && plan.install ? [runCommand(pm, "prepare").flat().join(" ")] : []),
   ];
 };
 
@@ -216,6 +239,7 @@ export const create = async (args: CreateArgs) => {
             const result = scaffold({
               templateDir: templateDir(),
               harnessDir: input.claude ? harnessDir() : undefined,
+              huskyDir: input.husky ? huskyDir() : undefined,
               targetDir: input.targetDir,
               name: input.name,
               features: input.features,
@@ -253,6 +277,11 @@ export const create = async (args: CreateArgs) => {
             [...gitIdentity(input.targetDir), "commit", "--quiet", "-m", COMMIT_MESSAGE],
             input.targetDir,
           );
+          if (!input.husky || !input.install) return;
+          // Install ran before there was a repository, so husky set no hooks. Turn them on now,
+          // after the first commit, which is far over their line limit.
+          step = "hooks";
+          await run(...runCommand(pm, "prepare"), input.targetDir);
         }),
       },
     }),
@@ -394,9 +423,9 @@ const offerCloudflare = async (
 /** Commits wrangler.jsonc when setup changed it; CI deploys from what is committed. */
 const commitWrangler = async (dir: string) => {
   if (!capture("git", dir)(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) return;
-  await run("git", ["add", WRANGLER_FILE], dir);
+  // Only this file: whatever else is staged is the owner's own work, and not for this commit.
   const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
-  await run("git", [...gitIdentity(dir), ...commit], dir);
+  await run("git", [...gitIdentity(dir), ...commit, "--", WRANGLER_FILE], dir);
 };
 
 const GITHUB = "create-tanstack-cf-saas github";
@@ -448,13 +477,37 @@ export const add = (arg: string) => {
   const feature = featureArg(arg);
   const root = process.cwd();
   readProject(root);
+  const git = capture("git", root);
+  const before = git(["status", "--porcelain"]);
+  const hooked = existsSync(join(root, ".husky/pre-commit"));
   const added = addBlock(root, templateDir(), feature);
   resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
+  if (!added.length) {
+    console.log(`${feature} is already on.`);
+    return;
+  }
+  // A feature is far over the size hook's limit, and none of it is the owner's writing. From a
+  // clean tree the commit holds the scaffolding and nothing else, so it alone may skip the hook.
+  const clean = before.ok && !before.stdout.trim();
+  if (hooked && clean) commitScaffold(root, git, added);
   console.log(
-    added.length
-      ? `Added ${added.join(", ")}. Install packages, then run db:generate <name> (say, add_${added[0]}) if a feature has tables.`
-      : `${feature} is already on.`,
+    `Added ${added.join(", ")}${hooked && clean ? ", in a commit of its own" : ""}. Install packages, then run db:generate <name> (say, add_${added[0]}) if a feature has tables.`,
   );
+  if (hooked && !clean)
+    console.log(
+      "Not committed: other work was uncommitted. The size hook counts this scaffolding, so commit it in steps; from a clean tree, `add` commits it for you.",
+    );
+};
+
+const commitScaffold = (root: string, git: Cli, added: ReadonlyArray<string>) => {
+  const message = `feat: add ${added.join(", ")} with create-tanstack-cf-saas ${VERSION}`;
+  for (const args of [
+    ["add", "-A"],
+    [...gitIdentity(root), "commit", "--quiet", "--no-verify", "-m", message],
+  ]) {
+    const result = git(args);
+    if (!result.ok) throw new Error(`git ${args[0]} failed:\n${result.stderr.trim()}`);
+  }
 };
 
 export const remove = (arg: string, force = false) => {

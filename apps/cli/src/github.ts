@@ -124,9 +124,9 @@ export const setDeploySettings = (
 
 /**
  * Puts the project on GitHub with its branch model: `staging` is the default branch, `production`
- * starts as a copy of it, and each gets the ruleset in `.github/rulesets/`. Safe to run again: a
- * repository, branch or ruleset that exists is kept or updated, never made twice. Returns the names
- * of the deploy settings it was not given.
+ * starts as a copy of it, each gets the ruleset in `.github/rulesets/`, and a squash commit takes
+ * its pull request's title. Safe to run again: a repository, branch or ruleset that exists is kept
+ * or updated, never made twice. Returns the names of the deploy settings it was not given.
  */
 export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOptions) => {
   const rulesets = readRulesets(root);
@@ -176,10 +176,26 @@ export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOpti
     options.log("branch production: created from staging");
   }
   must(
-    gh(["api", "--method", "PATCH", "repos/{owner}/{repo}", "-f", "default_branch=staging"]),
-    "Setting the default branch",
+    gh([
+      "api",
+      "--method",
+      "PATCH",
+      "repos/{owner}/{repo}",
+      "-f",
+      "default_branch=staging",
+      // title.yml checks the pull request's title; this makes it the squash commit's.
+      "-f",
+      "squash_merge_commit_title=PR_TITLE",
+      // The rulesets take squashes into staging and merge commits into production: allow both.
+      "-F",
+      "allow_squash_merge=true",
+      "-F",
+      "allow_merge_commit=true",
+    ]),
+    "Setting the default branch and the merge methods",
   );
   options.log("default branch: staging");
+  options.log("squash commits: titled by their pull request");
   applyRulesets(rulesets, gh, options.log);
   return missing;
 };

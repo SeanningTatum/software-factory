@@ -6,6 +6,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Its pull request titles must pass the title check.
+    commit-message:
+      prefix: build(deps)
     groups:
       packages:
         update-types: [minor, patch]
@@ -13,3 +16,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Its pull request titles must pass the title check.
+    commit-message:
+      prefix: build(deps)
