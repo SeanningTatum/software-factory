@@ -8,7 +8,10 @@ import { globToRegExp } from "./glob.ts";
 import { lint } from "./lint.ts";
 
 /** A project of these files, and one empty test file so that lint always has a file to read. */
-const project = (files: Record<string, string>, base = { "src/a.test.ts": "" }) => {
+const project = (
+  files: Record<string, string>,
+  base: Record<string, string> = { "src/a.test.ts": "" },
+) => {
   const root = mkdtempSync(join(tmpdir(), "cf-saas-lint-"));
   for (const [path, text] of Object.entries({ ...base, ...files })) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
