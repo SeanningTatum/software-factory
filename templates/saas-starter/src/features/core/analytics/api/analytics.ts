@@ -2,6 +2,7 @@ import { Context, DateTime, Effect, Layer } from "effect";
 import { type AppEnv, CloudflareEnv, setting } from "#/app/env.ts";
 import { CurrentRequest } from "#/app/request.ts";
 import { binding } from "#/features/core/lib/binding.ts";
+import { workerVersion } from "#/features/core/lib/version.ts";
 import type { AnalyticsEvent } from "../lib/catalog.ts";
 import type { AnalyticsAdapter, Captured } from "./adapter.ts";
 import { analyticsEngineAdapter, type DataPointWriter } from "./adapters/analytics-engine.ts";
@@ -16,8 +17,14 @@ export const selectAdapter = (env: AppEnv): AnalyticsAdapter => {
   if (provider === "console") return consoleAdapter;
   if (provider === "posthog") {
     const key = setting(env, "POSTHOG_KEY");
+    const version = workerVersion(env);
     return key
-      ? posthogAdapter(key, setting(env, "POSTHOG_HOST") ?? DEFAULT_POSTHOG_HOST)
+      ? posthogAdapter(
+          key,
+          setting(env, "POSTHOG_HOST") ?? DEFAULT_POSTHOG_HOST,
+          // The release tag reads better on a chart; an untagged deploy has only its id.
+          version?.tag ?? version?.id,
+        )
       : noopAdapter;
   }
   const dataset = binding<DataPointWriter>(env, "ANALYTICS");

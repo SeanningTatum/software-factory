@@ -45,6 +45,12 @@ describe("readiness", () => {
     });
   });
 
+  it("says which Worker version answered", async () => {
+    const CF_VERSION_METADATA = { id: "abc", tag: "v1.2.0" };
+    const ready = await check({ ...complete, APP_URL: APP, CF_VERSION_METADATA });
+    expect(ready.version).toEqual({ id: "abc", tag: "v1.2.0" });
+  });
+
   it("skips the database check in a project without one", async () => {
     expect(await check({ ...complete, APP_URL: APP })).toEqual({ ok: true, missing: [] });
   });

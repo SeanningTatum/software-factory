@@ -25,6 +25,17 @@ describe("posthogAdapter", () => {
     });
   });
 
+  it("puts the Worker's version on each event", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await Effect.runPromise(posthogAdapter("k", "https://ph.example", "v1.2.0").send(batch));
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).batch[0].properties).toEqual({
+      path: "/x",
+      app_version: "v1.2.0",
+    });
+  });
+
   it("sends user_identified as PostHog's $identify, linking the anonymous id", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
