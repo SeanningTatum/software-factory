@@ -37,6 +37,11 @@ const createCommand = defineCommand({
       default: true,
       description: "Add the Claude workflows (--no-claude to skip)",
     },
+    husky: {
+      type: "boolean",
+      default: true,
+      description: "Add husky hooks for conventional, small commits (--no-husky to skip)",
+    },
     install: {
       type: "boolean",
       default: true,
@@ -52,6 +57,7 @@ const createCommand = defineCommand({
       pm: args.pm,
       yes: args.yes,
       claude: args.claude,
+      husky: args.husky,
       install: args.install,
       git: args.git,
     }),

@@ -22,7 +22,7 @@ import {
   setupGithub,
 } from "./github.ts";
 import { harnessStatus, syncHarness } from "./harness.ts";
-import { harnessDir, templateDir } from "./paths.ts";
+import { harnessDir, huskyDir, templateDir } from "./paths.ts";
 import {
   detectPackageManager,
   installCommand,
@@ -74,6 +74,7 @@ export interface CreateArgs {
   readonly pm: string | undefined;
   readonly yes: boolean;
   readonly claude: boolean;
+  readonly husky: boolean;
   readonly install: boolean;
   readonly git: boolean;
 }
@@ -150,9 +151,30 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
       : cancelled(
           await p.confirm({ message: "Add the Claude workflows (.claude/)?", initialValue: true }),
         );
+  const husky = await askHusky(args);
   const devVars = args.yes ? {} : await askBlankSettings(blankSettings(templateDir(), features));
-  return { name, targetDir, features, claude, install: args.install, git: args.git, devVars };
+  return {
+    name,
+    targetDir,
+    features,
+    claude,
+    husky,
+    install: args.install,
+    git: args.git,
+    devVars,
+  };
 };
+
+/** Whether to add the commit hooks. They are git's, so without git there is nothing to ask. */
+const askHusky = async (args: CreateArgs) =>
+  !args.git || args.yes || !args.husky
+    ? args.git && args.husky
+    : cancelled(
+        await p.confirm({
+          message: "Add husky commit hooks (conventional messages, small commits)?",
+          initialValue: true,
+        }),
+      );
 
 /** Asks for each setting a chosen feature needs; an empty answer leaves it for .dev.vars later. */
 const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
@@ -172,14 +194,14 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
   return values;
 };
 
-type Step = "scaffold" | "install" | "migrate" | "git";
+type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
 
 const COMMIT_MESSAGE = `chore: create project with create-tanstack-cf-saas ${VERSION}`;
 const shellPath = (dir: string) => (/\s/.test(dir) ? JSON.stringify(dir) : dir);
 
 /** What is left to run by hand when `failed` broke, in order. */
 const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: boolean) => {
-  const order: ReadonlyArray<Step> = ["install", "migrate", "git"];
+  const order: ReadonlyArray<Step> = ["install", "migrate", "git", "hooks"];
   const pending = order.slice(order.indexOf(failed));
   return [
     `cd ${shellPath(plan.targetDir)}`,
@@ -193,6 +215,7 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
     ...(pending.includes("git") && plan.git
       ? [`git init -b staging && git add -A && git commit -m "${COMMIT_MESSAGE}"`]
       : []),
+    ...(plan.husky && plan.install ? [runCommand(pm, "prepare").flat().join(" ")] : []),
   ];
 };
 
@@ -216,6 +239,7 @@ export const create = async (args: CreateArgs) => {
             const result = scaffold({
               templateDir: templateDir(),
               harnessDir: input.claude ? harnessDir() : undefined,
+              huskyDir: input.husky ? huskyDir() : undefined,
               targetDir: input.targetDir,
               name: input.name,
               features: input.features,
@@ -253,6 +277,11 @@ export const create = async (args: CreateArgs) => {
             [...gitIdentity(input.targetDir), "commit", "--quiet", "-m", COMMIT_MESSAGE],
             input.targetDir,
           );
+          if (!input.husky || !input.install) return;
+          // Install ran before there was a repository, so husky set no hooks. Turn them on now,
+          // after the first commit, which is far over their line limit.
+          step = "hooks";
+          await run(...runCommand(pm, "prepare"), input.targetDir);
         }),
       },
     }),

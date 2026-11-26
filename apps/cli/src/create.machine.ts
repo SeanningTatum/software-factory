@@ -5,6 +5,8 @@ export interface CreatePlan {
   readonly targetDir: string;
   readonly features: ReadonlyArray<string>;
   readonly claude: boolean;
+  /** Commit hooks: conventional messages and a cap on lines added. Needs git. */
+  readonly husky: boolean;
   readonly install: boolean;
   readonly git: boolean;
   /** Values for .dev.vars, asked for when a chosen feature can't work without them. */

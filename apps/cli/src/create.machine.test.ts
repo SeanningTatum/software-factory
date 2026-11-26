@@ -8,6 +8,7 @@ const plan: CreatePlan = {
   targetDir: "/tmp/a",
   features: [],
   claude: true,
+  husky: true,
   install: true,
   git: true,
 };
