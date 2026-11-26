@@ -18,8 +18,6 @@ const collect = (source: ts.SourceFile, match: (n: ts.Node) => string | undefine
   return out;
 };
 
-const callee = (n: ts.Node) => (ts.isCallExpression(n) ? n.expression.getText() : undefined);
-
 /** The called name, whatever it is reached through: `runPromise` for `E.runPromise(...)` or `runPromise(...)`. */
 const calledName = (n: ts.Node): string | undefined => {
   if (!ts.isCallExpression(n)) return undefined;
@@ -48,7 +46,8 @@ export const noTryCatch: Rule = {
     ),
 };
 
-const RUNNERS = /^run(Promise|PromiseExit|Sync|SyncExit|Fork|Callback)$/;
+// Effect 4 adds the `…With` runners. Any mention counts, so a runner passed as a value is seen too.
+const RUNNERS = /^run(Promise|Sync|Fork|Callback)(Exit)?(With)?$/;
 
 export const noRunEffect: Rule = {
   id: "no-run-effect",
@@ -56,8 +55,8 @@ export const noRunEffect: Rule = {
     "Only edges run effects: server functions go through runEffect, the worker through the request runtime.",
   check: ({ source }) =>
     collect(source, (n) =>
-      RUNNERS.test(calledName(n) ?? "")
-        ? `${callee(n)} outside an edge; return the Effect and let the edge run it`
+      ts.isIdentifier(n) && RUNNERS.test(n.text)
+        ? `${n.text} outside an edge; return the Effect and let the edge run it`
         : undefined,
     ),
 };
@@ -156,7 +155,8 @@ export const fileSize: Rule = {
   id: "file-size",
   description: "Keep files small enough to read in one go.",
   check: ({ source, config }) => {
-    const lines = source.getLineStarts().length;
+    // A final newline starts no line of its own.
+    const lines = source.getLineStarts().length - (source.text.endsWith("\n") ? 1 : 0);
     return lines > config.maxLines
       ? [{ line: 1, message: `${lines} lines; split it below ${config.maxLines}` }]
       : [];

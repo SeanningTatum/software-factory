@@ -42,6 +42,12 @@ describe("runTimeline", () => {
     });
   });
 
+  test("fails when the base it was given does not exist", () => {
+    const result = runTimeline(repo(), { base: "origin/nope" });
+    expect(result.code).toBe(1);
+    expect(result.lines[0]).toContain('"origin/nope" not found');
+  });
+
   test("fails a feature change with no new line, and passes once one is added", () => {
     const root = repo();
     write(root, "src/features/kv/api/key-value.ts", "export const a = 2;\n");

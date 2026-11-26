@@ -44,6 +44,10 @@ export const runTimeline = (root: string, options: TimelineOptions = {}): Timeli
   }
   const candidates = options.base ? [options.base] : ["origin/staging", "origin/main", "HEAD~1"];
   const base = candidates.find((ref) => verified(root, ref));
+  // A base someone named and git can't find is a mistake (a typo, a shallow clone), not a pass.
+  if (!base && options.base) {
+    return { code: 1, lines: [`timeline: base ref "${options.base}" not found; fetch it first.`] };
+  }
   if (!base) return skipped(`no base ref (${candidates.join(", ")})`);
   const from = git(root, ["merge-base", base, "HEAD"])?.trim() || base;
   const changed = [
