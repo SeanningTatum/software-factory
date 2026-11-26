@@ -98,13 +98,13 @@ Rules for a good item:
 - **Size:** S
 - **Needs you:** A test project made with `bun run try`, set up on Cloudflare and GitHub
 
-**Why:** On 2026-11-25 a test project went the whole way to staging: `create` made its resources, migrated and deployed both environments, and its first push ran `deploy.yml` green on staging with the smoke test. Both rulesets are active on its repository. The second half has never run: no pull request has gone into `production`, and no one has run `setup` twice.
+**Why:** On 2026-11-25 a test project went the whole way to staging: `create` made its resources, migrated and deployed both environments, and its first push ran `deploy.yml` green on staging with the smoke test. Both rulesets are active on its repository. The second half has never run: `production` has never moved to a tagged commit of `staging`, and no one has run `setup` twice.
 
 **Done when:**
 
 - [ ] A second `bun run setup` on a project that is already set up changes nothing.
-- [ ] A pull request into `production` without a tag is refused.
-- [ ] One with a tag merges, `deploy.yml` deploys production, and its smoke test passes.
+- [ ] A push that moves `production` to a `staging` commit without a tag deploys nothing: `deploy.yml` stops at its tag check.
+- [ ] The tagged push in `docs/branches.md` moves `production` to `staging`'s tip, `deploy.yml` deploys production, and its smoke test passes.
 
 **Where:** `apps/cli/src/setup.ts`, `apps/cli/src/github.ts`, `templates/saas-starter/.github/`.
 

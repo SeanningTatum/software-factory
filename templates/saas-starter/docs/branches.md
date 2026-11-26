@@ -5,8 +5,9 @@ How code gets from your machine to production, and what stops a bad change on th
 ## The short version
 
 - **`staging`** is the default branch. Every merge into it deploys the staging site.
-- **`production`** deploys the live site. It moves only by a pull request from `staging` whose last
-  commit has a version tag and has already passed its own staging deploy.
+- **`production`** deploys the live site. It gets no pull requests and no commits of its own: a
+  release tags `staging`'s tip and moves `production` to that same commit, so both branches share
+  one head. The commit must have passed its checks and its own staging deploy.
 - **Small pull requests stack on each other** and get short checks. The pull request that rolls a
   stack up into `staging` gets the full checks.
 
@@ -16,20 +17,20 @@ flowchart LR
   B[Small pull request] -->|short checks| F
   F -->|full checks| S[staging]
   S -->|deploys| SS([Staging site])
-  S -->|tag, then full checks| P[production]
+  S -->|tag and fast-forward| P[production]
   P -->|deploys| PS([Live site])
 ```
 
 ## Which checks run where
 
-| A pull request into | Workflow      | What runs                                                                                           |
-| ------------------- | ------------- | --------------------------------------------------------------------------------------------------- |
-| any other branch    | `pr.yml`      | Lint, types, unit tests, dead code, a scan for keys                                                 |
-| `staging`           | `ci.yml`      | All of the above, plus the build, size budgets, `bun audit`, the migration check, e2e, the timeline |
-| `production`        | `ci.yml`      | The same checks again, on the merge result                                                          |
-| `production`        | `promote.yml` | The pull request comes from `staging`, and its last commit has a `v*` tag                           |
+| A pull request into | Workflow | What runs                                                                                           |
+| ------------------- | -------- | --------------------------------------------------------------------------------------------------- |
+| any other branch    | `pr.yml` | Lint, types, unit tests, dead code, a scan for keys                                                 |
+| `staging`           | `ci.yml` | All of the above, plus the build, size budgets, `bun audit`, the migration check, e2e, the timeline |
 
-A push to `staging` also runs `ci.yml` and `deploy.yml`.
+A push to `staging` also runs `ci.yml` and `deploy.yml`. `production` runs no checks of its own: it
+takes a commit only after these passed on it. Before `deploy.yml` deploys production, it checks
+that the commit is on `staging` and has a `v*` tag.
 
 The short checks take a few minutes and catch most mistakes. The slow ones (a real browser, the
 size of every page) run once, on the change that will ship.
@@ -70,22 +71,19 @@ sequenceDiagram
   participant CI as GitHub Actions
   participant P as production
   You->>S: merge the roll-up pull request
-  S->>CI: deploy.yml: migrate, deploy staging, smoke test
-  You->>S: git tag v1.2.0 and push the tag
-  You->>P: open a pull request from staging
-  CI->>P: ci.yml and promote.yml pass
-  You->>P: merge (a merge commit)
-  P->>CI: deploy.yml: migrate, deploy production, smoke test
+  S->>CI: ci.yml, and deploy.yml: migrate, deploy staging, smoke test
+  You->>P: one push: tag staging's tip v1.2.0, move production to it
+  P->>CI: deploy.yml: check the tag, migrate, deploy production, smoke test
   CI-->>P: roll back the code if the smoke test fails
 ```
 
 ```bash
 git fetch origin
-git tag v1.2.0 origin/staging && git push origin v1.2.0
-gh pr create --base production --head staging --title "Release v1.2.0"
+git push --atomic origin origin/staging:refs/tags/v1.2.0 origin/staging:refs/heads/production
 ```
 
-Tag first, then open the pull request. If you tag late, re-run the `promote` job.
+The one push makes the tag and moves `production` to the commit `staging` is on, or does neither.
+It adds no commit, so nothing merges and the tag names exactly what is live. Never add `--force`.
 
 ## The rules, and why each is there
 
@@ -93,17 +91,20 @@ The rules are files: `.github/rulesets/staging.json` and `production.json`. Appl
 `bunx create-tanstack-cf-saas github`, and run it again after you change one. GitHub can also
 import them by hand (Settings → Rules → Rulesets → Import).
 
-| Rule                                 | On                      | Why                                                                                                 |
-| ------------------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------- |
-| Changes come by pull request         | `staging`, `production` | Nothing reaches a deploy branch without its checks.                                                 |
-| No force push, no delete             | `staging`, `production` | History that has been deployed stays.                                                               |
-| `check`, `secrets`, `e2e` must pass  | `staging`, `production` | The full checks in `ci.yml`.                                                                        |
-| `timeline` must pass                 | `staging`               | Every changed feature gets a line in its `TIMELINE.md`.                                             |
-| `promote` must pass                  | `production`            | Only `staging` merges in, and only at a tagged commit: the tag names what you shipped.              |
-| `staging` (the deploy job) must pass | `production`            | The commit you promote has already been migrated, deployed and smoke-tested on staging.             |
-| Squash merges only                   | `staging`               | One pull request is one commit on `staging`, named by the pull request's title.                     |
-| `title` must pass                    | `staging`               | With the commit hooks, the title must be a conventional commit, like `fix(auth): expire sessions`.  |
-| Merge commits only                   | `production`            | A squash would give `production` a commit `staging` never had, and the next release would conflict. |
+| Rule                                 | On                      | Why                                                                                                |
+| ------------------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| Changes come by pull request         | `staging`               | Nothing lands on `staging` without its checks.                                                     |
+| No pull-request rule                 | `production`            | A merge would add a commit `staging` never had. A push of `staging`'s own commit keeps one head.   |
+| No force push, no delete             | `staging`, `production` | History that has been deployed stays.                                                              |
+| `check`, `secrets`, `e2e` must pass  | `staging`, `production` | The full checks in `ci.yml`. `production` takes a commit only once they passed on it.              |
+| `timeline` must pass                 | `staging`               | Every changed feature gets a line in its `TIMELINE.md`.                                            |
+| `staging` (the deploy job) must pass | `production`            | The commit you promote has already been migrated, deployed and smoke-tested on staging.            |
+| Squash merges only                   | `staging`               | One pull request is one commit on `staging`, named by the pull request's title.                    |
+| `title` must pass                    | `staging`               | With the commit hooks, the title must be a conventional commit, like `fix(auth): expire sessions`. |
+
+One gate is not a rule, because a ruleset cannot ask for a tag. The production job in `deploy.yml`
+starts by checking that the commit is on `staging` and has a `v*` tag, and deploys nothing
+otherwise.
 
 No rule asks for an approving review, so one person can run the whole flow. Add reviewers in the
 ruleset file when the team grows.
@@ -132,10 +133,17 @@ merge is a push) or close and reopen it, and the full checks run.
 ## Things that will surprise you once
 
 - **A check that never ran shows as "Expected".** That is the retarget case above. Push or reopen.
-- **`promote` fails with "No version tag".** Tag the commit at the tip of `staging`, push the tag,
-  re-run the job. A new merge into `staging` after you tagged moves the tip: tag again.
+- **GitHub refuses the release push.** A required check has not passed on `staging`'s tip yet, the
+  staging deploy included. Wait for it, then push again. No tag was made.
+- **The production deploy fails at "On staging, with a version tag".** `production` moved without
+  a tag. The error prints the command that tags the commit; run it, then re-run the job.
+- **Never merge a pull request into `production`.** It adds a commit `staging` lacks, which
+  `deploy.yml` will not deploy, and the release push then fails as "non-fast-forward". To mend it,
+  turn off "Restrict deletions" in the `production` ruleset, delete the branch, and run
+  `bunx create-tanstack-cf-saas github`: it makes the branch again from `staging` and puts the
+  rule back.
 - **A hotfix goes through `staging` too.** There is no side door into `production`. Merge the fix
-  into `staging`, tag, promote.
+  into `staging`, then release.
 - **Rules on a private repository need a paid GitHub plan.** On a free plan the `github` command
   creates the repository and both branches, then stops at the rules with GitHub's own message.
 - **Production is deployed once by hand, at setup.** That first deploy gives it an address. After
@@ -145,12 +153,11 @@ merge is a push) or close and reopen it, and the full checks run.
 
 ## Why a skipped job is dangerous here
 
-GitHub counts a job that was skipped by an `if` as passed. A push to `staging` runs `ci.yml` on the
-same commit a promotion starts from. If the tag gate lived in `ci.yml` with
-`if: base is production`, the push run would mark it skipped, and the promotion would show it green
-before it ran. So `promote.yml` stands alone, runs only on pull requests into `production`, and
-has no `if`. `timeline` skips on a push for the same reason, which is why `production` does not
-require it. `runbook.test.ts` fails if either drifts.
+GitHub counts a job that was skipped by an `if` as passed. `production` reads its required checks
+from the push to `staging` that a release starts from, and `timeline` skips on a push, so
+requiring it there would prove nothing: `production` does not. The tag gate is a step inside the
+production deploy job, not a job of its own, so it cannot pass by skipping: when the job skips,
+nothing deploys. `runbook.test.ts` fails if either drifts.
 
 ## Add your own workflows
 

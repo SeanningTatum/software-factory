@@ -35,12 +35,12 @@ bun run deploy
 ```
 
 Two branches deploy. `staging` is the default branch, and a push to it deploys staging.
-`production` deploys production, and moves only by a pull request from `staging` whose last commit
-has a version tag:
+`production` deploys production. It takes no pull requests: a release tags `staging`'s tip and
+moves `production` to that same commit in one push, so both branches share one head:
 
 ```bash
-git tag v1.2.0 origin/staging && git push origin v1.2.0
-gh pr create --base production --head staging --title "Release v1.2.0"
+git fetch origin
+git push --atomic origin origin/staging:refs/tags/v1.2.0 origin/staging:refs/heads/production
 ```
 
 Work in small pull requests stacked on each other. One whose base is another branch gets the short
