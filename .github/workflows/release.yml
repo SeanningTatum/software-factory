@@ -1,4 +1,4 @@
-# Staging opens the "Version Packages" pull request from the changesets merged so far; production
+# Staging opens the version pull request from the changesets merged so far; production
 # publishes what staging versioned. A pull request the action opens starts no workflows (GitHub
 # does not let GITHUB_TOKEN trigger them), so close and reopen it to run its required checks.
 name: release
@@ -27,6 +27,10 @@ jobs:
       - name: Open or refresh the version pull request
         if: ${{ github.ref_name == 'staging' }}
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        # The title lands on staging as a commit, so it must pass title.yml.
+        with:
+          commit-message: "chore: version packages"
+          pr-title: "chore: version packages"
       # With changesets still unversioned here it would open a version pull request into
       # production, which the ruleset refuses: merge the one into staging before promoting.
       # !created: the push that makes the branch publishes nothing; the first promotion does.

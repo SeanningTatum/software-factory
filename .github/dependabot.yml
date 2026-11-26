@@ -6,6 +6,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Its pull request titles must pass the title check.
+    commit-message:
+      prefix: build(deps)
     groups:
       packages:
         update-types: [minor, patch]
@@ -16,3 +19,6 @@ updates:
       - /templates/saas-starter/.github/workflows
     schedule:
       interval: weekly
+    # Its pull request titles must pass the title check.
+    commit-message:
+      prefix: build(deps)
