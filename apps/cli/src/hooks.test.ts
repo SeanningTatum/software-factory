@@ -19,11 +19,10 @@ describe("commit-msg", () => {
 
   test("takes a conventional commit, and the lines git writes itself", () => {
     for (const message of [
-      "feat: add husky",
       "fix(billing): keep Stripe's status\n\nThe body is free text.",
       "feat(cli)!: drop node 18",
       "build(deps): bump vite from 8.3.8 to 8.3.9 (#31)",
-      "\n# a comment the editor left\nchore: version packages\n",
+      "\n# a comment the editor left\nchore(release): version packages\n",
       "Merge branch 'staging' into feature",
       'Revert "feat: add husky"',
       "fixup! feat: add husky",
@@ -32,7 +31,15 @@ describe("commit-msg", () => {
   });
 
   test("refuses anything else", () => {
-    for (const message of ["Add husky", "feat add husky", "feat:no space", "Feat: x", "feat: "])
+    for (const message of [
+      "Add husky",
+      "feat add husky",
+      "feat: no scope",
+      "feat(): x",
+      "feat(cli):no space",
+      "Feat(cli): x",
+      "feat(cli): ",
+    ])
       expect([message, accepts(message)]).toEqual([message, false]);
   });
 });
@@ -53,7 +60,12 @@ describe.each([
 
   test("takes a conventional title and refuses the lines only git writes", () => {
     expect(accepts("fix(billing): keep Stripe's status")).toBe(true);
-    for (const title of ["Merge everything", 'Revert "feat: add husky"', "fixup! x", "Add husky"])
+    for (const title of [
+      "Merge everything",
+      'Revert "feat: add husky"',
+      "fixup! x",
+      "fix: no scope",
+    ])
       expect([title, accepts(title)]).toEqual([title, false]);
   });
 });

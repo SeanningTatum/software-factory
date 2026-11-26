@@ -37,7 +37,7 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
   90 days; renew it the same way.
 - **Version pull requests.** Settings → Actions → General → "Allow GitHub Actions to create and
   approve pull requests". Without it, open each one by hand:
-  `gh pr create --base staging --head changeset-release/staging --title "Version Packages"`.
+  `gh pr create --base staging --head changeset-release/staging --title "chore(release): version packages"`.
 - **Branch rules.** Applied from `.github/rulesets/`. After you edit one, find its id with
   `gh api 'repos/{owner}/{repo}/rulesets'` and send it:
   `gh api --method PUT 'repos/{owner}/{repo}/rulesets/<id>' --input .github/rulesets/<file>`.

@@ -46,8 +46,8 @@ jobs:
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         # The title lands on staging as a commit, so it must pass title.yml.
         with:
-          commit-message: "chore: version packages"
-          pr-title: "chore: version packages"
+          commit-message: "chore(release): version packages"
+          pr-title: "chore(release): version packages"
       # With changesets still unversioned here it would open a version pull request into
       # production: promote.sh refuses to promote until the one into staging is merged.
       - name: Publish

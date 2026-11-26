@@ -198,7 +198,7 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
 
 type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
 
-const COMMIT_MESSAGE = `chore: create project with create-tanstack-cf-saas ${VERSION}`;
+const COMMIT_MESSAGE = `chore(scaffold): create project with create-tanstack-cf-saas ${VERSION}`;
 const shellPath = (dir: string) => (/\s/.test(dir) ? JSON.stringify(dir) : dir);
 
 /** What is left to run by hand when `failed` broke, in order. */
@@ -427,7 +427,12 @@ const offerCloudflare = async (
 const commitWrangler = async (dir: string) => {
   if (!capture("git", dir)(["status", "--porcelain", "--", WRANGLER_FILE]).stdout.trim()) return;
   // Only this file: whatever else is staged is the owner's own work, and not for this commit.
-  const commit = ["commit", "--quiet", "-m", "chore: record Cloudflare resource ids and URLs"];
+  const commit = [
+    "commit",
+    "--quiet",
+    "-m",
+    "chore(setup): record Cloudflare resource ids and URLs",
+  ];
   await run("git", [...gitIdentity(dir), ...commit, "--", WRANGLER_FILE], dir);
 };
 
@@ -509,7 +514,7 @@ export const add = (...names: ReadonlyArray<string>) => {
 };
 
 const commitScaffold = (root: string, git: Cli, added: ReadonlyArray<string>) => {
-  const message = `feat: add ${added.join(", ")} with create-tanstack-cf-saas ${VERSION}`;
+  const message = `feat(scaffold): add ${added.join(", ")} with create-tanstack-cf-saas ${VERSION}`;
   for (const args of [
     ["add", "-A"],
     [...gitIdentity(root), "commit", "--quiet", "--no-verify", "-m", message],

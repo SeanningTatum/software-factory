@@ -282,14 +282,14 @@ describe("scaffold", () => {
       add("kv");
       expect(git("status", "--porcelain")).toBe("");
       expect(git("log", "-1", "--format=%s")).toMatch(
-        /^feat: add kv with create-tanstack-cf-saas /,
+        /^feat\(scaffold\): add kv with create-tanstack-cf-saas /,
       );
 
       // With the owner's work in the tree, the commit would hold more than scaffolding.
       writeFileSync(join(dir, "mine.ts"), "export {};\n");
       add("db");
       expect(git("status", "--porcelain")).toContain("mine.ts");
-      expect(git("log", "-1", "--format=%s")).toMatch(/^feat: add kv /);
+      expect(git("log", "-1", "--format=%s")).toMatch(/^feat\(scaffold\): add kv /);
     } finally {
       process.chdir(cwd);
     }
