@@ -60,8 +60,15 @@ describe("pre-commit", () => {
     expect(passes("pre-commit", staged(401, "a.ts"))).toBe(false);
   });
 
-  test("does not count lockfiles or generated files", () => {
-    const dir = staged(401, "bun.lock", "package-lock.json", "src/gen/routes.ts", "drizzle/0.sql");
+  test("counts code only: not Markdown, lockfiles or generated files", () => {
+    const dir = staged(
+      401,
+      "README.md",
+      "docs/a.md",
+      "bun.lock",
+      "src/gen/routes.ts",
+      "drizzle/0.sql",
+    );
     expect(passes("pre-commit", dir)).toBe(true);
   });
 

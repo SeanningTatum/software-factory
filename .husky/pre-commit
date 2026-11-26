@@ -1,6 +1,6 @@
 # A commit adds at most MAX lines, so a reader can take it in at one sitting.
-# Generated files and lockfiles do not count. A merge, a revert and a cherry-pick replay work
-# that is already written, so they are not checked.
+# Only code counts: Markdown, generated files and lockfiles do not. A merge, a revert and a
+# cherry-pick replay work that is already written, so they are not checked.
 # shortcut: an amend is measured on its new lines alone, so amends can grow a commit past the limit; measure against HEAD~1 if that gets abused.
 MAX=400
 
@@ -10,6 +10,7 @@ done
 
 added=$(git diff --cached --numstat -- . \
   ':(exclude)bun.lock' ':(exclude)pnpm-lock.yaml' ':(exclude)package-lock.json' ':(exclude)yarn.lock' \
+  ':(exclude,glob)**/*.md' \
   ':(exclude,glob)**/src/gen/**' \
   ':(exclude,glob)**/drizzle/**' |
   awk '{ n += $1 } END { print n + 0 }')
