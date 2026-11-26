@@ -10,8 +10,11 @@
   "logpush": true,
   "upload_source_maps": true,
   "placement": { "mode": "smart" },
+  // Tells the Worker which version it is: /api/health reports it and PostHog events carry it.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "env": {
     "staging": {
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_URL": "http://localhost:3000",
         "LOG_LEVEL": "Info",

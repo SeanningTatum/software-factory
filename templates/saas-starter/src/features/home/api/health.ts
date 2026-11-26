@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { CloudflareEnv, setting } from "#/app/env.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
+import { type WorkerVersion, workerVersion } from "#/features/core/lib/version.ts";
 import { requiredSettings } from "#/gen/env.ts";
 
 /** The part of a D1 binding the check uses. */
@@ -15,12 +16,14 @@ export interface Readiness {
   readonly missing: ReadonlyArray<string>;
   /** "up" or "down" when the project has a D1 binding; absent when it has none. */
   readonly database?: "up" | "down";
+  /** The Worker version that answered. The deploy checks it reached the version it uploaded. */
+  readonly version?: WorkerVersion;
 }
 
 /**
  * Whether this deploy can serve users: every required setting is set, APP_URL is the origin the
- * request came to (Better Auth refuses any other), and D1 answers when there is one. Names only;
- * no values leave the Worker.
+ * request came to (Better Auth refuses any other), and D1 answers when there is one. It names
+ * settings and the Worker version; no setting's value leaves the Worker.
  */
 export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: string) {
   const env = yield* CloudflareEnv;
@@ -39,9 +42,11 @@ export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: st
         Effect.catch((down) => Effect.succeed(down)),
       )
     : undefined;
+  const version = workerVersion(env);
   return {
     ok: missing.length === 0 && database !== "down",
     missing,
     ...(database ? { database } : {}),
+    ...(version ? { version } : {}),
   } satisfies Readiness;
 });

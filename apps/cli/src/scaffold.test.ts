@@ -95,7 +95,7 @@ describe("scaffold", () => {
     };
     const kept = make();
     expect(readdirSync(join(kept.dir, ".github/workflows")).sort()).toEqual(
-      ["ci.yml", "deploy.yml", "pr.yml", "promote.yml", "title.yml"], // the README says five
+      ["ci.yml", "deploy.yml", "pr.yml", "promote.yml", "rollout.yml", "title.yml"], // the README says six
     );
     expect(readdirSync(join(kept.dir, ".github/rulesets")).sort()).toEqual([
       "production.json",

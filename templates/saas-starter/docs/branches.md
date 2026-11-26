@@ -89,6 +89,82 @@ The same release is a button: on GitHub, Actions → promote → Run workflow, a
 `promote.yml` makes that one push from `staging`'s tip, under the same rules, then starts
 `deploy.yml` on `production` itself, because a push made by a workflow starts no other workflow.
 
+## Roll a release out to a share of visitors
+
+The promote button has a second choice, **rollout**. `full` gives every visitor the release at
+once. `gradual` gives it to a share of them, 10% unless you say otherwise, and leaves the old
+version serving the rest until you move the share.
+
+```mermaid
+sequenceDiagram
+  actor You
+  participant CI as GitHub Actions
+  participant CF as Cloudflare
+  You->>CI: promote: tag v1.2.0, rollout gradual, 10%
+  CI->>CF: upload v1.2.0 and add it at 0%
+  CI->>CF: smoke test, asking for v1.2.0 by id
+  CI->>CF: give v1.2.0 10%
+  You->>CI: rollout: 50, then 100 (or back out)
+  CI->>CF: move the share
+```
+
+1. **Start it.** Actions → promote → Run workflow, with the tag, `gradual` and a percent.
+   `deploy.yml` uploads the new version and adds it to production with no visitors on it. The smoke
+   test asks for that version by id and checks `/api/health` answers from it. Only then does it
+   get its share. A failed smoke test takes it out again; no visitor saw it.
+2. **Watch it.** Compare the two versions before you move on (see below).
+3. **Move it.** Actions → rollout → Run workflow: `25`, `50`, `75`, `100`, or `back out`, which
+   returns every visitor to the old version. At `100` or `back out` the rollout is over.
+
+### Where to see it
+
+| Where                                            | What it shows                                           |
+| ------------------------------------------------ | ------------------------------------------------------- |
+| The summary of each `deploy` or `rollout` run    | Each live version's id and its share, after the step    |
+| Cloudflare dashboard → your Worker → Deployments | The live split, and its history                         |
+| `/api/health`                                    | `version`: the id and tag of the version that answered  |
+| PostHog, with `ANALYTICS_PROVIDER=posthog`       | `app_version` on every event: the tag, such as `v1.2.0` |
+
+In PostHog, break any chart down by `app_version` to compare the two versions: errors, sign-ups,
+web vitals. To mark each step on the same timeline, give GitHub the project key:
+
+```bash
+gh secret set POSTHOG_KEY          # the same key the Worker has
+gh variable set POSTHOG_HOST --body https://eu.i.posthog.com   # only if you are not on the US host
+```
+
+Each deploy and each rollout step then posts a `deployment_rolled_out` event with `app_version`
+and `percent`. Without the secret, nothing is sent.
+
+### It needs a custom domain and one rule
+
+Cloudflare picks a version for each request on its own. Without help, a page from the new
+version asks the old one for a script it never had, and the page breaks. One rule on your domain
+pins each visitor to one version. In the Cloudflare dashboard, on the domain: Rules → Transform
+Rules → Modify Request Header → Create rule.
+
+| Field       | Value                            |
+| ----------- | -------------------------------- |
+| When        | All incoming requests            |
+| Then        | Set dynamic                      |
+| Header name | `Cloudflare-Workers-Version-Key` |
+| Value       | `ip.src`                         |
+
+Visitors behind one address then share a version, and one who changes network may switch once.
+That rule cannot run on `workers.dev`, so `deploy.yml` refuses a gradual rollout there. It cannot
+see the rule on a custom domain: make it before your first gradual rollout.
+
+### What a gradual rollout cannot carry
+
+- **A change to routes, cron triggers or Durable Object classes.** Those apply to the whole Worker
+  at once. Ship that release `full`.
+- **A migration that the old version cannot live with.** Both versions read one database, for as
+  long as the rollout runs. Keep migrations additive, as for any deploy.
+- **A second rollout.** Two versions can share production, not three. Finish or back out first.
+
+A `full` release is not held back by a running rollout: it takes all of production, and both
+older versions stop serving.
+
 ## The rules, and why each is there
 
 The rules are files: `.github/rulesets/staging.json` and `production.json`. Apply them with
@@ -152,6 +228,12 @@ merge is a push) or close and reopen it, and the full checks run.
   creates the repository and both branches, then stops at the rules with GitHub's own message.
 - **Production is deployed once by hand, at setup.** That first deploy gives it an address. After
   it, production moves only by a promotion; creating the `production` branch deploys nothing.
+- **A gradual rollout that `deploy.yml` refuses has still moved `production`.** The button checks
+  the percent and the domain before it pushes, but only the deploy can see that another rollout
+  is running. Finish that one or back out, then start the deploy again: Actions → deploy → Run
+  workflow, on `production`.
+- **The rollout button says no rollout is running.** One version serves everything: the last
+  release went out `full`, or the rollout already reached `100` or backed out.
 - **A failed production smoke test rolls back the code, not the database.** Keep migrations
   additive; `docs/runbook.md` says what to do next.
 
@@ -165,5 +247,5 @@ nothing deploys. `runbook.test.ts` fails if either drifts.
 
 ## Add your own workflows
 
-Put them beside the five in `.github/workflows/`. To make a new job a required check, add its name
+Put them beside the six in `.github/workflows/`. To make a new job a required check, add its name
 to the ruleset file and run `github` again. Never require a job that an `if` can skip.

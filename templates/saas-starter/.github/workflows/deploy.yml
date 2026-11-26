@@ -13,12 +13,26 @@
 # is the URL being tested, and D1 answers. Migrations run before the new code and a failed smoke test
 # rolls back the code only, never the database: keep every migration additive (add tables, columns
 # and indexes; drop or rename only in a later deploy, once no running version reads the old shape).
+#
+# Production deploys in full unless promote.yml (or Run workflow here) asks for `gradual`. Then the
+# new version is uploaded and smoke-tested with no visitors on it, and only after that given
+# `percent` of them; the old version keeps the rest until rollout.yml moves the share. Optional
+# secret POSTHOG_KEY (and variable POSTHOG_HOST): each step posts a `deployment_rolled_out` event.
 name: deploy
 on:
   push:
     branches: [staging, production]
   # promote.yml starts this on production: the push it makes with GITHUB_TOKEN starts no workflow.
   workflow_dispatch:
+    inputs:
+      rollout:
+        description: "Production only. full: every visitor gets it now. gradual: a share does, and Actions → rollout moves it"
+        type: choice
+        options: [full, gradual]
+        default: full
+      percent:
+        description: The share of visitors a gradual rollout starts with, 1 to 99
+        default: "10"
 permissions:
   contents: read
 concurrency: deploy-${{ github.ref_name }}
@@ -67,41 +81,121 @@ jobs:
       # The ruleset lets any commit that passed its checks fast-forward production. Deploy only a
       # promotion: a commit that is on staging and carries a version tag.
       - name: On staging, with a version tag
+        id: release
         run: |
           if ! git merge-base --is-ancestor HEAD origin/staging; then
             echo "::error::$(git rev-parse --short HEAD) is not on staging. Production takes staging's commits only: see docs/branches.md."; exit 1
           fi
-          if [ -z "$(git tag --points-at HEAD --list 'v*')" ]; then
+          tag=$(git tag --points-at HEAD --list 'v*' --sort=-v:refname | head -1)
+          if [ -z "$tag" ]; then
             echo "::error::No version tag on $(git rev-parse --short HEAD). Run: git push origin $(git rev-parse HEAD):refs/tags/v1.2.0, then re-run this job."; exit 1
           fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
-      - name: Migrate and deploy
+      # Before the migrations, so a refused rollout changes nothing.
+      - name: Check a gradual rollout can start
+        id: live
+        if: ${{ inputs.rollout == 'gradual' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          URL: ${{ vars.PRODUCTION_URL }}
+          PERCENT: ${{ inputs.percent }}
+        run: |
+          case $PERCENT in
+            [1-9] | [1-9][0-9]) ;;
+            *) echo "::error::percent must be a whole number from 1 to 99. For 100, run this again with rollout: full."; exit 1 ;;
+          esac
+          # Cloudflare picks a version for each request on its own. Without a rule that pins a
+          # visitor to one, a page from the new version asks the old one for scripts it lacks,
+          # and that rule cannot run on workers.dev: docs/branches.md has it.
+          case $URL in
+            *.workers.dev | *.workers.dev/*) echo "::error::A gradual rollout needs a custom domain. On workers.dev, run this again with rollout: full."; exit 1 ;;
+          esac
+          live=$(bunx wrangler deployments status --json)
+          if [ "$(jq '.versions | length' <<<"$live")" != 1 ]; then
+            echo "::error::A gradual rollout is already running. Finish it or back out first: Actions → rollout."; exit 1
+          fi
+          echo "old=$(jq -r '.versions[0].version_id' <<<"$live")" >> "$GITHUB_OUTPUT"
+      - name: Migrate and deploy
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          TAG: ${{ steps.release.outputs.tag }}
+          OLD: ${{ steps.live.outputs.old }}
         run: |
           if grep -q '"db:migrate:remote"' package.json; then bun run db:migrate:remote; fi
-          bun run deploy
+          if [ -z "$OLD" ]; then
+            bun run deploy --tag "$TAG" --message "$TAG"
+            exit 0
+          fi
+          # Gradual: upload without deploying, then add the new version to the deployment at 0%.
+          # No visitor reaches it there; the smoke test asks for it by id.
+          bunx vite build
+          WRANGLER_OUTPUT_FILE_PATH="$RUNNER_TEMP/upload.ndjson" bunx wrangler versions upload --tag "$TAG" --message "$TAG"
+          new=$(jq -r 'select(.type == "version-upload").version_id' "$RUNNER_TEMP/upload.ndjson")
+          name=$(jq -r 'select(.type == "version-upload").worker_name' "$RUNNER_TEMP/upload.ndjson")
+          test -n "$new"
+          bunx wrangler versions deploy "$new@0" "$OLD@100" -y --message "$TAG at 0%"
+          { echo "new=$new"; echo "name=$name"; } >> "$GITHUB_OUTPUT"
       - name: Smoke test, rolling back on failure
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          NEW: ${{ steps.deploy.outputs.new }}
+          NAME: ${{ steps.deploy.outputs.name }}
+          OLD: ${{ steps.live.outputs.old }}
         run: |
+          # In a gradual rollout the new version has no visitors yet: this header asks for it by id.
+          only=()
+          if [ -n "$NEW" ]; then only=(-H "Cloudflare-Workers-Version-Overrides: $NAME=\"$NEW\""); fi
+          # Cloudflare ignores that header until the deployment reaches the edge, and the old
+          # version then answers 200: so in a gradual rollout the proof is the id in the answer.
+          health() {
+            for _ in 1 2 3 4 5 6; do
+              if body=$(curl -sS --fail-with-body --max-time 15 "${only[@]}" "$1/api/health") &&
+                { [ -z "$NEW" ] || [ "$(jq -r '.version.id' <<<"$body")" = "$NEW" ]; }; then return 0; fi
+              echo "$body"; sleep 3
+            done
+            return 1
+          }
           # A CSP with a nonce is sent only by a production build, so only a deploy can see it break.
           csp() {
-            curl -sS --max-time 15 -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" "$1/" || return 1
+            curl -sS --max-time 15 "${only[@]}" -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" "$1/" || return 1
             n=$(tr -d '\r' < "$RUNNER_TEMP/h" | grep -i '^content-security-policy:' | grep -o "'nonce-[^']*'" | head -1 | cut -c8- | tr -d "'")
             test -n "$n" || { echo "no nonce in the content-security-policy header"; return 1; }
             ! tr '\n' ' ' < "$RUNNER_TEMP/b" | grep -o '<script[^>]*>' | grep -vF "nonce=\"$n\""
           }
-          if ! { curl --fail-with-body --retry 5 --retry-delay 3 --max-time 15 "${{ vars.PRODUCTION_URL }}/api/health" && csp "${{ vars.PRODUCTION_URL }}"; }; then
+          if ! { health "${{ vars.PRODUCTION_URL }}" && csp "${{ vars.PRODUCTION_URL }}"; }; then
             # Alert first: if the rollback fails too, the step exits before anything after it.
             if [ -n "$ALERT_WEBHOOK_URL" ]; then
               curl -sS --max-time 10 -X POST -H 'Content-Type: application/json' \
                 -d '{"text":"production deploy failed its smoke test; rolling back","content":"production deploy failed its smoke test; rolling back"}' "$ALERT_WEBHOOK_URL" || true
             fi
-            bunx wrangler rollback --message "smoke test failed" -y
+            if [ -n "$NEW" ]; then bunx wrangler versions deploy "$OLD@100" -y --message "smoke test failed"
+            else bunx wrangler rollback --message "smoke test failed" -y; fi
             exit 1
           fi
+      - name: Give the new version its share
+        if: ${{ inputs.rollout == 'gradual' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          TAG: ${{ steps.release.outputs.tag }}
+          NEW: ${{ steps.deploy.outputs.new }}
+          OLD: ${{ steps.live.outputs.old }}
+          PERCENT: ${{ inputs.percent }}
+        run: bunx wrangler versions deploy "$NEW@$PERCENT" "$OLD" -y --message "$TAG at $PERCENT%"
+      - name: Report the rollout
+        continue-on-error: true # the deploy has passed its smoke test; a failed report is not a failed deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PERCENT: ${{ inputs.rollout == 'gradual' && inputs.percent || '100' }}
+        run: sh .github/scripts/report-rollout.sh "$TAG" "$PERCENT"
