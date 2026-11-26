@@ -51,8 +51,6 @@
 
 ### Patch Changes
 
-- On Windows, `create` no longer fails at its first commit: git and `gh` start without a shell, which had split a commit message at its spaces. Package scripts that `setup` runs through npm, pnpm or yarn now start there too.
-- The template it ships gives Better Auth the `subscription` table, so a checkout or a Stripe webhook can store a plan. Before, every subscription write failed.
 - 9495429: Cap request bodies at 1 MB, rate limit the Stripe endpoints and sign-in per account and IPv6 /64, undo a half-finished sign-up, and record a retried Stripe webhook once.
 - 9495429: Billing shows "Manage" for unpaid subscriptions; uploads cap files per user and list one page at a time.
 - 9495429: Staging deploys now build for staging, so they stop overwriting production; deploy workflows time out, check the CSP nonce, and pin their actions by SHA.
