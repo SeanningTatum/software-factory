@@ -29,6 +29,8 @@ export interface ScaffoldOptions {
   readonly date?: string;
   /** Values written into .dev.vars, such as the Stripe keys asked for during `create`. */
   readonly devVars?: Readonly<Record<string, string>>;
+  /** The package manager the project will use. The template's Bun pin is kept only for Bun. */
+  readonly pm?: string;
 }
 
 export interface BlankSetting {
@@ -249,6 +251,10 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
 
   const kept = prune(targetDir, features);
   rename(targetDir, name);
+  // Corepack refuses to run pnpm or yarn in a project whose packageManager names another one.
+  if (options.pm && options.pm !== "bun") {
+    edit(join(targetDir, "package.json"), (text) => text.replace(/^ *"packageManager": .*\n/m, ""));
+  }
   uniqueNamespaceIds(targetDir);
   sync(targetDir);
   resetHistory(

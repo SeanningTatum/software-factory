@@ -86,6 +86,21 @@ describe("scaffold", () => {
     );
   });
 
+  test("pins this repo's Bun in a Bun project, and no package manager in any other", () => {
+    const pinned = (pm?: string) => {
+      const dir = target();
+      const options = { templateDir: TEMPLATE, harnessDir: undefined, targetDir: dir };
+      scaffold({ ...options, name: "a", features: [], ...(pm ? { pm } : {}) });
+      return JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).packageManager;
+    };
+    const root = JSON.parse(
+      readFileSync(join(import.meta.dirname, "../../../package.json"), "utf8"),
+    );
+    expect(pinned()).toBe(root.packageManager);
+    expect(pinned("bun")).toBe(root.packageManager);
+    expect(pinned("pnpm")).toBeUndefined();
+  });
+
   test("gives each project its own rate-limit namespace ids", () => {
     const ids = (name: string) => {
       const dir = target();

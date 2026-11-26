@@ -246,6 +246,7 @@ export const create = async (args: CreateArgs) => {
               name: input.name,
               features: input.features,
               devVars: input.devVars,
+              pm,
             });
             spinner.stop(
               `Created ${input.name} with ${result.features.length ? result.features.join(", ") : "the required features only"}`,
