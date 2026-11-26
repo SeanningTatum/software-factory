@@ -12,7 +12,7 @@ describe("Uploads", () => {
     const { bucket } = memoryBucket();
     const uploads = Uploads.make(bucket, undefined);
     const stored = await Effect.runPromise(uploads.upload("u1", png("my cat!.png")));
-    expect(stored.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(stored.id).toMatch(/^\d{13}-[0-9a-f-]{36}$/);
     expect(stored.name).toBe("my cat_.png");
     const listed = await Effect.runPromise(uploads.list("u1"));
     expect(listed.files.map((f) => f.id)).toEqual([stored.id]);
@@ -51,7 +51,8 @@ describe("Uploads", () => {
 
   const seed = (store: ReturnType<typeof memoryBucket>["store"], count: number) => {
     for (let i = 0; i < count; i++) {
-      store.set(`users/u1/${String(i).padStart(5, "0")}`, {
+      // As upload names them: the later the file, the lower its key.
+      store.set(`users/u1/${String(99_999 - i).padStart(5, "0")}`, {
         bytes: new ArrayBuffer(1),
         contentType: "image/png",
         meta: {
@@ -68,11 +69,21 @@ describe("Uploads", () => {
     const uploads = Uploads.make(bucket, undefined);
     const first = await Effect.runPromise(uploads.list("u1"));
     expect(first.files).toHaveLength(PAGE_SIZE);
-    expect(first.files[0]?.name).toBe(`f${PAGE_SIZE - 1}.png`);
+    expect(first.files[0]?.name).toBe(`f${PAGE_SIZE + 4}.png`);
     expect(first.cursor).toBeDefined();
     const second = await Effect.runPromise(uploads.list("u1", first.cursor));
     expect(second.files).toHaveLength(5);
+    expect(second.files.at(-1)?.name).toBe("f0.png");
     expect(second.cursor).toBeUndefined();
+  });
+
+  it("names a file so that a later upload lists first", async () => {
+    const uploads = Uploads.make(memoryBucket().bucket, undefined);
+    const older = await Effect.runPromise(uploads.upload("u1", png()));
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    const newer = await Effect.runPromise(uploads.upload("u1", png()));
+    const { files } = await Effect.runPromise(uploads.list("u1"));
+    expect(files.map((f) => f.id)).toEqual([newer.id, older.id]);
   });
 
   it("refuses an upload once the user holds the most files", async () => {

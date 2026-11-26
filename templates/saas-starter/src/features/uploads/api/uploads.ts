@@ -70,6 +70,11 @@ const NAME_MAX = 200;
 
 /** Every user's files live under their own prefix, so one user can never name another's file. */
 const prefixFor = (userId: string) => `users/${userId}/`;
+/**
+ * R2 lists keys in order, so a key starts with its time counted down: the newest file sorts first
+ * on every page. Thirteen digits last until the year 2286.
+ */
+const newestFirst = (millis: number) => String(9_999_999_999_999 - millis).padStart(13, "0");
 const safeName = (name: string) => name.replace(/[^\w.\- ]+/g, "_").slice(0, NAME_MAX) || "file";
 
 export class Uploads extends Context.Service<
@@ -114,10 +119,11 @@ export class Uploads extends Context.Service<
       const bytes = yield* call("read", () => file.arrayBuffer());
       const late = check(file, new Uint8Array(bytes.slice(0, HEAD_BYTES)));
       if (late) return yield* reject(late);
-      const id = crypto.randomUUID();
+      const now = yield* DateTime.now;
+      const id = `${newestFirst(DateTime.toEpochMillis(now))}-${crypto.randomUUID()}`;
       const key = `${prefixFor(userId)}${id}`;
       const name = safeName(file.name);
-      const uploadedAt = DateTime.formatIso(yield* DateTime.now);
+      const uploadedAt = DateTime.formatIso(now);
       yield* call("put", () =>
         bucket.put(key, bytes, {
           httpMetadata: { contentType: file.type },
@@ -144,8 +150,6 @@ export class Uploads extends Context.Service<
         size: o.size,
         uploadedAt: o.customMetadata?.uploadedAt ?? o.uploaded.toISOString(),
       }));
-      // Keys are random, so R2's key order means nothing to people: newest first within a page.
-      files.sort((x, y) => y.uploadedAt.localeCompare(x.uploadedAt));
       return { files, cursor: page.truncated ? page.cursor : undefined };
     });
 
