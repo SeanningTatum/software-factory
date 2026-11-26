@@ -190,6 +190,7 @@ jobs:
           PERCENT: ${{ inputs.percent }}
         run: bunx wrangler versions deploy "$NEW@$PERCENT" "$OLD" -y --message "$TAG at $PERCENT%"
       - name: Report the rollout
+        continue-on-error: true # the deploy has passed its smoke test; a failed report is not a failed deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

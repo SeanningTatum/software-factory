@@ -34,12 +34,25 @@ jobs:
       - name: Tag staging's tip and move production to it
         env:
           TAG: ${{ inputs.tag }}
+          ROLLOUT: ${{ inputs.rollout }}
+          PERCENT: ${{ inputs.percent }}
+          URL: ${{ vars.PRODUCTION_URL }}
         # No --force, ever: a refused push means a check has not passed on this commit yet.
         run: |
           case $TAG in
             v?*) ;;
             *) echo "::error::The tag must start with v: deploy.yml looks for v*."; exit 1 ;;
           esac
+          # deploy.yml checks these again. Here a typo costs nothing: no tag is made, nothing moves.
+          if [ "$ROLLOUT" = gradual ]; then
+            case $PERCENT in
+              [1-9] | [1-9][0-9]) ;;
+              *) echo "::error::percent must be a whole number from 1 to 99. For 100, choose full."; exit 1 ;;
+            esac
+            case $URL in
+              *.workers.dev | *.workers.dev/*) echo "::error::A gradual rollout needs a custom domain: see docs/branches.md. On workers.dev, choose full."; exit 1 ;;
+            esac
+          fi
           git push --atomic origin "HEAD:refs/tags/$TAG" HEAD:refs/heads/production
       # A push made with GITHUB_TOKEN starts no workflow, so deploy.yml is started by hand.
       - run: gh workflow run deploy.yml --ref production -f rollout="$ROLLOUT" -f percent="$PERCENT"

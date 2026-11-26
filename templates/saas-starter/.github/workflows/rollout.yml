@@ -43,6 +43,10 @@ jobs:
           pair=$(for id in $(jq -r '.versions[].version_id' <<<"$live"); do
             bunx wrangler versions view "$id" --json
           done | jq -s 'sort_by(.metadata.created_on)')
+          # A failed read above leaves one version here, and "back out" would then pick the new one.
+          if [ "$(jq 'length' <<<"$pair")" != 2 ]; then
+            echo "::error::Could not read both versions from Cloudflare. Nothing moved: run this again."; exit 1
+          fi
           old=$(jq -r '.[0].id' <<<"$pair")
           new=$(jq -r '.[1].id' <<<"$pair")
           tag=$(jq -r '.[1].annotations["workers/tag"] // .[1].id' <<<"$pair")
@@ -51,4 +55,5 @@ jobs:
             100) bunx wrangler versions deploy "$new@100" -y --message "$tag at 100%" ;;
             *) bunx wrangler versions deploy "$new@$TO" "$old" -y --message "$tag at $TO%" ;;
           esac
-          sh .github/scripts/report-rollout.sh "$tag" "$TO"
+          sh .github/scripts/report-rollout.sh "$tag" "$TO" ||
+            echo "::warning::The traffic moved, but the report did not run."

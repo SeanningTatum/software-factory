@@ -6,13 +6,14 @@
 set -eu
 tag=$1
 percent=$2
+# On its own line, so a failed read stops here: no empty table, no event for a split nobody saw.
+live=$(bunx wrangler deployments status --json)
 {
   echo "### Production: $tag serves $percent% of traffic"
   echo
   echo "| Version | Traffic |"
   echo "| --- | --- |"
-  bunx wrangler deployments status --json |
-    jq -r '.versions[] | "| `\(.version_id)` | \(.percentage)% |"'
+  printf '%s' "$live" | jq -r '.versions[] | "| `\(.version_id)` | \(.percentage)% |"'
 } >> "$GITHUB_STEP_SUMMARY"
 
 [ -n "${POSTHOG_KEY:-}" ] || exit 0

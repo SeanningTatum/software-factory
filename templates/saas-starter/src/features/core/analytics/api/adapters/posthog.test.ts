@@ -34,6 +34,13 @@ describe("posthogAdapter", () => {
       path: "/x",
       app_version: "v1.2.0",
     });
+    const identify = {
+      ...batch[0],
+      event: { _tag: "user_identified" as const, anonId: "anon:a1" },
+    };
+    await Effect.runPromise(posthogAdapter("k", "https://ph.example", "v1.2.0").send([identify]));
+    const [, sent] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(sent.body)).batch[0].properties.app_version).toBe("v1.2.0");
   });
 
   it("sends user_identified as PostHog's $identify, linking the anonymous id", async () => {

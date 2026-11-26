@@ -162,6 +162,9 @@ see the rule on a custom domain: make it before your first gradual rollout.
   long as the rollout runs. Keep migrations additive, as for any deploy.
 - **A second rollout.** Two versions can share production, not three. Finish or back out first.
 
+A `full` release is not held back by a running rollout: it takes all of production, and both
+older versions stop serving.
+
 ## The rules, and why each is there
 
 The rules are files: `.github/rulesets/staging.json` and `production.json`. Apply them with
@@ -225,9 +228,10 @@ merge is a push) or close and reopen it, and the full checks run.
   creates the repository and both branches, then stops at the rules with GitHub's own message.
 - **Production is deployed once by hand, at setup.** That first deploy gives it an address. After
   it, production moves only by a promotion; creating the `production` branch deploys nothing.
-- **A gradual rollout that `deploy.yml` refuses has still moved `production`.** The tag and the
-  branch were pushed before the deploy looked. Fix what it named, or give up on gradual: Actions →
-  deploy → Run workflow, on `production`, with `full`.
+- **A gradual rollout that `deploy.yml` refuses has still moved `production`.** The button checks
+  the percent and the domain before it pushes, but only the deploy can see that another rollout
+  is running. Finish that one or back out, then start the deploy again: Actions → deploy → Run
+  workflow, on `production`.
 - **The rollout button says no rollout is running.** One version serves everything: the last
   release went out `full`, or the rollout already reached `100` or backed out.
 - **A failed production smoke test rolls back the code, not the database.** Keep migrations

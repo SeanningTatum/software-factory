@@ -22,8 +22,8 @@ export interface Readiness {
 
 /**
  * Whether this deploy can serve users: every required setting is set, APP_URL is the origin the
- * request came to (Better Auth refuses any other), and D1 answers when there is one. Names only;
- * no values leave the Worker.
+ * request came to (Better Auth refuses any other), and D1 answers when there is one. It names
+ * settings and the Worker version; no setting's value leaves the Worker.
  */
 export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: string) {
   const env = yield* CloudflareEnv;

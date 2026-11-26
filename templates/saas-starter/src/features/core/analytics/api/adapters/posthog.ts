@@ -14,6 +14,7 @@ export const posthogAdapter = (
 ): AnalyticsAdapter => ({
   name: "posthog",
   send: Effect.fn("Analytics.posthog.send")(function* (batch) {
+    const release = version ? { app_version: version } : {};
     const body = JSON.stringify({
       api_key: apiKey,
       batch: batch.map(({ event, distinctId, timestamp }) =>
@@ -23,13 +24,13 @@ export const posthogAdapter = (
               event: "$identify",
               distinct_id: distinctId,
               timestamp,
-              properties: { $anon_distinct_id: event.anonId },
+              properties: { $anon_distinct_id: event.anonId, ...release },
             }
           : {
               event: event._tag,
               distinct_id: distinctId,
               timestamp,
-              properties: { ...properties(event), ...(version ? { app_version: version } : {}) },
+              properties: { ...properties(event), ...release },
             },
       ),
     });

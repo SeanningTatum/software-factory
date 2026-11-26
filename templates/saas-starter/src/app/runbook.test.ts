@@ -115,6 +115,8 @@ describe("gradual rollout", () => {
     expect(workflow("promote")).toMatch(
       /gh workflow run deploy\.yml --ref production -f rollout="\$ROLLOUT" -f percent="\$PERCENT"/,
     );
+    // A bad percent stops the button before it tags or moves anything.
+    expect(workflow("promote")).toMatch(/case \$PERCENT in[\s\S]*exit 1[\s\S]*git push --atomic/);
     expect(workflow("deploy")).toMatch(
       /workflow_dispatch:\n\s+inputs:\n\s+rollout:[\s\S]*options: \[full, gradual\]/,
     );
@@ -145,6 +147,8 @@ describe("gradual rollout", () => {
     expect(rollout).toMatch(/^ {4}environment: production$/m);
     // Backing out names the old version alone, so the new one leaves the deployment.
     expect(rollout).toMatch(/"back out"\) bunx wrangler versions deploy "\$old@100"/);
+    // It reads both versions before it picks one: with one missing, the new one would pass for the old.
+    expect(rollout).toMatch(/jq 'length' <<<"\$pair"\)" != 2 \][\s\S]*case \$TO in/);
   });
 
   it.skipIf(noGithub)(
