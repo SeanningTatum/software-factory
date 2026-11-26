@@ -18,12 +18,12 @@ to the template alone needs a changeset for the CLI, which carries it.
 
 ## Ship a release
 
-| Step | Do                                                        | What happens                                                    |
-| ---- | --------------------------------------------------------- | --------------------------------------------------------------- |
-| 1    | Merge the "Version Packages" pull request into `staging`. | Versions are bumped, changelogs written, changesets spent.      |
-| 2    | Wait for `check.yml` to pass on `staging`.                | `production` takes only a commit the checks passed on.          |
-| 3    | `bun run promote`, or Actions → promote → Run workflow.   | Tags `staging`'s tip, moves `production` to it; that publishes. |
-| 4    | `npm view create-tanstack-cf-saas version`                | Shows the version you just shipped.                             |
+| Step | Do                                                          | What happens                                                    |
+| ---- | ----------------------------------------------------------- | --------------------------------------------------------------- |
+| 1    | Merge the "Version Packages" pull request into `staging`.   | Versions are bumped, changelogs written, changesets spent.      |
+| 2    | Wait for `check.yml` and `blocks.yml` to pass on `staging`. | `production` takes only a commit the checks passed on.          |
+| 3    | `bun run promote`, or Actions → promote → Run workflow.     | Tags `staging`'s tip, moves `production` to it; that publishes. |
+| 4    | `npm view create-tanstack-cf-saas version`                  | Shows the version you just shipped.                             |
 
 The tag is `v<the CLI's version>`, as in `v0.1.0`; `release.yml` publishes to npm and makes the
 GitHub releases. Nothing merges into `production`: no pull request, no merge commit, never a
@@ -48,7 +48,7 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | The version pull request's checks are missing or stale.   | Close and reopen it. A push by Actions starts no checks.                                                         |
 | `promote` says "unversioned changesets".                  | Do step 1 first.                                                                                                 |
-| `promote` says "production did not move".                 | `check.yml` has not passed on `staging`'s tip: wait, then run it again.                                          |
+| `promote` says "production did not move".                 | `check.yml` or `blocks.yml` has not passed on `staging`'s tip: wait, or fix it, then run it again.               |
 | The same, and git says "non-fast-forward".                | `production` has a commit `staging` lacks. Rebuild it: see below.                                                |
 | `git tag` says the tag exists.                            | The CLI's version did not change. Pass a name: `bun run promote v0.1.1`.                                         |
 | `release.yml` fails at "On staging, with a version tag".  | `production` moved without `bun run promote`. Tag that commit `v…`, re-run the job.                              |

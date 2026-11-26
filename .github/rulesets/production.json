@@ -31,6 +31,30 @@
           },
           {
             "context": "secrets"
+          },
+          {
+            "context": "matrix (required)"
+          },
+          {
+            "context": "matrix (db)"
+          },
+          {
+            "context": "matrix (auth)"
+          },
+          {
+            "context": "matrix (billing)"
+          },
+          {
+            "context": "matrix (kv)"
+          },
+          {
+            "context": "matrix (workflows)"
+          },
+          {
+            "context": "matrix (uploads)"
+          },
+          {
+            "context": "matrix (all)"
           }
         ]
       }

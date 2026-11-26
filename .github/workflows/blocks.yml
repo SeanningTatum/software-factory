@@ -1,6 +1,7 @@
 name: blocks
 # The feature matrix, on pull requests into staging that touch what it proves.
-# Not a required check: a workflow with a paths filter never reports on the pull requests it skips.
+# Not a required check there: a workflow with a paths filter never reports on the pull requests it
+# skips. Every push to staging runs it, though, and production requires all eight on its commit.
 on:
   pull_request:
     branches: [staging]
