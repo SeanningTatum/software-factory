@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { capture, gitIdentity, run, usesShell } from "./run.ts";
@@ -21,6 +21,10 @@ test("a commit message with spaces reaches git whole", async () => {
   expect(capture("git", dir)(["log", "-1", "--format=%s"]).stdout.trim()).toBe(message);
 });
 
-test("a package manager that is a .cmd file on Windows still starts", () => {
-  expect(capture("npm", tmpdir())(["--version"]).ok).toBe(true);
+// npm, pnpm and yarn are .cmd files there, and Node starts one only through a shell. Its own file,
+// not npm: a cold `npm --version` on a Windows runner takes longer than a test gets.
+test.skipIf(process.platform !== "win32")("a .cmd file starts on Windows", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cli-run-"));
+  writeFileSync(join(dir, "hello.cmd"), "@echo hello\r\n");
+  expect(capture("hello.cmd", dir)([]).stdout.trim()).toBe("hello");
 });
