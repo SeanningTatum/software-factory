@@ -8,7 +8,7 @@ that builds projects from it.
 | Path                      | What it is                                                                                                                    |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `templates/saas-starter/` | The template, with every feature on. Its own `CLAUDE.md` holds the code rules.                                                |
-| `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `github`, `harness`. Ships the template and `claude/`.         |
+| `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `github`, `harness`. Ships the template, `claude/`, `.husky/`. |
 | `packages/biome-config/`  | Shared Biome rules (published).                                                                                               |
 | `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                        |
 | `packages/lint/`          | `cf-saas-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |
@@ -58,6 +58,24 @@ bun run --cwd templates/saas-starter dev                   # work on the templat
 bun run --filter create-tanstack-cf-saas test:matrix       # prove every feature combination
 node apps/cli/dist/index.js my-app --features db,auth      # try the CLI (after bun run build)
 ```
+
+## Commits
+
+Husky runs two hooks from `.husky/` on every commit. `bun install` turns them on, so run it first
+in a fresh clone or worktree. The CLI's bundle ships the same two files to each new project that
+asks for them, so a change to a hook is a change to what `create` hands out.
+
+- **The message is a conventional commit:** `type(scope): subject`, with the scope optional and the
+  type one of `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`,
+  `revert`. The subject says what changed, as in `fix(billing): keep Stripe's status after a late
+  webhook`.
+- **A commit does one thing and adds at most 400 lines**, not counting `bun.lock`, `src/gen/` and
+  `drizzle/`. Commit each step of a feature as soon as it works (the schema, then the service, then
+  the page), each with its tests, instead of one commit at the end.
+- **A pull request into `staging` is squashed, and its title is the commit.** `title.yml` holds the
+  title to the same rule as a commit message, and the `staging` ruleset requires it.
+- **When a hook refuses a commit, fix the commit.** Split it with `git add -p` or file by file.
+  Never pass `--no-verify` unless the owner says to.
 
 ## Claude harness
 
