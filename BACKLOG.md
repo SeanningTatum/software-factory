@@ -41,6 +41,8 @@ Rules for a good item:
 | B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
 | B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 | B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
+| B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
+| B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
 
 ## Now
 
@@ -154,3 +156,34 @@ Rules for a good item:
 - [ ] `bun run --filter @tanstack-cf-saas/lint test` and `test:matrix` pass.
 
 **Where:** `packages/lint/src/files.ts`, `lint.ts`, `rules/ast-rules.ts`, `rules/shared-lib.ts`, `rules/types.ts`.
+
+### B-21 · A stranger can't lock a user out of sign-in
+
+- **Area:** Security
+- **Size:** M
+- **Needs you:** Decide: a second, looser limiter for the account key, or a counter of failed sign-ins in KV or D1
+
+**Why:** Sign-in is limited per account as well as per address, so that many addresses cannot guess one password. The same limit lets anyone who knows an email send ten bad sign-ins a minute and keep its owner out. Cloudflare's limiter counts and checks in one call, so it cannot count failures alone: counting after the password check would let a guesser try without limit.
+
+**Done when:**
+
+- [ ] The choice is written in the auth `TIMELINE.md`.
+- [ ] A test shows the owner, with the right password, signing in while a stranger sends bad ones for the same email.
+- [ ] A test shows that guesses at one account from many addresses are still stopped.
+
+**Where:** `templates/saas-starter/src/features/auth/api/auth-service.ts` (`refuseIfLimited`), `src/features/auth/feature.json`.
+
+### B-22 · A repeated Stripe event leaves one audit row
+
+- **Area:** Logging
+- **Size:** M
+- **Needs you:** no
+
+**Why:** When Stripe sends a checkout or a cancel event twice, the billing hooks run twice and `audit_log` gets two rows for one plan change. The hook is handed the row after the Stripe plugin has already written it, so it cannot tell a first delivery from a repeat.
+
+**Done when:**
+
+- [ ] Each Stripe event id is recorded once, and a repeat skips `onEvent`.
+- [ ] A real-SQL test sends one event twice and finds one `audit_log` row.
+
+**Where:** `templates/saas-starter/src/features/billing/auth-plugins.ts`, `src/features/billing/schema.ts`.

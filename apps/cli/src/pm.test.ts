@@ -5,7 +5,8 @@ describe("package manager", () => {
   test("detects who launched the CLI", () => {
     expect(detectPackageManager("pnpm/9.0.0 npm/? node/v22")).toBe("pnpm");
     expect(detectPackageManager("npm/10.0.0 node/v22")).toBe("npm");
-    expect(detectPackageManager("")).toBe("bun");
+    expect(detectPackageManager("", (pm) => pm === "pnpm")).toBe("pnpm");
+    expect(detectPackageManager("", () => false)).toBe("npm");
   });
   test("builds script commands", () => {
     expect(runCommand("npm", "db:generate")).toEqual(["npm", ["run", "db:generate"]]);

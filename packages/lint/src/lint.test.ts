@@ -7,9 +7,13 @@ import { importSpecifiers, toSlash } from "./files.ts";
 import { globToRegExp } from "./glob.ts";
 import { lint } from "./lint.ts";
 
-const project = (files: Record<string, string>) => {
+/** A project of these files, and one empty test file so that lint always has a file to read. */
+const project = (
+  files: Record<string, string>,
+  base: Record<string, string> = { "src/a.test.ts": "" },
+) => {
   const root = mkdtempSync(join(tmpdir(), "cf-saas-lint-"));
-  for (const [path, text] of Object.entries(files)) {
+  for (const [path, text] of Object.entries({ ...base, ...files })) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), text);
   }
@@ -66,6 +70,17 @@ describe("lint", () => {
     expect(lint(project({ "CLAUDE.md": `${at}one more\n` })).map((f) => f.rule)).toEqual([
       "rules-file",
     ]);
+  });
+
+  test("fails when no file matches include, so a run in the wrong folder is not a pass", () => {
+    expect(lint(project({ "lib/a.ts": "" }, {})).map((f) => f.rule)).toEqual(["no-files"]);
+  });
+
+  test("counts lines, not the final newline", () => {
+    const at = "//\n".repeat(defaults.maxLines);
+    const rulesOf = (text: string) => lint(project({ "src/big.test.ts": text })).map((f) => f.rule);
+    expect(rulesOf(at)).toEqual([]);
+    expect(rulesOf(`${at}//`)).toEqual(["file-size"]);
   });
 
   describe("CLAUDE.md is true", () => {
@@ -132,10 +147,13 @@ describe("lint", () => {
         "export const d = globalThis.process.env.Z;",
         'export const e = process["env"].W;',
         'export const f = E.fn("f")(function* () { return yield* E.tryPromise(() => fetch("x")) });',
+        "export const g = (xs: Array<never>) => xs.map(E.runSync);",
+        "export const h = E.runPromiseExitWith;",
       ].join("\n"),
       "src/core/sneaky.test.ts": "",
     });
     expect(lint(root).map((f) => `${f.rule}:${f.line}`)).toEqual([
+      "no-run-effect:2",
       "no-process-env:3",
       "no-run-effect:4",
       "no-run-effect:5",
@@ -143,6 +161,8 @@ describe("lint", () => {
       "external-call-span:6",
       "no-process-env:7",
       "no-process-env:8",
+      "no-run-effect:10",
+      "no-run-effect:11",
     ]);
   });
 

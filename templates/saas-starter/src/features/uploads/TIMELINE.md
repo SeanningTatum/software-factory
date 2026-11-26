@@ -53,10 +53,10 @@ stateDiagram-v2
 
 - 2026-11-24 — The upload route reads the form through `readForm`, which counts bytes as they arrive. Why: a chunked body has no content-length, so the old check let `formData()` buffer up to the Worker's request limit.
 - 2026-11-24 — Uploads return and list `id`, the file's id within its owner's files, instead of the R2 key; downloads name the file. Why: the API gave out a key that `/api/uploads/$id` could not take, and downloads were saved as a bare UUID.
-- 2026-11-24 — The list comes in pages of 50 with R2's cursor for the next page, newest first within a page; the upload limiter fails open like auth's. Why: keys are random, so R2's own order means nothing to people, and a limiter outage must not stop uploads.
+- 2026-11-24 — The list comes in pages of 50 with R2's cursor for the next page, newest first across pages; the upload limiter fails open like auth's. Why: a key starts with its upload time counted down, so R2's own key order is newest first, and a limiter outage must not stop uploads.
 - 2026-11-24 — The server checks a file's first bytes against its declared type, not only the type the browser claims. Why: the declared type is whatever the client says.
 - 2026-11-24 — The browser machine and the server run the same `check` from `lib/validate.ts`. Why: the user hears about a bad file before it uploads, and the server still has the last word.
-- 2026-11-24 — Each user's files sit under `users/<id>/` with random keys. Why: one user can never name another's file.
+- 2026-11-24 — Each user's files sit under `users/<id>/`, and a key ends in a random UUID. Why: one user can never name another's file, or guess one.
 - 2026-11-24 — Downloads go out as attachments with `nosniff`. Why: a stored file never renders as a page on our origin.
 - 2026-11-24 — Without the `BUCKET` binding every call fails with `NotConfigured`; without `UPLOAD_LIMITER` uploads are not rate limited. Why: missing setup turns the feature off, not the app.
 - 2026-11-24 — A request whose content-length passes 5 MB plus form overhead is refused before the form is read. Why: the Worker does not buffer an upload it will reject.

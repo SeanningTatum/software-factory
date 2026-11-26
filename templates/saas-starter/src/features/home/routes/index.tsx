@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { buttonVariants } from "#/features/core/ui/components/button.tsx";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -15,11 +14,6 @@ function Home() {
         TanStack Start on Cloudflare Workers, written in Effect, with every flow drawn as a state
         machine.
       </p>
-      <div className="mt-8 flex gap-3">
-        <Link to="/" className={buttonVariants({ size: "lg" })}>
-          Get started
-        </Link>
-      </div>
     </main>
   );
 }

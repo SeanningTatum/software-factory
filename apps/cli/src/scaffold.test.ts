@@ -9,6 +9,7 @@ import { add, remove } from "./commands.ts";
 import {
   blankSettings,
   hasTables,
+  namespaceIds,
   parseFeatures,
   scaffold,
   titleCase,
@@ -83,6 +84,21 @@ describe("scaffold", () => {
     expect(Object.keys(withHooks.devDependencies)).toEqual(
       Object.keys(without.devDependencies).concat("husky").sort(),
     );
+  });
+
+  test("pins this repo's Bun in a Bun project, and no package manager in any other", () => {
+    const pinned = (pm?: string) => {
+      const dir = target();
+      const options = { templateDir: TEMPLATE, harnessDir: undefined, targetDir: dir };
+      scaffold({ ...options, name: "a", features: [], ...(pm ? { pm } : {}) });
+      return JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).packageManager;
+    };
+    const root = JSON.parse(
+      readFileSync(join(import.meta.dirname, "../../../package.json"), "utf8"),
+    );
+    expect(pinned()).toBe(root.packageManager);
+    expect(pinned("bun")).toBe(root.packageManager);
+    expect(pinned("pnpm")).toBeUndefined();
   });
 
   test("gives each project its own rate-limit namespace ids", () => {
@@ -240,8 +256,8 @@ describe("scaffold", () => {
       expect(existsSync(join(dir, "src/features/core/kv/api/key-value.ts"))).toBe(true);
       expect(git("status", "--porcelain").stdout).not.toBe("");
       // kv's files are new and uncommitted, so only --force removes them.
-      expect(() => remove("kv")).toThrow(/uncommitted changes/);
-      remove("kv", true);
+      expect(() => remove(["kv"])).toThrow(/uncommitted changes/);
+      remove(["kv"], true);
     } finally {
       process.chdir(cwd);
     }
@@ -277,6 +293,34 @@ describe("scaffold", () => {
     } finally {
       process.chdir(cwd);
     }
+  });
+
+  test("add takes several names, and gives a new limiter an id of its own", () => {
+    const dir = target();
+    scaffold({
+      templateDir: TEMPLATE,
+      harnessDir: undefined,
+      targetDir: dir,
+      name: "many",
+      features: [],
+    });
+    const before = namespaceIds(dir);
+    const cwd = process.cwd();
+    process.chdir(dir);
+    try {
+      expect(() => add("kv", "nope")).toThrow(/Unknown feature\(s\): nope/);
+      expect(existsSync(join(dir, "src/features/core/kv"))).toBe(false);
+      add("kv,auth", "workflows");
+    } finally {
+      process.chdir(cwd);
+    }
+    for (const folder of ["core/kv", "auth", "workflows"]) {
+      expect(existsSync(join(dir, "src/features", folder, "feature.json"))).toBe(true);
+    }
+    const after = [...namespaceIds(dir)];
+    expect(after.length).toBeGreaterThan(before.size);
+    expect(after.filter((id) => before.has(id)).length).toBe(before.size);
+    expect(after.some((id) => /^[12]00\d$/.test(id))).toBe(false);
   });
 
   test("accepts the old block names d1 and r2", () => {

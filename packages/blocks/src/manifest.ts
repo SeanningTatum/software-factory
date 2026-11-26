@@ -147,15 +147,6 @@ const manifestDirs = (root: string, parent: string): ReadonlyArray<string> => {
 };
 
 /**
- * Where a feature lives, found by its name: `src/features/core/<name>` or `src/features/<name>`.
- * Undefined when neither has a feature.json.
- */
-export const featureDir = (root: string, name: string): string | undefined =>
-  [`${CORE_DIR}/${name}`, `${FEATURES_DIR}/${name}`].find((dir) =>
-    existsSync(join(root, dir, MANIFEST_FILE)),
-  );
-
-/**
  * Throws when two features declare the same env name (var, secret or binding: all keys of `Env`)
  * or the same workflow class, which would generate duplicate code.
  */

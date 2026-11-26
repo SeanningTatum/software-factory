@@ -1,10 +1,21 @@
+import { spawnSync } from "node:child_process";
+import { usesShell } from "./run.ts";
+
 export type PackageManager = "bun" | "pnpm" | "npm" | "yarn";
 export const packageManagers: ReadonlyArray<PackageManager> = ["bun", "pnpm", "npm", "yarn"];
 
-/** The package manager that launched us (`bunx`, `pnpm dlx`, `npx`), else bun. */
+const installed = (pm: PackageManager) =>
+  spawnSync(pm, ["--version"], { stdio: "ignore", shell: usesShell(pm) }).status === 0;
+
+/**
+ * The package manager that launched us (`bunx`, `pnpm dlx`, `npx`). A global install names none,
+ * so then it is the first one found on this machine, and npm, which comes with Node, at the last.
+ */
 export const detectPackageManager = (
   userAgent = process.env.npm_config_user_agent ?? "",
-): PackageManager => packageManagers.find((pm) => userAgent.startsWith(pm)) ?? "bun";
+  has: (pm: PackageManager) => boolean = installed,
+): PackageManager =>
+  packageManagers.find((pm) => userAgent.startsWith(pm)) ?? packageManagers.find(has) ?? "npm";
 
 export const installCommand = (pm: PackageManager): [string, Array<string>] => [pm, ["install"]];
 

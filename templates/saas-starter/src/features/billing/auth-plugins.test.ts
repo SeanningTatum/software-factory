@@ -77,11 +77,16 @@ describe("the subscription table", () => {
 // shortcut: calls the hook directly, not through a signed webhook; B-07 runs one end to end.
 describe("a late subscription update", () => {
   type UpdateData = Parameters<NonNullable<SubscriptionOptions["onSubscriptionUpdate"]>>[0];
-  const run = async (written: string, inStripe: string) => {
+  const run = async (written: string, inStripe: Record<string, unknown>) => {
     const stripeClient = new Stripe("sk_test_x");
     vi.spyOn(stripeClient.subscriptions, "retrieve").mockResolvedValue({
-      status: inStripe,
-    } as Awaited<ReturnType<typeof stripeClient.subscriptions.retrieve>>);
+      cancel_at_period_end: false,
+      cancel_at: null,
+      canceled_at: null,
+      ended_at: null,
+      items: { data: [{ current_period_start: 100, current_period_end: 200 }] },
+      ...inStripe,
+    } as unknown as Awaited<ReturnType<typeof stripeClient.subscriptions.retrieve>>);
     const update = vi.fn(async () => null);
     const plugins = billingPlugins(stripeClient, "whsec_x", deps({ STRIPE_PRICE_PRO: "price_1" }));
     await plugins
@@ -93,20 +98,33 @@ describe("a late subscription update", () => {
       subscription: { id: "s1", status: written } as Subscription,
       stripeSubscription: { id: "sub_1", status: written },
     } as unknown as UpdateData);
-    return update;
+    return update.mock.calls.map((call) => (call as Array<unknown>)[0]);
   };
+  const period = { periodStart: new Date(100_000), periodEnd: new Date(200_000) };
 
   it("puts back Stripe's status when a stale update follows the delete", async () => {
     // The delete left the row canceled; an earlier update, retried, made the plugin write active.
-    const update = await run("active", "canceled");
-    expect(update).toHaveBeenCalledWith({
-      model: "subscription",
-      where: [{ field: "id", value: "s1" }],
-      update: { status: "canceled" },
-    });
+    expect(await run("active", { status: "canceled", canceled_at: 150, ended_at: 150 })).toEqual([
+      {
+        model: "subscription",
+        where: [{ field: "id", value: "s1" }],
+        update: {
+          status: "canceled",
+          cancelAtPeriodEnd: false,
+          cancelAt: null,
+          canceledAt: new Date(150_000),
+          endedAt: new Date(150_000),
+          ...period,
+        },
+      },
+    ]);
   });
 
-  it("writes nothing when the row already matches Stripe", async () => {
-    expect(await run("active", "active")).not.toHaveBeenCalled();
+  it("puts back the cancel flag and the period end when only they are stale", async () => {
+    // The status matches, so comparing it alone would write nothing and keep the stale event's flag.
+    const [written] = await run("active", { status: "active", cancel_at_period_end: true });
+    expect(written).toMatchObject({
+      update: { status: "active", cancelAtPeriodEnd: true, periodEnd: new Date(200_000) },
+    });
   });
 });

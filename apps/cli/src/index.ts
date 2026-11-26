@@ -74,12 +74,12 @@ const main = defineCommand({
   subCommands: {
     create: createCommand,
     add: defineCommand({
-      meta: { description: "Add a feature (and the features it needs) to this project" },
+      meta: { description: "Add features (and the features they need): `add kv workflows`" },
       args: { feature: { type: "positional", required: true } },
-      run: guarded(({ args }) => add(args.feature)),
+      run: guarded(({ args }) => add(...args._)),
     }),
     remove: defineCommand({
-      meta: { description: "Remove a feature and everything it owns" },
+      meta: { description: "Remove features and everything they own" },
       args: {
         feature: { type: "positional", required: true },
         force: {
@@ -88,7 +88,7 @@ const main = defineCommand({
           description: "Remove even with uncommitted changes in the feature's files",
         },
       },
-      run: guarded(({ args }) => remove(args.feature, args.force)),
+      run: guarded(({ args }) => remove(args._, args.force)),
     }),
     setup: defineCommand({
       meta: {
