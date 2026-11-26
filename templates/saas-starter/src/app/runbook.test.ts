@@ -151,9 +151,9 @@ describe("gradual rollout", () => {
     "reports each step to the run's summary, and to PostHog when it has the key",
     () => {
       for (const name of ["deploy", "rollout"]) {
-      expect(workflow(name)).toContain("sh .github/scripts/report-rollout.sh");
-    }
-    const report = read(".github/scripts/report-rollout.sh");
+        expect(workflow(name)).toContain("sh .github/scripts/report-rollout.sh");
+      }
+      const report = read(".github/scripts/report-rollout.sh");
       expect(report).toMatch(/GITHUB_STEP_SUMMARY/);
       expect(report).toMatch(
         /\[ -n "\$\{POSTHOG_KEY:-\}" \] \|\| exit 0[\s\S]*deployment_rolled_out/,
