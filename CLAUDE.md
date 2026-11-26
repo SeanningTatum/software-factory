@@ -88,14 +88,15 @@ here. Start sessions there.
 
 ## Releasing
 
-`staging` is the default branch; `production` takes only a pull request from `staging` whose last
-commit has a `v*` tag (`.github/rulesets/`, applied with `create-tanstack-cf-saas github`). Stack
-small pull requests on each other: they get `pr.yml`; the one into `staging` gets `check.yml`.
-`templates/saas-starter/docs/branches.md` draws the flow and says why each rule is there.
+`staging` is the default branch. `production` gets no pull requests and no commits of its own:
+`bun run promote` tags `staging`'s tip `v*` and fast-forwards `production` to it, so both branches
+share one head (`.github/rulesets/`; the checks must have passed on that commit). Stack small pull
+requests on each other: they get `pr.yml`; the one into `staging` gets `check.yml`. The template
+still promotes by pull request: `templates/saas-starter/docs/branches.md` draws that flow.
 
 `bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
 pull request; on `production` it publishes `packages/*` and the CLI under the `@tanstack-cf-saas`
 npm scope (claim it before the first publish).
 
-`RELEASING.md` has the steps: merge the version pull request, `bun run promote`, merge the promotion
-with a merge commit. `/release` has Claude follow it.
+`RELEASING.md` has the steps: merge the version pull request, wait for the checks, `bun run
+promote`. Never merge into `production` or force-push it. `/release` has Claude follow it.

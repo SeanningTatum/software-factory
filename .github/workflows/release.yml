@@ -1,6 +1,8 @@
 # Staging opens the version pull request from the changesets merged so far; production
-# publishes what staging versioned. A pull request the action opens starts no workflows (GitHub
-# does not let GITHUB_TOKEN trigger them), so close and reopen it to run its required checks.
+# publishes what staging versioned. `bun run promote` moves production to staging's tagged tip by
+# a fast-forward, so both branches hold one commit and every tag of a release sits on it.
+# A pull request the action opens starts no workflows (GitHub does not let GITHUB_TOKEN trigger
+# them), so close and reopen it to run its required checks.
 name: release
 on:
   push:
@@ -16,6 +18,19 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # brings the tags and origin/staging
+      # The ruleset lets any commit with green checks fast-forward production. Publish only what
+      # promote.sh sends: a commit that is on staging and carries a version tag.
+      - name: On staging, with a version tag
+        if: ${{ github.ref_name == 'production' }}
+        run: |
+          if ! git merge-base --is-ancestor HEAD origin/staging; then
+            echo "::error::$(git rev-parse --short HEAD) is not on staging. Production takes staging's commits only: see RELEASING.md."; exit 1
+          fi
+          if [ -z "$(git tag --points-at HEAD --list 'v*')" ]; then
+            echo "::error::No version tag on $(git rev-parse --short HEAD). Release with: bun run promote"; exit 1
+          fi
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       # changesets/action v2 no longer writes .npmrc from NPM_TOKEN; setup-node writes one that
@@ -32,10 +47,9 @@ jobs:
           commit-message: "chore: version packages"
           pr-title: "chore: version packages"
       # With changesets still unversioned here it would open a version pull request into
-      # production, which the ruleset refuses: merge the one into staging before promoting.
-      # !created: the push that makes the branch publishes nothing; the first promotion does.
+      # production: promote.sh refuses to promote until the one into staging is merged.
       - name: Publish
-        if: ${{ github.ref_name == 'production' && !github.event.created }}
+        if: ${{ github.ref_name == 'production' }}
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           publish-script: bun run release
