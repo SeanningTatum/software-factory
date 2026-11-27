@@ -18,6 +18,7 @@ import {
   DEPLOY_SECRET,
   DEPLOY_SWITCH,
   hasSecret,
+  keepPlaceholders,
   readRulesets,
   requireGh,
   setUrlVariables,
@@ -39,6 +40,7 @@ import {
   blankSettings,
   hasTables,
   isEmptyDir,
+  missedAuto,
   nameFromDir,
   namespaceIds,
   parseFeatures,
@@ -90,12 +92,23 @@ export interface CreateArgs {
 
 const featureOptions = () =>
   [...loadManifests(templateDir()).values()]
-    .filter((m) => !m.required)
+    .filter((m) => !m.required && !m.auto)
     .map((m) => ({
       value: m.name,
       label: m.title,
       hint: m.requires.length ? `needs ${m.requires.join(", ")}` : m.description,
     }));
+
+/** Says what the choice pulled in, and what a half-chosen auto feature would have added. */
+const explainFeatures = (
+  manifests: ReturnType<typeof loadManifests>,
+  chosen: ReadonlyArray<string>,
+  features: ReadonlyArray<string>,
+) => {
+  const added = features.filter((f) => !chosen.includes(f));
+  if (added.length) p.log.info(`Also adding ${added.join(", ")}, which ${chosen.join(", ")} need.`);
+  for (const note of missedAuto(manifests, features)) p.log.warn(note);
+};
 
 const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
   const dirArg =
@@ -152,8 +165,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         .join(", ")}`,
     );
   const features = withRequirements(manifests, chosen).filter((f) => !manifests.get(f)?.required);
-  const added = features.filter((f) => !chosen.includes(f));
-  if (added.length) p.log.info(`Also adding ${added.join(", ")}, which ${chosen.join(", ")} need.`);
+  explainFeatures(manifests, chosen, features);
   const claude =
     args.yes || !args.claude
       ? args.claude
@@ -417,9 +429,21 @@ export const create = async (args: CreateArgs) => {
 const printSetupSteps = (root: string, cloudflare: ReadonlyArray<Item> | undefined) => {
   // The Cloudflare table already lists these steps.
   if (cloudflare) return;
-  for (const step of [...loadManifests(root).values()].flatMap((m) => m.setup ?? []))
+  const steps = [...loadManifests(root).values()].flatMap((m) => m.setup ?? []);
+  if (steps.length)
+    p.log.warn(`Still to do by hand before you go live (\`${GITHUB}\` opens an issue for each):`);
+  for (const step of steps)
     p.log.info(`${step.description}${step.help ? pc.dim(` (${step.help})`) : ""}`);
 };
+
+/** One issue per manual setup step; the title is its identity, so keep it stable. */
+const setupIssues = (root: string) =>
+  [...loadManifests(root).values()].flatMap((m) =>
+    (m.setup ?? []).map((step) => ({
+      title: `${m.title} setup: ${step.id}`,
+      body: `${keepPlaceholders(step.description)}\n${step.help ? `\n${step.help}\n` : ""}\nNo command can do or check this step. Close this issue when it is done.`,
+    })),
+  );
 
 /** The last line of create: what setup is still for, or that nothing is left. */
 const closingLine = (cloudflare: ReadonlyArray<Item> | undefined, pm: PackageManager) => {
@@ -569,6 +593,7 @@ const offerGithub = async (plan: CreatePlan) => {
       name: () => plan.name,
       visibility,
       deploy: await deployInputs(plan.targetDir, gh, false),
+      issues: setupIssues(plan.targetDir),
       log: (line) => p.log.step(line),
     });
     printMissing(missing);
@@ -821,6 +846,8 @@ export const github = async (isPublic: boolean) => {
     name: () => readProject(root).name,
     visibility: isPublic ? "public" : "private",
     deploy: await deployInputs(root, gh, git(["remote", "get-url", "origin"]).ok),
+    // Not made from the template: no feature manifests, so no steps.
+    issues: existsSync(join(root, WRANGLER_FILE)) ? setupIssues(root) : [],
     log: console.log,
   });
   printMissing(missing);

@@ -44,7 +44,8 @@ type Section =
   | "r2_buckets"
   | "workflows"
   | "ratelimits"
-  | "analytics_engine_datasets";
+  | "analytics_engine_datasets"
+  | "send_email";
 
 const sectionOf: Record<Binding["type"], Section> = {
   d1: "d1_databases",
@@ -53,12 +54,13 @@ const sectionOf: Record<Binding["type"], Section> = {
   workflow: "workflows",
   ratelimit: "ratelimits",
   analytics_engine: "analytics_engine_datasets",
+  send_email: "send_email",
 };
 const sections = Object.values(sectionOf);
 
-/** Wrangler names rate limiters by `name`; everything else by `binding`. */
+/** Wrangler names rate limiters and email senders by `name`; everything else by `binding`. */
 const keyOf = (section: Section, entry: Entry) =>
-  String(section === "ratelimits" ? entry.name : entry.binding);
+  String(section === "ratelimits" || section === "send_email" ? entry.name : entry.binding);
 
 export const resourceName = (template: string, project: string, env: EnvName) =>
   template
@@ -96,6 +98,8 @@ const entryFor = (binding: Binding, project: string, env: EnvName, existing?: En
     }
     case "analytics_engine":
       return { binding: binding.binding, dataset: resourceName(binding.dataset, project, env) };
+    case "send_email":
+      return { name: binding.binding };
   }
 };
 

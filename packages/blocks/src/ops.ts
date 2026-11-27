@@ -63,20 +63,29 @@ const uncommitted = (root: string, paths: ReadonlyArray<string>) => {
 };
 
 /**
- * Removes one feature or core module: its folder plus its `files`. Refuses required ones, ones
- * others require, and, unless `force`, ones with uncommitted work (or outside a git repository).
+ * Removes one feature or core module: its folder plus its `files`, and the `auto` features that
+ * need it. Refuses required ones, ones a chosen feature requires, and, unless `force`, ones with uncommitted work (or outside a git repository).
  */
 export const removeBlock = (root: string, name: string, { force = false } = {}) => {
   const manifests = loadManifests(root);
   const manifest = manifests.get(name);
   if (!manifest) throw new BlockError(`"${name}" is not an enabled feature`);
   if (manifest.required) throw new BlockError(`"${name}" is required; it can't be removed`);
+  if (manifest.auto)
+    throw new BlockError(
+      `"${name}" is on because ${manifest.requires.join(" and ")} are; remove one of those instead`,
+    );
   const dependents = dependentsOf(manifests, [...manifests.keys()], name);
-  if (dependents.length) {
-    throw new BlockError(`"${name}" is required by ${dependents.join(", ")}; remove those first`);
+  const blocking = dependents.filter((d) => !manifests.get(d)?.auto);
+  if (blocking.length) {
+    throw new BlockError(`"${name}" is required by ${blocking.join(", ")}; remove those first`);
   }
+  // Auto features that need this one leave with it: nobody chose them, so nobody removes them.
+  const removed = [...manifests.values()].filter(
+    (m) => m.name === name || dependents.includes(m.name),
+  );
   if (!force) {
-    const changes = uncommitted(root, ownedPaths(manifest));
+    const changes = uncommitted(root, removed.flatMap(ownedPaths));
     if (changes === undefined)
       throw new BlockError(
         `Can't tell whether ${name} has uncommitted work: this is not a git repository. Pass --force to remove it anyway.`,
@@ -86,16 +95,16 @@ export const removeBlock = (root: string, name: string, { force = false } = {}) 
         `${name} has uncommitted changes, which removing it would delete:\n${changes}\nCommit or stash them, or pass --force.`,
       );
   }
-  const kept = [...manifests.values()].filter((m) => m.name !== name);
+  const kept = [...manifests.values()].filter((m) => !removed.includes(m));
   plan(root); // fails on a broken project before anything is deleted
-  deleteOwned(root, [manifest], kept);
-  writePackage(root, withoutBlockPackages(readPackage(root), [manifest], kept));
+  deleteOwned(root, removed, kept);
+  writePackage(root, withoutBlockPackages(readPackage(root), removed, kept));
   sync(root);
 };
 
 /**
- * Copies a feature, and any features it requires that are missing, from a full template, each to
- * the folder it has there (`src/features/<name>` or `src/features/core/<name>`).
+ * Copies a feature, any features it requires that are missing, and the `auto` features it
+ * completes, from a full template, each to the folder it has there (`src/features/<name>` or `src/features/core/<name>`).
  */
 export const addBlock = (
   root: string,
@@ -104,7 +113,9 @@ export const addBlock = (
 ): ReadonlyArray<string> => {
   const available = loadManifests(templateRoot);
   const enabled = loadManifests(root);
-  const wanted = withRequirements(available, [name]).filter((n) => !enabled.has(n));
+  const wanted = withRequirements(available, [name, ...enabled.keys()]).filter(
+    (n) => !enabled.has(n),
+  );
   const added = wanted.map((n) => {
     const manifest = available.get(n);
     if (!manifest) throw new BlockError(`Unknown feature "${n}"`);

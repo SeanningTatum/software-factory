@@ -1,5 +1,12 @@
 import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
-import { SIGN_IN, SIGN_OUT, SIGN_UP } from "../constants.ts";
+import {
+  CODE_SIGN_IN,
+  RESET_PASSWORD,
+  SIGN_IN,
+  SIGN_OUT,
+  SIGN_UP,
+  VERIFY_EMAIL,
+} from "../constants.ts";
 
 export interface Captured {
   readonly event: AnalyticsEvent;
@@ -42,6 +49,25 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
       isOk(status)
         ? [{ event: { _tag: "sign_in_succeeded", method: "email" }, distinctId: userId }]
         : [{ event: { _tag: "sign_in_failed", reason: failureReason(status, code) } }],
+  },
+  {
+    method: "POST",
+    path: CODE_SIGN_IN,
+    rule: (status, userId, code) =>
+      isOk(status)
+        ? [{ event: { _tag: "sign_in_succeeded", method: "code" }, distinctId: userId }]
+        : [{ event: { _tag: "sign_in_failed", reason: failureReason(status, code) } }],
+  },
+  {
+    method: "POST",
+    path: VERIFY_EMAIL,
+    rule: (status, userId) =>
+      isOk(status) ? [{ event: { _tag: "email_verified" }, distinctId: userId }] : [],
+  },
+  {
+    method: "POST",
+    path: RESET_PASSWORD,
+    rule: (status) => (isOk(status) ? [{ event: { _tag: "password_reset" } }] : []),
   },
   {
     method: "POST",

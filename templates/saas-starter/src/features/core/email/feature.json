@@ -1,0 +1,23 @@
+{
+  "name": "email",
+  "title": "Email",
+  "description": "Transactional email through Cloudflare Email Service, as an Effect Email service over the send_email binding. With auth, adds password reset, email verification and sign-in by code.",
+  "requires": [],
+  "bindings": [{ "type": "send_email", "binding": "EMAIL" }],
+  "vars": {
+    "EMAIL_FROM": {
+      "description": "Sender address on a domain onboarded to Cloudflare Email Service, e.g. hello@example.com",
+      "required": true,
+      "default": "",
+      "example": "hello@example.com",
+      "help": "https://developers.cloudflare.com/email-service/get-started/send-emails/"
+    }
+  },
+  "setup": [
+    {
+      "id": "email-domain",
+      "description": "Onboard the sending domain with `wrangler email sending enable <domain>`, then set EMAIL_FROM to an address on it. On the Workers Free plan mail reaches only verified destination addresses; any recipient needs Workers Paid.",
+      "help": "https://developers.cloudflare.com/email-service/configuration/domains/"
+    }
+  ]
+}

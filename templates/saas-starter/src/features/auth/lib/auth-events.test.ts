@@ -29,6 +29,22 @@ describe("authEvents", () => {
     expect(authEvents("POST", "/api/auth/sign-out", 200, null)[0]?.event._tag).toBe("signed_out");
   });
 
+  it("records the code paths auth-email serves: sign-in by code, verification and reset", () => {
+    const user = { user: { id: "u1" } };
+    expect(authEvents("POST", "/api/auth/sign-in/email-otp", 200, user)).toEqual([
+      { event: { _tag: "sign_in_succeeded", method: "code" }, distinctId: "u1" },
+    ]);
+    expect(authEvents("POST", "/api/auth/sign-in/email-otp", 400, null)[0]?.event._tag).toBe(
+      "sign_in_failed",
+    );
+    expect(authEvents("POST", "/api/auth/email-otp/verify-email", 200, user)).toEqual([
+      { event: { _tag: "email_verified" }, distinctId: "u1" },
+    ]);
+    expect(authEvents("POST", "/api/auth/email-otp/reset-password", 200, {})).toEqual([
+      { event: { _tag: "password_reset" } },
+    ]);
+  });
+
   it("ignores everything else", () => {
     expect(authEvents("GET", "/api/auth/get-session", 200, {})).toEqual([]);
   });

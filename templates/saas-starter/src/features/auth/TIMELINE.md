@@ -7,7 +7,7 @@ Better Auth with email and password, sessions in D1, rate-limited sign-in and si
 
 - Kind: feature, optional; `cf-saas-blocks remove auth` takes it out
 - Depends on: [db](../core/db/TIMELINE.md)
-- Used by: [billing](../billing/TIMELINE.md), [uploads](../uploads/TIMELINE.md)
+- Used by: [auth-email](../auth-email/TIMELINE.md), [billing](../billing/TIMELINE.md), [uploads](../uploads/TIMELINE.md)
 - Bindings: `AUTH_LIMITER` (ratelimit)
 - Vars: `APP_URL` (required), `TRUSTED_ORIGINS`, `TURNSTILE_SITE_KEY`
 - Secrets: `BETTER_AUTH_SECRET` (required), `TURNSTILE_SECRET_KEY`
@@ -16,7 +16,7 @@ Better Auth with email and password, sessions in D1, rate-limited sign-in and si
 - Routes: `/api/auth/$`, `/dashboard`, `/login`, `/signup`
 - Services: `Auth`, `AuthRateLimiter`
 - Errors: `AuthServiceError`
-- Events: `sign_in_failed`, `sign_in_succeeded`, `sign_up_completed`, `signed_out`
+- Events: `email_verified`, `password_reset`, `sign_in_failed`, `sign_in_succeeded`, `sign_up_completed`, `signed_out`
 - Machines: `components/credentials.machine.ts`. Diagrams under Machines, from `bun run machines:print`.
 <!-- generated:end -->
 
@@ -52,8 +52,8 @@ stateDiagram-v2
 - 2026-11-24 — A failed audit write is logged as a warning with `audit: true` and the request goes on. Why: a lost audit row is better than a user who cannot sign in.
 - 2026-11-24 — A sign-in the rate limiter blocks goes to analytics only, not the audit log. Why: one row per blocked attempt would let a flood grow the table.
 - 2026-11-24 — Sign-up or sign-in with an anonymous id sends `user_identified`, and sign-up, sign-in and sign-out all clear the id cookie. Why: earlier visits join the account, and an id is never tied to two users on a shared browser.
-- 2026-11-24 — Before launch, wire a mail hook: email verification and password reset do not work yet. Set `sendResetPassword` under `emailAndPassword`, `sendVerificationEmail` under `emailVerification`, and `requireEmailVerification: true` in `api/auth.ts`, then add `/api/auth/request-password-reset` back to `LIMITED_PATHS`. Why: no sender is wired, so anyone can sign up with an address they don't own and nobody can reset a password.
-- 2026-11-24 — The rate-limited paths are `LIMITED_PATHS` in `api/rate-limit.ts`: sign-in, sign-up and the Stripe subscription calls, through the shared `checkLimit` in `core/lib/rate-limit.ts`; `request-password-reset` joins them once a reset sender exists. Why: these take a password, make an account or spend the Stripe quota the whole account shares, and limiting a route that sends nothing would imply resets work.
+- 2026-11-27 — Auth alone has no email verification and no password reset; both come with the `email` module, through the `auth-email` feature (Better Auth's `emailOTP` plugin, added from its `auth-plugins.ts`). Auth's part is small: `CODE_PATHS` in `api/rate-limit.ts`, the `email_verified` and `password_reset` events, and the login and sign-up pages, which show `sign-in-help` nav entries and send an unverified address to the `verify-email` one. Why: auth must work without email, and it can't import a feature that may be absent.
+- 2026-11-24 — The rate-limited paths are `LIMITED_PATHS` in `api/rate-limit.ts`: sign-in, sign-up and the Stripe subscription calls, through the shared `checkLimit` in `core/lib/rate-limit.ts`; `CODE_PATHS` beside them are the mail and code routes that exist only with `auth-email`. Why: these take a password, make an account or spend the Stripe quota the whole account shares.
 - 2026-11-24 — An `APP_URL` without `http://` or `https://` degrades auth to `NotConfigured` naming `APP_URL (a full https:// URL)`. Why: `new URL` threw while the layer was built, so every route answered 500, not only auth.
 - 2026-11-24 — A 429 carries a `retry-after` header from `RateLimited.retryAfterSeconds`, both from auth's handler and from `runResponse`. Why: clients had no way to know when to try again.
 - 2026-11-24 — Email and password only, no social sign-in. Why: a provider nobody set up is dead weight; add one to `socialProviders` in `api/auth.ts` when you need it.

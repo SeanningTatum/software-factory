@@ -38,7 +38,8 @@
         "POSTHOG_HOST": "https://us.i.posthog.com",
         "TRUSTED_ORIGINS": "",
         "STRIPE_PRICE_PRO": "",
-        "TURNSTILE_SITE_KEY": ""
+        "TURNSTILE_SITE_KEY": "",
+        "EMAIL_FROM": ""
       },
       "d1_databases": [
         {
@@ -100,6 +101,11 @@
           "binding": "BUCKET",
           "bucket_name": "saas-starter-uploads-staging"
         }
+      ],
+      "send_email": [
+        {
+          "name": "EMAIL"
+        }
       ]
     }
   },
@@ -111,7 +117,8 @@
     "POSTHOG_HOST": "https://us.i.posthog.com",
     "TRUSTED_ORIGINS": "",
     "STRIPE_PRICE_PRO": "",
-    "TURNSTILE_SITE_KEY": ""
+    "TURNSTILE_SITE_KEY": "",
+    "EMAIL_FROM": ""
   },
   "d1_databases": [
     {
@@ -172,6 +179,11 @@
     {
       "binding": "BUCKET",
       "bucket_name": "saas-starter-uploads"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL"
     }
   ]
 }

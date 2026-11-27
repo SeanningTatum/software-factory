@@ -1,0 +1,16 @@
+{
+  "name": "email-templates",
+  "title": "Email templates",
+  "description": "The one look every mail shares, as React Email components (layout, text, button, code), and renderMail, which turns a mail into the HTML and plain text Email.send takes.",
+  "requires": ["email"],
+  "auto": true,
+  "packageJson": {
+    "dependencies": {
+      "@react-email/components": "^1.0.12",
+      "html-to-text": "^10.0.1"
+    },
+    "devDependencies": {
+      "@types/html-to-text": "^9.0.4"
+    }
+  }
+}

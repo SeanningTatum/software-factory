@@ -1,13 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
 import { getShortestPaths } from "xstate/graph";
-import { asVisitor } from "#/app/testing/e2e.ts";
+import { asVisitor, passVerification, uniqueEmail } from "#/app/testing/e2e.ts";
 import { credentialsMachine } from "../components/credentials.machine.ts";
 
 const paths = getShortestPaths(credentialsMachine, {
   events: [{ type: "SUBMIT", credentials: { email: "", password: "" } }, { type: "EDIT" }],
 });
-
-const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
 test.beforeEach(({ page }) => asVisitor(page));
 
@@ -18,27 +16,24 @@ const fill = async (page: Page, email: string, password: string) => {
   await page.getByLabel("Password").fill(password);
 };
 
-test.describe("sign-up form", () => {
+test.describe("credentials form", () => {
   for (const path of paths) {
     const target = String(path.state.value);
     test(`@golden reaches ${target}`, async ({ page }) => {
       await page.goto("/signup");
       if (target === "done" || target === "submitting") {
-        await fill(page, uniqueEmail(), "correct horse battery");
-        await page.getByRole("button", { name: "Create account" }).click();
-        await expect(page).toHaveURL(/\/dashboard$/);
-        return;
-      }
-      if (target === "failed" || target === "idle") {
         const email = uniqueEmail();
         await fill(page, email, "correct horse battery");
         await page.getByRole("button", { name: "Create account" }).click();
-        await expect(page).toHaveURL(/\/dashboard$/);
-        await page.getByRole("button", { name: "Sign out" }).click();
-        await expect(page.getByRole("banner").getByRole("link", { name: "Sign up" })).toBeVisible();
-        await page.goto("/signup");
-        await fill(page, email, "correct horse battery");
-        await page.getByRole("button", { name: "Create account" }).click();
+        await passVerification(page, email);
+        return;
+      }
+      if (target === "failed" || target === "idle") {
+        await page.goto("/login");
+        await expect(page.getByRole("button", { name: "Sign in" })).toBeEnabled();
+        await page.getByLabel("Email").fill(uniqueEmail());
+        await page.getByLabel("Password").fill("not the password");
+        await page.getByRole("button", { name: "Sign in" }).click();
         await expect(page.getByRole("alert")).toBeVisible();
         if (target === "idle") {
           await page.getByLabel("Password").fill("edited password!");

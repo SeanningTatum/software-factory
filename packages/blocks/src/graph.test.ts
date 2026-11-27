@@ -19,6 +19,14 @@ describe("graph", () => {
   test("adds what a block requires, in order", () => {
     expect(withRequirements(manifests, ["billing"])).toEqual(["d1", "auth", "billing"]);
   });
+  test("an auto block joins only when everything it requires is selected", () => {
+    const withAuto = new Map([
+      ...manifests,
+      ["auth-kv", { ...block("auth-kv", ["auth", "kv"]), auto: true }],
+    ]);
+    expect(withRequirements(withAuto, ["auth"])).toEqual(["d1", "auth"]);
+    expect(withRequirements(withAuto, ["auth", "kv"])).toEqual(["d1", "auth", "kv", "auth-kv"]);
+  });
   test("sorts independent blocks by name", () => {
     expect(topoSort(manifests, ["kv", "d1"])).toEqual(["d1", "kv"]);
   });

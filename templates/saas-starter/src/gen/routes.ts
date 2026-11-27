@@ -7,6 +7,7 @@ export const routes = rootRoute("__root.tsx", [
   physical("../features/home/routes"),
   physical("../features/core/observability/routes"),
   physical("../features/auth/routes"),
+  physical("../features/auth-email/routes"),
   physical("../features/billing/routes"),
   physical("../features/uploads/routes"),
 ]);

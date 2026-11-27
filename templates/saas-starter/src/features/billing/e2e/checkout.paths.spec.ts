@@ -1,19 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { asVisitor } from "#/app/testing/e2e.ts";
-
-const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
-
-test.beforeEach(({ page }) => asVisitor(page));
+import { signUp } from "#/app/testing/e2e.ts";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/signup");
-  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
-  await page.getByLabel("Name").fill("E2E Billing");
-  await page.getByLabel("Email").fill(uniqueEmail());
-  await page.getByLabel("Password").fill("correct horse battery");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByText("Welcome, E2E Billing")).toBeVisible();
+  await signUp(page, "E2E Billing");
 });
 
 test("@golden checkout: a free user sees an upgrade path or the setup hint", async ({ page }) => {

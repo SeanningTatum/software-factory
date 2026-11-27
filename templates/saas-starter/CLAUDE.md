@@ -8,9 +8,9 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   headers and the page shell. It imports only itself, `src/gen/` and required features and modules.
 - Core holds shared modules of one kind: components only, or services and helpers only. A module
   with both, or with a page, is a feature. Your own code goes in a feature, beside `auth`.
-  - `src/features/core/<name>/` is a core module: `db`, `kv`, `observability`, `analytics` (services
-    and helpers: `api/`, `lib/`, `machines/`, the top-level files below, and server routes under
-    `routes/api/` only) and `ui` (components only: `components/`, `lib/`, `feature.json`,
+  - `src/features/core/<name>/` is a core module: `db`, `kv`, `email`, `observability`, `analytics`
+    (services and helpers: `api/`, `lib/`, `machines/`, the top-level files below, and server routes under
+    `routes/api/` only) and `ui`, `email-templates` (components only: `components/`, `lib/`, `feature.json`,
     `TIMELINE.md`, `constants.ts`; no machines). No core module has `e2e/` or a page.
   - `src/features/core/lib/`: pure helpers two or more features use, flat `.ts` files with tests,
     no `feature.json`, services, layers or React (rule `shared-lib`). It imports only `src/app`.
