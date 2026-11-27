@@ -59,7 +59,8 @@ jobs:
           else bun run deploy:staging --tag "staging-${GITHUB_SHA::7}"; fi
           # targets holds the workers.dev URL and any routes: a route pattern has a *, and a custom
           # domain reads "example.com (custom domain)".
-          url=${GIVEN:-$(jq -r 'select(.type == "deploy") | .targets[]? | select(contains("*") | not) | if startswith("https://") then . elif endswith(" (custom domain)") then "https://" + rtrimstr(" (custom domain)") else empty end'| .targets[]? | select(startswith("https://") and (contains("*") | not))' "$WRANGLER_OUTPUT_FILE_PATH" | head -1)}
+          url=$GIVEN
+          test -n "$url" || url=$(jq -r 'select(.type == "deploy") | .targets[]? | select(contains("*") | not) | if startswith("https://") then . elif endswith(" (custom domain)") then "https://" + rtrimstr(" (custom domain)") else empty end' "$WRANGLER_OUTPUT_FILE_PATH" | head -1)
           test -n "$url" || { echo "::error::The deploy named no URL. Turn on workers.dev for the Worker, give it a custom domain, or set DOCS_STAGING_URL or DOCS_PRODUCTION_URL."; exit 1; }
           echo "url=${url%/}" >> "$GITHUB_OUTPUT"
       - name: Smoke test, rolling back production on failure
