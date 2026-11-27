@@ -7,7 +7,7 @@ Transactional email through Cloudflare Email Service, as an Effect Email service
 
 - Kind: core module, optional; `cf-saas-blocks remove email` takes it out
 - Depends on: none
-- Used by: none
+- Used by: [auth-email](../../auth-email/TIMELINE.md)
 - Bindings: `EMAIL` (send_email)
 - Vars: `EMAIL_FROM` (required)
 - Secrets: none

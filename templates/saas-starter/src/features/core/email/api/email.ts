@@ -1,5 +1,5 @@
 import { Context, Effect, Layer, Schema } from "effect";
-import { CloudflareEnv, setting } from "#/app/env.ts";
+import { type AppEnv, CloudflareEnv, setting } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
@@ -43,15 +43,20 @@ export class Email extends Context.Service<
         ).pipe(Effect.asVoid),
     });
 
+  /** Outside a layer, for callers that only have the env, such as a Better Auth plugin. */
+  static readonly fromEnv = (env: AppEnv) => {
+    const sender = binding<EmailSender>(env, "EMAIL");
+    const from = setting(env, "EMAIL_FROM");
+    if (sender && from) return Email.fromSender(sender, from);
+    const missing = sender ? "EMAIL_FROM" : "EMAIL (send_email binding)";
+    return Email.of({ send: () => Effect.fail(new NotConfigured({ setting: missing })) });
+  };
+
   static readonly layer = Layer.effect(
     Email,
     Effect.gen(function* () {
       const env = yield* CloudflareEnv;
-      const sender = binding<EmailSender>(env, "EMAIL");
-      const from = setting(env, "EMAIL_FROM");
-      if (sender && from) return Email.fromSender(sender, from);
-      const missing = sender ? "EMAIL_FROM" : "EMAIL (send_email binding)";
-      return Email.of({ send: () => Effect.fail(new NotConfigured({ setting: missing })) });
+      return Email.fromEnv(env);
     }),
   );
 }
