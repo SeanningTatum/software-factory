@@ -1,4 +1,4 @@
-# software-factory
+# Software Factory
 
 [![check](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml/badge.svg?branch=staging)](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
@@ -8,15 +8,26 @@
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](apps/cli/package.json)
 
-Build a SaaS on Cloudflare from building blocks. One command asks what your product needs (a
-database, sign-in, billing, file uploads, background jobs) and hands you a working
-[TanStack Start](https://tanstack.com/start) app with those parts wired together, tested, and ready
-to deploy to Cloudflare Workers.
+A software factory for Cloudflare Workers, made to be run with Claude Code. You compose a product
+from blocks (a database, sign-in, billing, file uploads, background jobs). The factory wires them
+together, tests them and deploys the result, and the same blocks, checks and workflows keep
+working on the project after day one, for you and for a coding agent.
+
+Today it makes one kind of product: a SaaS on [TanStack Start](https://tanstack.com/start).
 
 ```bash
 npm install -g create-software-factory
 create-software-factory my-saas
 ```
+
+## How the factory works
+
+| Part            | Here                                       | What it does                                                                                             |
+| --------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Blocks          | Features, one folder each, with a manifest | A block names what it owns and what it needs, so it can be added or removed whole.                       |
+| The line        | `create-software-factory`                  | Builds a project from the blocks you pick, adds or removes one later, and sets up Cloudflare.            |
+| Inspection      | Lint rules, tests and the feature matrix   | Before a release, each block is built and checked alone and all together. Each project ships its own CI. |
+| Agent workflows | `.claude/` in each project                 | Commands that take Claude through a job in steps and stop for you at each decision.                      |
 
 ## Why use it
 
@@ -221,6 +232,7 @@ This is a monorepo: the template, the CLI that builds projects from it, and the 
 | `templates/saas-starter/` | The template, with every feature on. Start with its `FEATURES.md`.               |
 | `apps/cli/`               | `create-software-factory`                                                        |
 | `packages/`               | Shared lint rules, TypeScript presets, and the tool that wires features together |
+| `claude/`                 | The Claude workflows the CLI ships to each project                               |
 
 ```bash
 bun install
