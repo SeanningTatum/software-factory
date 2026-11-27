@@ -1,0 +1,16 @@
+{
+  "name": "docs-website",
+  "template": "saas-starter",
+  "managed": {
+    "bindings": [
+      "EVENTS_LIMITER",
+      "REPORT_LIMITER"
+    ],
+    "vars": [
+      "ANALYTICS_PROVIDER",
+      "ERROR_REPORTER",
+      "LOG_LEVEL",
+      "POSTHOG_HOST"
+    ]
+  }
+}
