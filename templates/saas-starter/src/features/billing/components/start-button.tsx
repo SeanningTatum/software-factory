@@ -1,7 +1,8 @@
+import type { ActorRefFrom } from "xstate";
 import { Button } from "#/features/core/ui/components/button.tsx";
-import type { CheckoutAction } from "./checkout.machine.ts";
+import type { CheckoutAction, checkoutMachine } from "./checkout.machine.ts";
 
-export type Send = (event: { type: "START"; action: CheckoutAction }) => void;
+export type Send = ActorRefFrom<typeof checkoutMachine>["send"];
 
 interface StartProps {
   readonly action: CheckoutAction;
