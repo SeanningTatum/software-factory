@@ -43,6 +43,7 @@ Rules for a good item:
 | B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
 | B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
 | B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
+| B-24 | A live project moves to its own domain in one run | Deployment        | M    | A custom domain       |
 | B-23 | A gradual rollout runs on a real project          | Deployment        | M    | A custom domain       |
 
 ## Now
@@ -188,6 +189,26 @@ Rules for a good item:
 - [ ] A real-SQL test sends one event twice and finds one `audit_log` row.
 
 **Where:** `templates/saas-starter/src/features/billing/auth-plugins.ts`, `src/features/billing/schema.ts`.
+
+### B-24 · A live project moves to its own domain in one run
+
+- **Area:** Deployment
+- **Size:** M
+- **Needs you:** A test project on `workers.dev` and a domain in Cloudflare to move it to
+
+**Why:** The wizard asks for each environment's URL once, in `create`. A project that starts on `workers.dev` and gets a domain later has three places to change by hand: `APP_URL` in `wrangler.jsonc`, the `PRODUCTION_URL` variable on GitHub, and a commit so CI does not deploy the old one. Adding the domain in Cloudflare changes none of them. Miss one and GitHub links to the old address, the promote button refuses a gradual rollout as if the site were still on `workers.dev`, or the next deploy fails its smoke test and rolls back.
+
+**Done when:**
+
+- [ ] `create-tanstack-cf-saas setup`, run at a terminal in a project whose `APP_URL` is on `workers.dev`, asks for each environment's URL in the words `create` uses; a domain given there becomes that environment's `APP_URL` and the environment deploys under it.
+- [ ] In a project with a GitHub repository, the same run sets `STAGING_URL` or `PRODUCTION_URL` to match: `gh variable list` shows the new URL, and the next deploy's link on GitHub goes to the domain.
+- [ ] The run ends by saying `wrangler.jsonc` changed and must reach `staging` before the next promotion.
+- [ ] `create` with production's URL left empty lists the domain under "Next": what it unlocks (gradual production rollouts), the one command to run once the domain exists, and the Transform Rule in `docs/branches.md`. With a domain given, the step is absent.
+- [ ] On the test project: `/api/health` on the domain answers 200, a deploy from CI leaves the domain attached, and promote with `gradual` gets past the `workers.dev` check.
+- [ ] `setup.test.ts`, `github.test.ts` and `create.machine.test.ts` hold the question, the variable, the closing line and the reminder.
+- [ ] `docs/branches.md` has a short "Move to your own domain" section that names the one command.
+
+**Where:** `apps/cli/src/commands.ts` (the URL question in the `create` wizard, the `setup` command, `deployInputs`), `apps/cli/src/setup.ts` (`firstDeploy`), `apps/cli/src/github.ts` (`setDeploySettings`), `templates/saas-starter/docs/branches.md`. Do it before B-23, which needs a project on its own domain. Tracked as https://github.com/SeanningTatum/tanstack-cf-saas-starter/issues/47.
 
 ### B-23 · A gradual rollout runs on a real project
 

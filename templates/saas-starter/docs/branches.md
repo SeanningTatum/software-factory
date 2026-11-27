@@ -75,6 +75,7 @@ sequenceDiagram
   You->>P: one push: tag staging's tip v1.2.0, move production to it
   P->>CI: deploy.yml: check the tag, migrate, deploy production, smoke test
   CI-->>P: roll back the code if the smoke test fails
+  CI-->>You: a GitHub release for v1.2.0, with notes
 ```
 
 ```bash
@@ -88,6 +89,15 @@ It adds no commit, so nothing merges and the tag names exactly what is live. Nev
 The same release is a button: on GitHub, Actions → promote → Run workflow, and type the tag.
 `promote.yml` makes that one push from `staging`'s tip, under the same rules, then starts
 `deploy.yml` on `production` itself, because a push made by a workflow starts no other workflow.
+
+Either way, each promoted tag gets a GitHub release. Once the smoke test has passed, `deploy.yml`
+creates it for the tag, with notes GitHub writes from the pull requests merged since the last
+release. A release that fails its smoke test gets no release page, and the next release's notes
+list its changes. A gradual rollout gets its page with its first share and keeps it if you back
+out later: nothing deletes a release. To remove one by hand, run `gh release delete v1.2.0`.
+
+If GitHub cannot make the release, the deploy still passes, and the run shows a warning with the
+command to make it by hand.
 
 ## Roll a release out to a share of visitors
 
