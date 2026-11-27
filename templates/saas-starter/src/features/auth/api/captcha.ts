@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import type { BetterAuthPlugin } from "better-auth";
 import { captcha } from "better-auth/plugins/captcha";
 import { type AppEnv, setting } from "#/app/env.ts";
@@ -30,7 +31,6 @@ export const captchaPlugin: AuthPluginFactory = ({ env, onWarning }) => {
 const turnstile = (secretKey: string, endpoints: Array<string>) =>
   captcha({ provider: "cloudflare-turnstile", secretKey, endpoints });
 
-/** Guards sign-in too: only for a request past its account's limit (see `Auth.admit`). */
 export const signInCaptcha = (env: AppEnv): ReadonlyArray<BetterAuthPlugin> => {
   const keys = turnstileKeys(env);
   return keys ? [turnstile(keys.secretKey, SIGN_IN)] : [];

@@ -6,7 +6,6 @@ export class AuthServiceError extends Schema.TaggedError<AuthServiceError>()("Au
   cause: Schema.Defect(),
 }) {}
 
-/** The server wants a Turnstile token with this sign-in; the form shows the check from then on. */
 export class ChallengeRequired extends Error {}
 
 export type Errors = AuthServiceError;

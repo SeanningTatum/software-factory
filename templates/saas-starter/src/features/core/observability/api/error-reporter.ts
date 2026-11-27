@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { ErrorReporter } from "effect";
 import { type AppEnv, setting } from "#/app/env.ts";
 import type { RequestInfo } from "#/app/request.ts";

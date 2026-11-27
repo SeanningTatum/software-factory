@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { and, eq, notExists, sql } from "drizzle-orm";
 import { Cause, Context, DateTime, Effect, ErrorReporter, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";

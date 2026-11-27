@@ -19,7 +19,6 @@ export const Route = createFileRoute("/login")({
   component: Login,
 });
 
-/** Better Auth's captcha plugin: this account is past its limit, so the server wants a token. */
 const NO_CAPTCHA = "MISSING_RESPONSE";
 
 const signIn = async ({ email, password, captcha }: Credentials) => {

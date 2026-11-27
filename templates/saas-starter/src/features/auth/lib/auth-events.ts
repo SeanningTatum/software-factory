@@ -11,7 +11,6 @@ const CREDENTIAL_FAILURES = new Set([401, 403]);
 
 const isOk = (status: number) => status >= 200 && status < 400;
 
-/** Better Auth's captcha plugin, when a request it guards came without a token. */
 const NO_CAPTCHA = "MISSING_RESPONSE";
 
 const failureReason = (status: number, code: string | undefined) => {

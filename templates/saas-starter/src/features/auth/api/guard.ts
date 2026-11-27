@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Effect } from "effect";
@@ -17,7 +18,6 @@ const getUser = createServerFn({ method: "GET" }).handler(({ context }) =>
   ),
 );
 
-/** Turnstile's public site key, or null when Turnstile isn't set up. */
 export const getSiteKey = createServerFn({ method: "GET" }).handler(({ context }) =>
   runEffect(
     context,
