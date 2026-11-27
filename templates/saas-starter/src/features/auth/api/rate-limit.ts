@@ -3,6 +3,7 @@ import { CloudflareEnv } from "#/app/env.ts";
 import type { RateLimited } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { checkLimit, clientAddress, type Limiter } from "#/features/core/lib/rate-limit.ts";
+import { SIGN_IN, SIGN_UP } from "../constants.ts";
 
 export class AuthRateLimiter extends Context.Service<
   AuthRateLimiter,
@@ -20,12 +21,10 @@ export class AuthRateLimiter extends Context.Service<
   );
 }
 
-export const SIGN_IN = "/api/auth/sign-in/email";
-
 /** Add `/api/auth/request-password-reset` here once a reset sender is wired. */
 export const LIMITED_PATHS = [
   SIGN_IN,
-  "/api/auth/sign-up/email",
+  SIGN_UP,
   "/api/auth/subscription/upgrade",
   "/api/auth/subscription/billing-portal",
   "/api/auth/subscription/cancel",
