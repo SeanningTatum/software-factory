@@ -67,10 +67,9 @@ console.log("• Packing the packages");
 linkLocal(template, packAll(join(template, ".packs"), "./.packs"));
 
 console.log(`\nRunning the CLI into ${target}\n`);
-const result = spawnSync("node", [join(cli, "dist/index.js"), target, ...flags], {
-  stdio: "inherit",
-  env: { ...process.env, CF_SAAS_TEMPLATE_DIR: template },
-});
+const env = { ...process.env, CF_SAAS_TEMPLATE_DIR: template };
+const args = [join(cli, "dist/index.js"), target, ...flags];
+const result = spawnSync("node", args, { stdio: "inherit", env }); // NOSONAR: runs the CLI with the developer's node, as npx would.
 
 if (result.status === 0) {
   console.log(

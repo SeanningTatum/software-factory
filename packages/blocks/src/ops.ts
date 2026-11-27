@@ -57,10 +57,8 @@ export class BlockError extends Error {}
 
 /** Uncommitted changes under `paths`, or undefined when git can't tell (not a repository). */
 const uncommitted = (root: string, paths: ReadonlyArray<string>) => {
-  const status = spawnSync("git", ["status", "--porcelain", "--", ...paths], {
-    cwd: root,
-    encoding: "utf8",
-  });
+  const args = ["status", "--porcelain", "--", ...paths];
+  const status = spawnSync("git", args, { cwd: root, encoding: "utf8" }); // NOSONAR: the user's own git, from their PATH like any CLI.
   return status.status === 0 ? status.stdout.trim() : undefined;
 };
 

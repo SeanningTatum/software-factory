@@ -53,7 +53,7 @@ const LOCAL =
  */
 const gitFiles = (dir: string): ReadonlyArray<string> | undefined => {
   const listed = spawnSync(
-    "git",
+    "git", // NOSONAR: the developer's own git, from their PATH like any CLI.
     ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "."],
     { cwd: dir, encoding: "utf8" },
   );

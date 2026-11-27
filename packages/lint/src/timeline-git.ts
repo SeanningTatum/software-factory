@@ -18,7 +18,7 @@ export interface TimelineResult {
 }
 
 const git = (root: string, args: ReadonlyArray<string>): string | undefined => {
-  const out = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+  const out = spawnSync("git", args, { cwd: root, encoding: "utf8" }); // NOSONAR: the user's own git, from their PATH like any CLI.
   return out.status === 0 ? out.stdout : undefined;
 };
 

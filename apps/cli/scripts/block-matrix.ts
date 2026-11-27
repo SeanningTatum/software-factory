@@ -6,9 +6,9 @@
  *   bun scripts/block-matrix.ts [outDir] [--only required,auth]
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { addBlock, check, removeBlock } from "@tanstack-cf-saas/blocks";
 import { hasTables, scaffold } from "../src/scaffold.ts";
 import { linkLocal, packAll } from "./pack.ts";
@@ -16,10 +16,11 @@ import { linkLocal, packAll } from "./pack.ts";
 const template = join(import.meta.dirname, "../template");
 /** The Claude workflows ship with every project, so the gates must pass with them in place. */
 const harness = join(import.meta.dirname, "../harness");
-const outDir =
+const outDir = resolve(
   process.argv[2] && !process.argv[2].startsWith("--")
     ? process.argv[2]
-    : join(tmpdir(), "cf-saas-matrix");
+    : join(tmpdir(), "cf-saas-matrix"),
+);
 const onlyIndex = process.argv.indexOf("--only");
 const only = onlyIndex > 0 ? (process.argv[onlyIndex + 1] ?? "").split(",") : undefined;
 
@@ -80,6 +81,11 @@ const step = (dir: string, label: string, cmd: string, args: Array<string>) => {
   return ok;
 };
 
+// A run wipes outDir, so it takes only a new or empty folder, or one an earlier run left (.packs).
+if (existsSync(outDir) && readdirSync(outDir).length && !existsSync(join(outDir, ".packs"))) {
+  console.log(`${outDir} holds files this script did not make. Pass a new or empty folder.`);
+  process.exit(1);
+}
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 const failures: Array<string> = [];
