@@ -7,3 +7,5 @@ export const RedirectSearch = Schema.toStandardSchemaV1(
 );
 
 export const afterSignIn = (redirect: string | undefined) => ({ href: redirect ?? "/dashboard" });
+
+export const verifyHref = (to: string, email: string) => `${to}?email=${encodeURIComponent(email)}`;

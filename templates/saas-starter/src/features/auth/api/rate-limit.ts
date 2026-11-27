@@ -21,7 +21,15 @@ export class AuthRateLimiter extends Context.Service<
   );
 }
 
-/** Add `/api/auth/request-password-reset` here once a reset sender is wired. */
+/** Served only with the auth-email feature; each sends a mail or tries a code. */
+export const CODE_PATHS = [
+  "/api/auth/sign-in/email-otp",
+  "/api/auth/email-otp/send-verification-otp",
+  "/api/auth/email-otp/verify-email",
+  "/api/auth/email-otp/request-password-reset",
+  "/api/auth/email-otp/reset-password",
+];
+
 export const LIMITED_PATHS = [
   SIGN_IN,
   SIGN_UP,

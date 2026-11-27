@@ -45,6 +45,25 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   },
   {
     method: "POST",
+    path: "/api/auth/sign-in/email-otp",
+    rule: (status, userId, code) =>
+      isOk(status)
+        ? [{ event: { _tag: "sign_in_succeeded", method: "code" }, distinctId: userId }]
+        : [{ event: { _tag: "sign_in_failed", reason: failureReason(status, code) } }],
+  },
+  {
+    method: "POST",
+    path: "/api/auth/email-otp/verify-email",
+    rule: (status, userId) =>
+      isOk(status) ? [{ event: { _tag: "email_verified" }, distinctId: userId }] : [],
+  },
+  {
+    method: "POST",
+    path: "/api/auth/email-otp/reset-password",
+    rule: (status) => (isOk(status) ? [{ event: { _tag: "password_reset" } }] : []),
+  },
+  {
+    method: "POST",
     path: SIGN_OUT,
     rule: (status) => (isOk(status) ? [{ event: { _tag: "signed_out" } }] : []),
   },

@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-const Method = Schema.Literal("email");
+const Method = Schema.Literals(["email", "code"]);
 
 const SignUpCompleted = Schema.TaggedStruct("sign_up_completed", { method: Method });
 const SignInSucceeded = Schema.TaggedStruct("sign_in_succeeded", { method: Method });
@@ -8,8 +8,17 @@ const SignInFailed = Schema.TaggedStruct("sign_in_failed", {
   reason: Schema.Literals(["invalid_credentials", "rate_limited", "challenged", "other"]),
 });
 const SignedOut = Schema.TaggedStruct("signed_out", {});
+const EmailVerified = Schema.TaggedStruct("email_verified", {});
+const PasswordReset = Schema.TaggedStruct("password_reset", {});
 
-export const events = [SignUpCompleted, SignInSucceeded, SignInFailed, SignedOut] as const;
+export const events = [
+  SignUpCompleted,
+  SignInSucceeded,
+  SignInFailed,
+  SignedOut,
+  EmailVerified,
+  PasswordReset,
+] as const;
 
 export const metric = {
   name: "Share of sign-in attempts that succeed",

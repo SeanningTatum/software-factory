@@ -16,11 +16,18 @@ import { authEvents } from "../lib/auth-events.ts";
 import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
 import { captchaPlugin, signInCaptcha, turnstileKeys } from "./captcha.ts";
-import { AuthRateLimiter, accountKey, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
+import {
+  AuthRateLimiter,
+  accountKey,
+  CODE_PATHS,
+  LIMITED_PATHS,
+  limitKey,
+} from "./rate-limit.ts";
 
 const IDENTIFIES = new Set(["sign_up_completed", "sign_in_succeeded"]);
 const WEBHOOK = "/api/auth/stripe/webhook";
 const SERVER_ERROR = 500;
+const LIMITED = new Set([...LIMITED_PATHS, ...CODE_PATHS]);
 const RESETS_ANON_ID = new Set([...IDENTIFIES, "signed_out"]);
 
 export interface SessionUser {
@@ -277,7 +284,7 @@ export class Auth extends Context.Service<
         const handle = Effect.fn("Auth.handle")(function* (incoming: Request) {
           const path = new URL(incoming.url).pathname;
           const admission =
-            incoming.method === "POST" && LIMITED_PATHS.includes(path)
+            incoming.method === "POST" && LIMITED.has(path)
               ? yield* admit(incoming, path)
               : undefined;
           if (admission instanceof Response) return admission;

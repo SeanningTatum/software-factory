@@ -5,7 +5,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
-import { afterSignIn, RedirectSearch } from "./redirect.ts";
+import { afterSignIn, RedirectSearch, verifyHref } from "./redirect.ts";
 
 const root = createRootRoute();
 const page = (path: string) => createRoute({ getParentRoute: () => root, path });
@@ -34,4 +34,10 @@ describe("RedirectSearch", () => {
   it.each(["//evil.com", "/\\evil.com", "https://evil.com"])("refuses %s", (value) =>
     expect(validate(value).issues).toBeDefined(),
   );
+});
+
+describe("verifyHref", () => {
+  it("carries the email as an escaped search param", () => {
+    expect(verifyHref("/verify-email", "a+b@c.dev")).toBe("/verify-email?email=a%2Bb%40c.dev");
+  });
 });
