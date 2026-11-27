@@ -92,11 +92,22 @@ describe.skipIf(noGithub)("branch rules", () => {
   });
 
   it("gives a promoted tag a GitHub release, only after the production smoke test has passed", () => {
-    const deploy = workflow("deploy");
-    expect(deploy).toMatch(
-      / {2}production:\n[\s\S]*permissions:\n\s+contents: write[\s\S]*name: Smoke test, rolling back on failure[\s\S]*name: Give the new version its share[\s\S]*gh release view "\$TAG" >\/dev\/null 2>&1 \|\| gh release create "\$TAG" --verify-tag --generate-notes/,
+    const [before = "", after = ""] = workflow("deploy").split(
+      "      - name: Create the GitHub release\n",
     );
-    expect(deploy).not.toMatch(/\b(always|failure|cancelled)\(\)/);
+    const [release = ""] = after.split("\n      - ");
+    expect(before).toMatch(
+      / {2}production:\n[\s\S]*permissions:\n\s+contents: write[\s\S]*name: Smoke test, rolling back on failure[\s\S]*name: Give the new version its share/,
+    );
+    expect(release).toMatch(/if gh release view "\$TAG" >\/dev\/null 2>&1; then exit 0; fi/);
+    expect(release).toMatch(/gh release create "\$TAG" --verify-tag --generate-notes/);
+    expect(release).not.toMatch(/^\s+(if|continue-on-error):/m);
+  });
+
+  it("starts the notes at the last release, and warns when it cannot make one", () => {
+    expect(workflow("deploy")).toMatch(
+      /last=\$\(gh release list --exclude-drafts --limit 1 [^\n]*\) \|\| true\n[\s\S]*--generate-notes \$\{last:\+--notes-start-tag "\$last"\} \|\|\n\s+echo "::warning::/,
+    );
   });
 
   it("keeps the production job's write token from the packages it installs", () => {

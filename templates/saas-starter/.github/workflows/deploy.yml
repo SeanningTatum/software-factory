@@ -204,8 +204,14 @@ jobs:
           PERCENT: ${{ inputs.rollout == 'gradual' && inputs.percent || '100' }}
         run: sh .github/scripts/report-rollout.sh "$TAG" "$PERCENT"
       - name: Create the GitHub release
-        continue-on-error: true # the deploy has passed its smoke test; a missing release page is not a failed deploy
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
-        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --generate-notes
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then exit 0; fi
+          # From the last release, not the last tag: a tag that failed its smoke test has no
+          # release, and its changes first ship in this one.
+          last=$(gh release list --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // empty') || true
+          # A warning, not a failure: the deploy has passed its smoke test.
+          gh release create "$TAG" --verify-tag --generate-notes ${last:+--notes-start-tag "$last"} ||
+            echo "::warning::No GitHub release was made for $TAG. Run: gh release create $TAG --verify-tag --generate-notes${last:+ --notes-start-tag $last}"
