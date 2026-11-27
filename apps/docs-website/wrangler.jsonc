@@ -1,0 +1,83 @@
+// Bindings and vars marked in cf-saas.json are managed by `bun run blocks:sync`.
+// Everything else here is yours: it is kept when blocks are added or removed.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "docs-website",
+  "main": "./src/server.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    // Keeps sign-in codes and reset tokens in URLs out of Cloudflare's own logs and traces.
+    "redact_query_string": true,
+    // Samples whole traces, chosen when a request starts. Never set the top-level
+    // head_sampling_rate: it samples logs, and every request must keep its log lines.
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 },
+    "issues": { "enabled": true }
+  },
+  "logpush": true,
+  "upload_source_maps": true,
+  "placement": { "mode": "smart" },
+  // Tells the Worker which version it is: /api/health reports it and PostHog events carry it.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "env": {
+    "staging": {
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
+      // An env's block replaces the one above instead of merging, so it is repeated in full.
+      "observability": {
+        "enabled": true,
+        "redact_query_string": true,
+        "traces": { "enabled": true, "head_sampling_rate": 1 },
+        "issues": { "enabled": true }
+      },
+      "vars": {
+        "LOG_LEVEL": "Info",
+        "ERROR_REPORTER": "console",
+        "ANALYTICS_PROVIDER": "console",
+        "POSTHOG_HOST": "https://us.i.posthog.com"
+      },
+      "ratelimits": [
+        {
+          "name": "EVENTS_LIMITER",
+          "namespace_id": "1370440709",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        },
+        {
+          "name": "REPORT_LIMITER",
+          "namespace_id": "862236062",
+          "simple": {
+            "limit": 10,
+            "period": 60
+          }
+        }
+      ]
+    }
+  },
+  "vars": {
+    "LOG_LEVEL": "Info",
+    "ERROR_REPORTER": "console",
+    "ANALYTICS_PROVIDER": "console",
+    "POSTHOG_HOST": "https://us.i.posthog.com"
+  },
+  "ratelimits": [
+    {
+      "name": "EVENTS_LIMITER",
+      "namespace_id": "2119661973",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    },
+    {
+      "name": "REPORT_LIMITER",
+      "namespace_id": "273748674",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ]
+}
