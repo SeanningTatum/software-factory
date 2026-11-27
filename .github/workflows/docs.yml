@@ -1,0 +1,72 @@
+# Deploys apps/docs-website: a push to staging to the docs-website-staging Worker, a promotion to
+# the docs-website Worker. The first deploy creates each Worker on its account's workers.dev.
+# Needs the repository secret CLOUDFLARE_API_TOKEN (Workers Scripts → Edit) and the variable
+# CLOUDFLARE_ACCOUNT_ID; skipped until that variable is set. Optional variables DOCS_STAGING_URL and
+# DOCS_PRODUCTION_URL name a custom domain to smoke-test; without them the workers.dev URL is used.
+# check.yml has already tested the commit; production takes only what promote.sh sends.
+name: docs
+on:
+  push:
+    branches: [staging, production]
+  # promote.yml starts this on production: its own push, made with GITHUB_TOKEN, starts nothing.
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: docs-${{ github.ref_name }}
+jobs:
+  deploy:
+    # !created: the push that makes production deploys nothing; the first promotion does.
+    if: ${{ vars.CLOUDFLARE_ACCOUNT_ID != '' && (github.ref_name == 'staging' || (github.ref_name == 'production' && !github.event.created)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: docs-${{ github.ref_name }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # brings the tags and origin/staging
+          persist-credentials: false
+      - name: On staging, with a version tag
+        id: release
+        if: ${{ github.ref_name == 'production' }}
+        run: |
+          if ! git merge-base --is-ancestor HEAD origin/staging; then
+            echo "::error::$(git rev-parse --short HEAD) is not on staging. Promote with bun run promote: see RELEASING.md."; exit 1
+          fi
+          tag=$(git tag --points-at HEAD --list 'v*' --sort=-v:refname | head -1)
+          test -n "$tag" || { echo "::error::No version tag on $(git rev-parse --short HEAD). Promote with bun run promote."; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # As in check.yml: build the packages, then install again to link their bins.
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run turbo run build --filter='./packages/*'
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run --cwd apps/docs-website postinstall
+      - name: Deploy
+        id: deploy
+        working-directory: apps/docs-website
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/deploy.ndjson
+          TAG: ${{ steps.release.outputs.tag }}
+          GIVEN: ${{ github.ref_name == 'production' && vars.DOCS_PRODUCTION_URL || vars.DOCS_STAGING_URL }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = production ]; then bun run deploy --tag "$TAG" --message "$TAG"
+          else bun run deploy:staging --tag "staging-${GITHUB_SHA::7}"; fi
+          # targets holds the workers.dev URL and any routes; a route pattern has a *.
+          url=${GIVEN:-$(jq -r 'select(.type == "deploy") | .targets[]? | select(startswith("https://") and (contains("*") | not))' "$WRANGLER_OUTPUT_FILE_PATH" | head -1)}
+          test -n "$url" || { echo "::error::The deploy named no URL. Turn on workers.dev for the Worker, or set DOCS_STAGING_URL or DOCS_PRODUCTION_URL."; exit 1; }
+          echo "url=${url%/}" >> "$GITHUB_OUTPUT"
+      - name: Smoke test, rolling back production on failure
+        working-directory: apps/docs-website
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          # A new workers.dev name can take a few seconds to answer.
+          if curl -sS --fail-with-body --retry 6 --retry-delay 5 --retry-all-errors --max-time 15 "$URL/api/health"; then exit 0; fi
+          if [ "$GITHUB_REF_NAME" = production ]; then bun run wrangler rollback --message "smoke test failed" -y; fi
+          exit 1

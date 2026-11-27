@@ -38,6 +38,13 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
 - **Version pull requests.** Settings → Actions → General → "Allow GitHub Actions to create and
   approve pull requests". Without it, open each one by hand:
   `gh pr create --base staging --head changeset-release/staging --title "chore(release): version packages"`.
+- **Docs site.** `docs.yml` deploys `apps/docs-website` to Cloudflare: each push to `staging` to
+  the `docs-website-staging` Worker, each promotion to `docs-website`. The first deploy creates
+  them. In the Cloudflare dashboard make an API token from the "Edit Cloudflare Workers" template,
+  then run `gh secret set CLOUDFLARE_API_TOKEN` and paste it, and
+  `gh variable set CLOUDFLARE_ACCOUNT_ID --body <account id>`. Until that variable is set the job
+  is skipped. On a custom domain, set `DOCS_STAGING_URL` or `DOCS_PRODUCTION_URL` to it so the smoke
+  test checks the domain; without them it checks `workers.dev`.
 - **Branch rules.** Applied from `.github/rulesets/`. After you edit one, find its id with
   `gh api 'repos/{owner}/{repo}/rulesets'` and send it:
   `gh api --method PUT 'repos/{owner}/{repo}/rulesets/<id>' --input .github/rulesets/<file>`.
@@ -54,6 +61,7 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
 | `release.yml` fails at "On staging, with a version tag".  | `production` moved without `bun run promote`. Tag that commit `v…`, re-run the job.                              |
 | A release leaves the CLI out, or npm refuses its `0.2.0`. | `0.2.0` was used on 2026-11-26 and npm never frees a number. Set the CLI to `0.2.1` in the version pull request. |
 | Publish fails with 401 or 403.                            | The token expired or lacks the scope. Replace `NPM_TOKEN`, re-run the job.                                       |
+| `docs.yml` fails its smoke test.                          | Production rolled back; the npm release still went out. Read the job's `/api/health` answer, fix, promote again. |
 | Publish failed part way.                                  | Re-run the job. It skips versions already on npm.                                                                |
 | A bad version is live.                                    | Fix forward with a new release. `npm deprecate` the bad one; never unpublish.                                    |
 
