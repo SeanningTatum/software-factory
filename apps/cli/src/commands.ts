@@ -157,7 +157,12 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         );
   const husky = await askHusky(args);
   const github = await askGithub(args);
-  const devVars = args.yes ? {} : await askBlankSettings(blankSettings(templateDir(), features));
+  const devVars = args.yes
+    ? {}
+    : {
+        ...(await askBlankSettings(blankSettings(templateDir(), features))),
+        ...(await askPosthog()),
+      };
   return {
     name,
     targetDir,
@@ -210,6 +215,35 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
     if (value) values[blank.key] = value;
   }
   return values;
+};
+
+/**
+ * Asks for a PostHog project key and its cloud. The key (phc_…) is public, safe in a browser, so
+ * unlike the other keys typed here it is no test value: production gets it too.
+ */
+const askPosthog = async (): Promise<Record<string, string>> => {
+  const key = cancelled(
+    await p.text({
+      message:
+        "PostHog project API key, to send analytics from staging and production (phc_…; leave empty to skip)",
+      defaultValue: "",
+      validate: (v) =>
+        !v || /^phc_\S+$/.test(v.trim())
+          ? undefined
+          : "A project API key starts with phc_ (PostHog → Project settings)",
+    }),
+  ).trim();
+  if (!key) return {};
+  const host = cancelled(
+    await p.select({
+      message: "Which PostHog cloud is the project in?",
+      options: [
+        { value: "https://us.i.posthog.com", label: "US" },
+        { value: "https://eu.i.posthog.com", label: "EU" },
+      ],
+    }),
+  );
+  return { POSTHOG_KEY: key, POSTHOG_HOST: host };
 };
 
 type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
@@ -425,7 +459,9 @@ const offerCloudflare = async (
       await provision(plan.targetDir, wrangler, {
         envs: [env],
         vars: typed.vars,
-        secretValue: async (key) => typed.secrets[key],
+        // The PostHog key is a real one, not test data, so it goes to both environments.
+        secretValue: async (key) =>
+          typed.secrets[key] ?? (key === "POSTHOG_KEY" ? plan.devVars?.POSTHOG_KEY : undefined),
         log: (line) => p.log.step(line),
       });
     }

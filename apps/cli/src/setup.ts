@@ -257,7 +257,7 @@ const provisionBinding = (
   return text;
 };
 
-const withVars = (text: string, env: EnvName, vars: Readonly<Record<string, string>>) =>
+export const withVars = (text: string, env: EnvName, vars: Readonly<Record<string, string>>) =>
   Object.entries(vars).reduce((acc, [key, value]) => {
     const path = env === "production" ? ["vars", key] : ["env", env, "vars", key];
     return applyEdits(acc, modify(acc, path, value, { formattingOptions: formattingOf(acc) }));

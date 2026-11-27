@@ -121,6 +121,10 @@ database. Cloudflare setup needs you logged in to wrangler, and the GitHub step 
 A feature that needs keys you don't have yet, such as Stripe for billing, asks for them and takes
 an empty answer. The feature stays off until you fill them in `.dev.vars`.
 
+It also asks for a PostHog project API key (`phc_…`) and its cloud, US or EU. Give one and staging
+and production send analytics to PostHog: Cloudflare setup uploads the key to both, and `dev`
+stays on the console. Leave it empty to keep the console everywhere.
+
 ### Skip the questions
 
 ```bash

@@ -10,10 +10,18 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
-import { loadManifests, prune, readProject, sync, writeProject } from "@tanstack-cf-saas/blocks";
+import {
+  envNames,
+  loadManifests,
+  prune,
+  readProject,
+  sync,
+  WRANGLER_FILE,
+  writeProject,
+} from "@tanstack-cf-saas/blocks";
 import { applyEdits, modify, parse } from "jsonc-parser";
 import { installHarness } from "./harness.ts";
-import { GENERATED_SECRETS, SECRET_BYTES } from "./setup.ts";
+import { GENERATED_SECRETS, SECRET_BYTES, withVars } from "./setup.ts";
 import { resetHistory, today } from "./timeline.ts";
 import { VERSION } from "./version.ts";
 
@@ -203,6 +211,19 @@ const writeDevVars = (dir: string, values: Readonly<Record<string, string>>) => 
   );
 };
 
+/**
+ * A PostHog key given during `create` switches staging and production to PostHog, on the host
+ * given with it. `dev` stays on console: .dev.vars keeps its own ANALYTICS_PROVIDER.
+ */
+const usePosthog = (dir: string, values: Readonly<Record<string, string>>) => {
+  const { POSTHOG_KEY, POSTHOG_HOST } = values;
+  if (!POSTHOG_KEY) return;
+  const vars = { ANALYTICS_PROVIDER: "posthog", ...(POSTHOG_HOST ? { POSTHOG_HOST } : {}) };
+  edit(join(dir, WRANGLER_FILE), (text) =>
+    envNames.reduce((acc, env) => withVars(acc, env, vars), text),
+  );
+};
+
 /** The husky a project gets; keep it in step with this repo's own. */
 const HUSKY_VERSION = "^9.1.7";
 
@@ -280,6 +301,7 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
     `- ${options.date ?? today()} — Created from create-tanstack-cf-saas ${VERSION}.`,
   );
   writeDevVars(targetDir, options.devVars ?? {});
+  usePosthog(targetDir, options.devVars ?? {});
 
   if (harnessDir && existsSync(harnessDir)) installHarness(harnessDir, targetDir);
   if (huskyDir && existsSync(huskyDir)) installHusky(huskyDir, targetDir);

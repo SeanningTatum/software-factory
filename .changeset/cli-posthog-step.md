@@ -2,4 +2,4 @@
 "create-tanstack-cf-saas": minor
 ---
 
-The wizard says how to send analytics to PostHog: create a project, then run `bun run setup` per environment with `ANALYTICS_PROVIDER=posthog`, which asks for `POSTHOG_KEY` and uploads it. When Cloudflare setup is skipped, `create` now prints each feature's manual steps too.
+`create` asks for a PostHog project API key and its cloud (US or EU). With one, staging and production send analytics to PostHog, and Cloudflare setup uploads the key to both; `dev` stays on the console. When Cloudflare setup is skipped, `create` now also prints each feature's manual steps, such as billing's Stripe webhook.
