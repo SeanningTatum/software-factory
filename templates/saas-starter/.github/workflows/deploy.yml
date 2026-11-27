@@ -71,6 +71,9 @@ jobs:
   production:
     # !created: the push that makes the branch deploys nothing; the first promotion does.
     if: ${{ github.ref_name == 'production' && !github.event.created && vars.CLOUDFLARE_ACCOUNT_ID != '' }}
+    # write: the last step makes the tag's GitHub release.
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
@@ -199,3 +202,9 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           PERCENT: ${{ inputs.rollout == 'gradual' && inputs.percent || '100' }}
         run: sh .github/scripts/report-rollout.sh "$TAG" "$PERCENT"
+      - name: Create the GitHub release
+        continue-on-error: true # the deploy has passed its smoke test; a missing release page is not a failed deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --generate-notes

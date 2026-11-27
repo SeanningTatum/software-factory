@@ -90,6 +90,14 @@ describe.skipIf(noGithub)("branch rules", () => {
     expect(promote).toMatch(/gh workflow run deploy\.yml --ref production/);
     expect(workflow("deploy")).toMatch(/^ {2}workflow_dispatch:$/m);
   });
+
+  it("gives a promoted tag a GitHub release, only after the production smoke test has passed", () => {
+    const deploy = workflow("deploy");
+    expect(deploy).toMatch(
+      / {2}production:\n[\s\S]*permissions:\n\s+contents: write[\s\S]*name: Smoke test, rolling back on failure[\s\S]*name: Give the new version its share[\s\S]*gh release view "\$TAG" >\/dev\/null 2>&1 \|\| gh release create "\$TAG" --verify-tag --generate-notes/,
+    );
+    expect(deploy).not.toMatch(/\b(always|failure|cancelled)\(\)/);
+  });
 });
 
 describe("gradual rollout", () => {
