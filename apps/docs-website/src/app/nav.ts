@@ -7,6 +7,3 @@ export interface NavItem {
 }
 
 export const navItems: ReadonlyArray<NavItem> = featureNav;
-
-export const visibleNav = (items: ReadonlyArray<NavItem>, signedIn: boolean) =>
-  items.filter((item) => !item.when || (item.when === "signed-in") === signedIn);
