@@ -43,4 +43,5 @@ Rules for a new block:
 
 `docs/workflow-blocks.md` draws the flow, with a sample of what goes in and out.
 
-To try a script here, copy it into `.claude/workflows/` and run `/reload-skills`.
+To try a script here, edit it and run `/reload-skills`: this repo's `.claude/workflows` is a symlink
+to `workflows/`. A new command needs its own link in `.claude/commands/`, as `foundation.md` has.
