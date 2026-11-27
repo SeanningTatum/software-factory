@@ -28,6 +28,7 @@
     "src/features/{*,core/*}/routes/**",
     "src/features/{*,core/*}/lib/*-client.ts",
     "src/features/{*,core/*}/api/guard.ts",
+    "src/features/{*,core/*}/api/loaders.ts",
     "src/features/{*,core/*}/api/memory-*.ts",
     "src/features/{*,core/*}/api/test-*.ts",
     "src/features/{*,core/*}/workflows.ts",
