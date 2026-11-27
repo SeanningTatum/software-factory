@@ -3,7 +3,7 @@
 
 # UI (`ui`)
 
-shadcn/ui components, the cn helper, useHydrated, and the site header and footer.
+shadcn/ui components, the cn helper, useHydrated, and the site footer.
 
 - Kind: core module, required; it can't be removed
 - Depends on: none
@@ -33,5 +33,6 @@ shadcn/ui components, the cn helper, useHydrated, and the site header and footer
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-27 — The site header is gone, and `--fd-banner-height` with it: Fumadocs' own nav heads every page, so the docs sidebar starts at the top.
 - 2026-11-27 — The site header sticks to the top, and `--fd-banner-height` in `src/styles.css` tells Fumadocs its height, so the docs sidebar ends at the bottom of the window.
 - 2026-11-27 — Created from create-tanstack-cf-saas 0.1.0.

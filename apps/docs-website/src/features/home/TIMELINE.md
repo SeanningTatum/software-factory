@@ -33,6 +33,7 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-27 — The home page sits in Fumadocs' `HomeLayout`, whose nav links to the docs.
 - 2026-11-27 — The home page introduces the docs and links to /docs.
 
 - 2026-11-27 — The health spec expects `database` to be "up" with a `drizzle.config.ts` and absent without one, so a lost binding fails it.

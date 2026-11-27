@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "title": "UI",
-  "description": "shadcn/ui components, the cn helper, useHydrated, and the site header and footer.",
+  "description": "shadcn/ui components, the cn helper, useHydrated, and the site footer.",
   "required": true,
   "requires": []
 }
