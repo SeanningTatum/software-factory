@@ -3,7 +3,7 @@ import { navItems, visibleNav } from "#/app/nav.ts";
 
 export function SiteHeader({ signedIn, appName }: { signedIn: boolean; appName: string }) {
   return (
-    <header className="border-b">
+    <header className="sticky top-0 z-40 border-b bg-background">
       <nav className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4" aria-label="Main">
         <Link to="/" className="font-semibold">
           {appName}

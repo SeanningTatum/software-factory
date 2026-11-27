@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Outlet, Scripts, useRouter } from "@tanstack/react-router";
+import { RootProvider } from "fumadocs-ui/provider/tanstack";
 import type { ReactNode } from "react";
 import { getShell } from "#/app/shell.ts";
 import { ConsentProvider } from "#/features/consent/components/consent-banner.tsx";
@@ -32,19 +33,23 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const { viewer, consent } = Route.useLoaderData();
+  // The theme script is inline: without the nonce the production CSP blocks it.
+  const nonce = useRouter().options.ssr?.nonce;
   return (
-    <ConsentProvider input={consent}>
-      <div className="flex min-h-dvh flex-col">
-        <SiteHeader signedIn={viewer.signedIn} appName={APP_NAME} />
-        <div className="flex-1">
-          <Outlet />
+    <RootProvider theme={{ nonce }}>
+      <ConsentProvider input={consent}>
+        <div className="flex min-h-dvh flex-col">
+          <SiteHeader signedIn={viewer.signedIn} appName={APP_NAME} />
+          <div className="flex-1">
+            <Outlet />
+          </div>
+          <SiteFooter>
+            <CookieSettingsButton />
+          </SiteFooter>
         </div>
-        <SiteFooter>
-          <CookieSettingsButton />
-        </SiteFooter>
-      </div>
-      <AnalyticsTracker />
-    </ConsentProvider>
+        <AnalyticsTracker />
+      </ConsentProvider>
+    </RootProvider>
   );
 }
 
