@@ -291,6 +291,19 @@ describe("lint", () => {
     ]);
   });
 
+  test("reports an event type written beside a machine, not in the machine or a file without one", () => {
+    const send = 'export type Send = (event: { type: "START"; plan: string }) => void;';
+    const root = project({
+      "src/features/x/components/button.tsx": `import type { m } from "./m.machine.ts";\n${send}`,
+      "src/features/x/components/m.machine.ts": `import { setup } from "xstate";\n${send}`,
+      "src/features/x/api/webhook.ts": send,
+    });
+    const found = lint(root).filter((f) => f.rule === "derived-machine-types");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual([
+      "src/features/x/components/button.tsx:2",
+    ]);
+  });
+
   test("reports commented-out code, TODOs, dividers and empty comments, not prose or directives", () => {
     const body = [
       "// const old = compute();",

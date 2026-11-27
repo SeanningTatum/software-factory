@@ -293,3 +293,38 @@ export const serverFnPlacement: Rule = {
     );
   },
 };
+
+/** Whether the file can reach a machine to derive from: it imports xstate or a `*.machine.ts`. */
+const importsMachine = (source: ts.SourceFile) =>
+  source.statements.some(
+    (s) =>
+      ts.isImportDeclaration(s) &&
+      ts.isStringLiteral(s.moduleSpecifier) &&
+      /^(xstate|@xstate\/react)$|\.machine(\.ts)?$/.test(s.moduleSpecifier.text),
+  );
+
+/** `{ type: "START"; ... }` written as a type: an event shape. */
+const isEventType = (n: ts.Node) =>
+  ts.isTypeLiteralNode(n) &&
+  n.members.some(
+    (m) =>
+      ts.isPropertySignature(m) &&
+      m.name.getText() === "type" &&
+      m.type !== undefined &&
+      ts.isLiteralTypeNode(m.type) &&
+      ts.isStringLiteral(m.type.literal),
+  );
+
+export const derivedMachineTypes: Rule = {
+  id: "derived-machine-types",
+  description:
+    "A machine's events are declared once, in its *.machine.ts; code beside it derives them instead of writing them again.",
+  check: ({ file, source }) => {
+    if (file.endsWith(".machine.ts") || !importsMachine(source)) return [];
+    return collect(source, (n) =>
+      isEventType(n)
+        ? 'derive this event type from the machine: EventFrom<typeof machine>, or ActorRefFrom<typeof machine>["send"] for send'
+        : undefined,
+    );
+  },
+};

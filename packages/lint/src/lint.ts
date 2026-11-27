@@ -7,6 +7,7 @@ import { matchesAny } from "./glob.ts";
 import { noRepeatedApiPath } from "./rules/api-paths.ts";
 import {
   classPlacement,
+  derivedMachineTypes,
   errorPlacement,
   externalCallSpan,
   fileSize,
@@ -39,6 +40,7 @@ export const rules: ReadonlyArray<Rule> = [
   classPlacement,
   errorPlacement,
   serverFnPlacement,
+  derivedMachineTypes,
   noUselessComment,
   fileSize,
   testMap,
@@ -64,6 +66,7 @@ const SOURCE_ONLY = new Set([
   "one-component-per-file",
   "class-placement",
   "error-placement",
+  "derived-machine-types",
 ]);
 const TEST_FILE = /\.(test|spec)\.tsx?$/;
 

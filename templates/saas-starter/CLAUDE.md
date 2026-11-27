@@ -70,9 +70,9 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - Log with `Effect.log*`, never `console`. Every line already carries the request id and user.
 - With `auth`, sign-ins, sign-outs and plan changes pass through `Auth.handle` into analytics and
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
-- Every flow a user can see, and every lifecycle, is an XState machine in a `*.machine.ts` file with a
-  unit test; UI machines sit in `components/` with `e2e/<name>.paths.spec.ts`. A `.tsx` holds one
-  component, no class, no inline handler (`one-component-per-file`, `class-placement`, `no-inline-handler`).
+- Every flow a user can see, and every lifecycle, is an XState machine in a tested `*.machine.ts`;
+  UI ones sit in `components/` with `e2e/<name>.paths.spec.ts`, and code beside a machine derives its
+  event types (`EventFrom`, `ActorRefFrom`). A `.tsx` holds one component, no class, no inline handler.
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
   `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
   personal data in event properties.
