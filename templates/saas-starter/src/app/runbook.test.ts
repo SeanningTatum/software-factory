@@ -104,6 +104,31 @@ describe.skipIf(noGithub)("branch rules", () => {
     expect(promote).toMatch(/gh workflow run deploy\.yml --ref production/);
     expect(workflow("deploy")).toMatch(/^ {2}workflow_dispatch:$/m);
   });
+
+  it("gives a promoted tag a GitHub release, only after the production smoke test has passed", () => {
+    const [before = "", after = ""] = workflow("deploy").split(
+      "      - name: Create the GitHub release\n",
+    );
+    const [release = ""] = after.split("\n      - ");
+    expect(before).toMatch(
+      / {2}production:\n[\s\S]*permissions:\n\s+contents: write[\s\S]*name: Smoke test, rolling back on failure[\s\S]*name: Give the new version its share/,
+    );
+    expect(release).toMatch(/if gh release view "\$TAG" >\/dev\/null 2>&1; then exit 0; fi/);
+    expect(release).toMatch(/gh release create "\$TAG" --verify-tag --generate-notes/);
+    expect(release).not.toMatch(/^\s+(if|continue-on-error):/m);
+  });
+
+  it("starts the notes at the last release, and warns when it cannot make one", () => {
+    expect(workflow("deploy")).toMatch(
+      /last=\$\(gh release list --exclude-drafts --limit 1 [^\n]*\) \|\| true\n[\s\S]*--generate-notes \$\{last:\+--notes-start-tag "\$last"\} \|\|\n\s+echo "::warning::/,
+    );
+  });
+
+  it("keeps the production job's write token from the packages it installs", () => {
+    expect(workflow("deploy")).toMatch(
+      / {2}production:\n[\s\S]*contents: write[\s\S]*persist-credentials: false[\s\S]*bun install/,
+    );
+  });
 });
 
 describe("gradual rollout", () => {

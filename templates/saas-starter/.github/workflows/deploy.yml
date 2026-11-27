@@ -73,6 +73,9 @@ jobs:
   production:
     # !created: the push that makes the branch deploys nothing; the first promotion does.
     if: ${{ github.ref_name == 'production' && !github.event.created && vars.CLOUDFLARE_ACCOUNT_ID != '' }}
+    # write: the last step makes the tag's GitHub release.
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -82,6 +85,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # brings the tags and origin/staging
+          persist-credentials: false # the job's token can write; the packages it installs must not find it
       # The ruleset lets any commit that passed its checks fast-forward production. Deploy only a
       # promotion: a commit that is on staging and carries a version tag.
       - name: On staging, with a version tag
@@ -203,3 +207,15 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           PERCENT: ${{ inputs.rollout == 'gradual' && inputs.percent || '100' }}
         run: sh .github/scripts/report-rollout.sh "$TAG" "$PERCENT"
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then exit 0; fi
+          # From the last release, not the last tag: a tag that failed its smoke test has no
+          # release, and its changes first ship in this one.
+          last=$(gh release list --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // empty') || true
+          # A warning, not a failure: the deploy has passed its smoke test.
+          gh release create "$TAG" --verify-tag --generate-notes ${last:+--notes-start-tag "$last"} ||
+            echo "::warning::No GitHub release was made for $TAG. Run: gh release create $TAG --verify-tag --generate-notes${last:+ --notes-start-tag $last}"
