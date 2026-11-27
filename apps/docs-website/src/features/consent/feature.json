@@ -1,0 +1,7 @@
+{
+  "name": "consent",
+  "title": "Consent",
+  "description": "The cookie consent banner and its state machine, the cookie settings button, and the analytics tracker that waits for consent. Honours Do Not Track and Global Privacy Control.",
+  "required": true,
+  "requires": []
+}
