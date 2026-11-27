@@ -6,7 +6,6 @@ import { drizzle } from "drizzle-orm/libsql";
 import { Layer } from "effect";
 import { Database, type Db } from "./database.ts";
 
-/** Builds the DDL with drizzle-kit, so it always matches the schema files. */
 export const makeTestDb = async (schema: Record<string, unknown>): Promise<Db> => {
   const client = createClient({ url: ":memory:" });
   const empty = await generateSQLiteDrizzleJson({});

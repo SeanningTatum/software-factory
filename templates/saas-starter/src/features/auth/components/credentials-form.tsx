@@ -20,7 +20,6 @@ export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
   );
   const id = useId();
   const [token, setToken] = useState<string>();
-  // A token works once; a new `key` mounts a new check for the next try.
   const [attempt, setAttempt] = useState(0);
   if (snapshot.status === "done") queueMicrotask(onDone);
   const busy = snapshot.matches("submitting") || snapshot.status === "done";

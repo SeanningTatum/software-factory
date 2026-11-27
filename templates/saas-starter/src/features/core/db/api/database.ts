@@ -6,7 +6,6 @@ import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 
-/** Any async SQLite Drizzle database: D1 in the Worker, libSQL in tests. */
 export type Db = BaseSQLiteDatabase<"async", unknown>;
 
 export class DatabaseError extends Schema.TaggedError<DatabaseError>()("DatabaseError", {
@@ -17,9 +16,7 @@ export class DatabaseError extends Schema.TaggedError<DatabaseError>()("Database
 export class Database extends Context.Service<
   Database,
   {
-    /** For libraries such as Better Auth that take one. */
     readonly db: Db | undefined;
-    /** The name becomes the span name and appears in errors. */
     readonly query: <A>(
       operation: string,
       run: (db: Db) => Promise<A>,

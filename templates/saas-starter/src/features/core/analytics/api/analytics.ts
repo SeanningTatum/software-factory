@@ -11,7 +11,6 @@ import { posthogAdapter } from "./adapters/posthog.ts";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 
-/** A missing key or binding turns analytics off, never the app. */
 export const selectAdapter = (env: AppEnv): AnalyticsAdapter => {
   const provider = setting(env, "ANALYTICS_PROVIDER") ?? "console";
   if (provider === "console") return consoleAdapter;
@@ -22,7 +21,6 @@ export const selectAdapter = (env: AppEnv): AnalyticsAdapter => {
       ? posthogAdapter(
           key,
           setting(env, "POSTHOG_HOST") ?? DEFAULT_POSTHOG_HOST,
-          // The release tag reads better on a chart; an untagged deploy has only its id.
           version?.tag ?? version?.id,
         )
       : noopAdapter;
@@ -35,7 +33,6 @@ export const selectAdapter = (env: AppEnv): AnalyticsAdapter => {
 export class Analytics extends Context.Service<
   Analytics,
   {
-    /** The batch is sent when the request ends. */
     readonly capture: (event: AnalyticsEvent, distinctId?: string) => Effect.Effect<void>;
   }
 >()("app/features/analytics/Analytics") {

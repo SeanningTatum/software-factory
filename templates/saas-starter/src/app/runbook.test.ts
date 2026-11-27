@@ -68,9 +68,7 @@ describe.skipIf(noGithub)("branch rules", () => {
     expect(types).not.toContain("pull_request");
     expect(types).toEqual(expect.arrayContaining(["deletion", "non_fast_forward"]));
     expect(workflow("ci")).toMatch(/pull_request:\n\s+branches: \[staging\]/);
-    // GitHub counts a skipped job as passed, and timeline skips on the push a promotion starts from.
     expect(required("production")).not.toContain("timeline");
-    // A ruleset cannot ask for a tag, so the production job does, before it touches anything.
     expect(workflow("deploy")).toMatch(
       / {2}production:\n[\s\S]*merge-base --is-ancestor HEAD origin\/staging[\s\S]*git tag --points-at HEAD --list 'v\*'[\s\S]*name: Migrate and deploy/,
     );
@@ -137,7 +135,6 @@ describe("gradual rollout", () => {
     expect(rollout).toMatch(/^concurrency: deploy-production$/m);
     expect(rollout).toMatch(/^ {4}environment: production$/m);
     expect(rollout).toMatch(/"back out"\) bunx wrangler versions deploy "\$old@100"/);
-    // It reads both versions before it picks one: with one missing, the new one would pass for the old.
     expect(rollout).toMatch(/jq 'length' <<<"\$pair"\)" != 2 \][\s\S]*case \$TO in/);
   });
 

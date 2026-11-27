@@ -16,7 +16,6 @@ test.beforeEach(async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Welcome, E2E Uploads")).toBeVisible();
   await page.goto("/uploads");
-  // The picker turns on once React hydrates; a file picked before then would be ignored.
   await expect(page.getByLabel("Upload a file")).toBeEnabled();
 });
 

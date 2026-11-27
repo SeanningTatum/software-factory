@@ -12,7 +12,6 @@ const DAY_SECONDS = 60 * 60 * 24;
 
 interface AuthPluginDeps {
   readonly env: AppEnv;
-  /** Pass the user's id when the request has no session of its own: a Stripe webhook, say. */
   readonly onEvent: (event: AnalyticsEvent, userId?: string) => void;
   readonly onWarning: (message: string, details: Record<string, unknown>) => void;
   readonly loggedErrors: () => number;
@@ -33,7 +32,6 @@ export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string
     return { missing: "BETTER_AUTH_SECRET (32+ characters)" };
   const baseURL = setting(env, "APP_URL");
   if (!baseURL) return { missing: "APP_URL" };
-  // `new URL` throws on a bare host, and this runs while the layer is built: every route would 500.
   if (!/^https?:\/\//.test(baseURL) || !URL.canParse(baseURL))
     return { missing: "APP_URL (a full https:// URL)" };
   const extra = (setting(env, "TRUSTED_ORIGINS") ?? "")
@@ -52,7 +50,6 @@ export const makeAuth = (
   db: Db,
   plugins: ReadonlyArray<BetterAuthPlugin>,
   log: AuthLog,
-  /** The plugins' own tables (billing's `subscription`): the adapter refuses one it was not given. */
   tables: Record<string, unknown> = {},
 ) =>
   betterAuth({
@@ -69,8 +66,6 @@ export const makeAuth = (
     // Workers rate-limit bindings guard sign-in and sign-up instead; see rate-limit.ts.
     rateLimit: { enabled: false },
     advanced: { useSecureCookies: config.baseURL.startsWith("https://") },
-    // Plugins (Stripe's webhook, for one) catch their own failures and only log them; route those
-    // lines to our logger and error reporter instead of the console.
     logger: { level: "warn", log: (level, message) => log(level, message) },
     plugins: [...plugins, tanstackStartCookies()],
   });

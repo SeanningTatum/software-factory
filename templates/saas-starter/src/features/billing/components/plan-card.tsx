@@ -55,7 +55,6 @@ function StartButton({ action, label, busy, disabled, send }: StartProps) {
 
 function Actions({ state, busy, send }: { state: BillingState; busy: boolean; send: Send }) {
   const disabled = busy || !state.configured;
-  // A subscription to manage, even one not paying right now (past due): fixing the card is there.
   if (state.status) {
     return (
       <StartButton

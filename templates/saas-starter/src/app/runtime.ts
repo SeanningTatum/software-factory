@@ -11,10 +11,6 @@ export interface RuntimeInput {
   readonly waitUntil: (promise: Promise<unknown>) => void;
 }
 
-/**
- * The logger and error reporter are installed here, not through src/gen/layers.ts, because they
- * need the env and the request before any layer is built.
- */
 export const kernelLayer = ({ env, request, waitUntil }: RuntimeInput) => {
   const base = Layer.mergeAll(
     CloudflareEnv.layer(env),

@@ -15,7 +15,6 @@ const Payload = Schema.Struct({
   events: Schema.Array(BrowserEvent).check(Schema.isMaxLength(MAX_EVENTS)),
 });
 
-/** `userId` is only looked up once the request has passed the limit. */
 export const ingestBrowserEvents = Effect.fn("Analytics.ingest")(function* (
   request: Request,
   requestId: string,

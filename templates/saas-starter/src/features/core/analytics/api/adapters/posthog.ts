@@ -2,10 +2,6 @@ import { Effect } from "effect";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { type AnalyticsAdapter, AnalyticsDeliveryError, properties } from "../adapter.ts";
 
-/**
- * No SDK, so nothing joins the bundle. `version` goes on every event as `app_version`, so a chart
- * can compare the two versions of a gradual rollout.
- */
 export const posthogAdapter = (
   apiKey: string,
   host: string,
@@ -17,7 +13,6 @@ export const posthogAdapter = (
     const body = JSON.stringify({
       api_key: apiKey,
       batch: batch.map(({ event, distinctId, timestamp }) =>
-        // PostHog merges the anonymous visitor into the user on its own $identify event.
         event._tag === "user_identified"
           ? {
               event: "$identify",

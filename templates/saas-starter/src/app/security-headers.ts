@@ -17,7 +17,6 @@ export const securityHeaders = (nonce: string, production: boolean): Record<stri
       "img-src 'self' data: https:",
       "font-src 'self' data:",
       "connect-src 'self'",
-      // Turnstile's challenge frame. Its script loads from ours, so 'strict-dynamic' covers it.
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",

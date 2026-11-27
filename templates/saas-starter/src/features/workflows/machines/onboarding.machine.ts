@@ -1,9 +1,5 @@
 import { getNextSnapshot, setup } from "xstate";
 
-/**
- * The workflow runs these steps in this order, and a test checks that it does, so this diagram is
- * always what production runs.
- */
 export const onboardingMachine = setup({
   types: { events: {} as { type: "STEP_DONE" } },
 }).createMachine({

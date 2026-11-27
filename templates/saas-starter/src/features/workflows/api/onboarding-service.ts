@@ -17,10 +17,6 @@ export class WorkflowError extends Schema.TaggedError<WorkflowError>()("Workflow
   cause: Schema.Defect(),
 }) {}
 
-/**
- * Nothing starts a run for you: call it from your own server code, for example after sign-up:
- * `const onboarding = yield* Onboarding;` then `yield* onboarding.start({ userId: user.id })`.
- */
 export class Onboarding extends Context.Service<
   Onboarding,
   {
@@ -40,7 +36,6 @@ export class Onboarding extends Context.Service<
         (cause) => new WorkflowError({ operation, cause }),
       );
     return Onboarding.of({
-      // One run per user: a retried trigger finds the run it already started instead of a second.
       start: (params) => {
         const id = instanceIdFor(params.userId);
         return call("create", () => binding.create({ id, params })).pipe(

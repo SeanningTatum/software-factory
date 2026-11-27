@@ -1,7 +1,6 @@
 import { assign, fromPromise, setup } from "xstate";
 import { check, type Rejection, rejectionMessage } from "../lib/validate.ts";
 
-/** The browser check is a courtesy; the server checks again, including the file's real bytes. */
 export const uploadMachine = setup({
   types: {
     context: {} as { file: File | undefined; error: string | undefined },

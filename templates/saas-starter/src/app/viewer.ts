@@ -13,7 +13,6 @@ export const anonymous: Viewer = { signedIn: false };
 export const pickViewer = (viewers: ReadonlyArray<Effect.Effect<Viewer>>): Effect.Effect<Viewer> =>
   viewers[0] ?? Effect.succeed(anonymous);
 
-/** Features' viewers need their own services; the request runtime provides them. */
 export const currentViewer = pickViewer(
   featureViewers as unknown as ReadonlyArray<Effect.Effect<Viewer>>,
 );

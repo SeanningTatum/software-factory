@@ -12,11 +12,6 @@ const MS_PER_SECOND = 1000;
 
 const dateOf = (seconds: number | null) => (seconds ? new Date(seconds * MS_PER_SECOND) : null);
 
-/**
- * The Stripe plugin catches a failed webhook (a D1 error, say), logs it and still answers 200, so
- * Stripe would never send it again. When Better Auth logged an error while handling the webhook,
- * answer 500 instead: Stripe retries, and the handlers only write by id, so a retry is safe.
- */
 export const webhookRetry = (loggedErrors: () => number): BetterAuthPlugin => {
   let webhook = false;
   return {
@@ -44,13 +39,11 @@ export const authPlugins: AuthPluginFactory = (deps) => {
   return billingPlugins(stripeClient, webhookSecret, deps);
 };
 
-/** Split out of `authPlugins` so tests can pass a Stripe client. */
 export const billingPlugins = (
   stripeClient: Stripe,
   webhookSecret: string,
   { env, onEvent, onWarning, loggedErrors }: Parameters<AuthPluginFactory>[0],
 ): ReadonlyArray<BetterAuthPlugin> => {
-  // The Stripe plugin's update hook gets no context, so the database adapter is caught at init.
   let adapter: AuthContext["adapter"] | undefined;
   return [
     stripe({
@@ -64,7 +57,6 @@ export const billingPlugins = (
           onEvent({ _tag: "checkout_started", plan: plan.name }, user.id);
           return {};
         },
-        // Webhooks carry no session; the subscription's reference id is the user's.
         onSubscriptionComplete: async ({ plan, subscription }) => {
           onEvent({ _tag: "subscription_activated", plan: plan.name }, subscription.referenceId);
         },
@@ -76,15 +68,11 @@ export const billingPlugins = (
         },
         onSubscriptionUpdate: async ({ event, subscription, stripeSubscription }) => {
           const change = unexpectedChange(event, subscription.status);
-          // Stripe stays the source of truth; an unexpected change is worth a look, not a refusal.
           if (change)
             onWarning("unexpected subscription change", {
               ...change,
               subscriptionId: subscription.id,
             });
-          // The plugin copies each event without comparing times, so a late or retried event can
-          // undo a newer one: bring a canceled subscription back, or drop a cancel at period end.
-          // Whatever the event said, write what Stripe says now.
           const current = await stripeClient.subscriptions.retrieve(stripeSubscription.id);
           // shortcut: the first item's period; with several items a subscription, find the plan's as the plugin does.
           const item = current.items.data[0];

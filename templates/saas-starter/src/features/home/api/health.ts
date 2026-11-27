@@ -11,17 +11,11 @@ interface Pingable {
 
 export interface Readiness {
   readonly ok: boolean;
-  /** Also APP_URL when it isn't the origin being served. */
   readonly missing: ReadonlyArray<string>;
   readonly database?: "up" | "down";
-  /** The deploy checks it reached the version it uploaded. */
   readonly version?: WorkerVersion;
 }
 
-/**
- * APP_URL must be the origin the request came to: Better Auth refuses any other. No setting's value
- * leaves the Worker.
- */
 export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: string) {
   const env = yield* CloudflareEnv;
   const missing: Array<string> = requiredSettings.filter((key) => !setting(env, key));

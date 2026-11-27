@@ -1,4 +1,3 @@
-/** Recognised by their first bytes, not by what the browser claims. */
 const ALLOWED = {
   "image/png": [0x89, 0x50, 0x4e, 0x47],
   "image/jpeg": [0xff, 0xd8, 0xff],
@@ -24,7 +23,6 @@ export const sniff = (head: Uint8Array): AllowedType | undefined =>
       (type !== "image/webp" || startsWith(head, WEBP_TAG, WEBP_TAG_OFFSET)),
   );
 
-/** Checks a file before upload (in the browser) or before storing it (on the server). */
 export const check = (
   file: { size: number; type: string },
   head?: Uint8Array,

@@ -64,9 +64,7 @@ const FORM_OVERHEAD = MB;
 const UPLOAD_CAP = 5 * MB + FORM_OVERHEAD;
 
 /**
- * Runs before any route reads the body, so auth routes and the Stripe webhook cannot be made to
- * buffer a huge one. Stripe, browsers and fetch all send a content-length.
- * shortcut: a chunked body with no content-length is refused; count its bytes as they arrive
+ * shortcut: a request body with no content-length is refused; count its bytes as they arrive
  * instead if a client must be allowed to send one.
  */
 export const bodyTooLarge = (request: Request): Response | undefined => {

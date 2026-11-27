@@ -13,7 +13,6 @@ const Report = Schema.Struct({
   path: Schema.String.check(Schema.isMaxLength(512)),
 });
 
-/** Rate-limited per address, so a script can't spend the error tracker's quota. */
 export const reportBrowserError = Effect.fn("Observability.browserReport")(function* (
   request: Request,
 ) {

@@ -7,7 +7,6 @@ export interface RequestInfo {
   readonly trace: Traceparent | undefined;
   /** Never logged: they carry cookies. */
   readonly headers: Headers;
-  /** Filled in once a session is resolved. */
   userId: string | undefined;
 }
 
@@ -63,7 +62,6 @@ export const requestInfoFrom = (request: Request): RequestInfo => {
 const HEX32 = /^[0-9a-f]{32}$/;
 const SPAN_ID_LENGTH = 16;
 
-// A new root takes the request id as its trace id, so logs and traces share one id.
 export const parentSpanFor = (info: RequestInfo) =>
   Tracer.externalSpan(
     info.trace ?? {

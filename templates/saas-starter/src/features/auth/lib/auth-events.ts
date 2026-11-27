@@ -42,7 +42,6 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   },
 ];
 
-/** Read on the server, where Better Auth's answer is certain, not in the form. */
 export const authEvents = (
   method: string,
   path: string,

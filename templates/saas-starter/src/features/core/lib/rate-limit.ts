@@ -7,10 +7,6 @@ export interface Limiter {
 
 const WINDOW_SECONDS = 60;
 
-/**
- * No binding, or a limiter that is down, lets the request through: an outage of the limiter should
- * not lock everyone out.
- */
 export const checkLimit = (limiter: Limiter | undefined, key: string) =>
   limiter
     ? Effect.tryPromise(() => limiter.limit({ key })).pipe(
@@ -24,7 +20,6 @@ export const checkLimit = (limiter: Limiter | undefined, key: string) =>
       )
     : Effect.void;
 
-/** A /64 is one customer's whole network. */
 const network = (address: string) => {
   if (!address.includes(":") || address.includes(".")) return address;
   const [head = "", tail = ""] = address.toLowerCase().split("::");
