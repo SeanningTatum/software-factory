@@ -16,7 +16,9 @@
 #
 # Production deploys in full unless promote.yml (or Run workflow here) asks for `gradual`. Then the
 # new version is uploaded and smoke-tested with no visitors on it, and only after that given
-# `percent` of them; the old version keeps the rest until rollout.yml moves the share. Optional
+# `percent` of them; the old version keeps the rest until rollout.yml moves the share. It first makes
+# the rule that pins a visitor to one version, when the token may (Zone → Zone → Read and Zone →
+# Transform Rules → Edit); if one address still gets both versions, it backs out. Optional
 # secret POSTHOG_KEY (and variable POSTHOG_HOST): each step posts a `deployment_rolled_out` event.
 name: deploy
 on:
@@ -57,7 +59,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if grep -q '"db:migrate:staging"' package.json; then bun run db:migrate:staging; fi
-          bun run deploy:staging
+          # A tag, so staging's events and /api/health name the commit and not a bare version id.
+          bun run deploy:staging --tag "staging-${GITHUB_SHA::7}"
       - name: Smoke test
         run: |
           curl --fail-with-body --retry 5 --retry-delay 3 --max-time 15 "${{ vars.STAGING_URL }}/api/health"
@@ -125,6 +128,7 @@ jobs:
           if [ "$(jq '.versions | length' <<<"$live")" != 1 ]; then
             echo "::error::A gradual rollout is already running. Finish it or back out first: Actions → rollout."; exit 1
           fi
+          sh .github/scripts/pin-visitors.sh "$URL"
           echo "old=$(jq -r '.versions[0].version_id' <<<"$live")" >> "$GITHUB_OUTPUT"
       - name: Migrate and deploy
         id: deploy
@@ -134,7 +138,11 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           OLD: ${{ steps.live.outputs.old }}
         run: |
-          if grep -q '"db:migrate:remote"' package.json; then bun run db:migrate:remote; fi
+          if grep -q '"db:migrate:remote"' package.json; then
+            # A failed smoke test rolls back the code only. This is the way back for the data.
+            echo "D1 before this release's migrations: \`bunx wrangler d1 time-travel restore DB --timestamp=$(date +%s)\`" >> "$GITHUB_STEP_SUMMARY"
+            bun run db:migrate:remote
+          fi
           if [ -z "$OLD" ]; then
             bun run deploy --tag "$TAG" --message "$TAG"
             exit 0
@@ -196,7 +204,13 @@ jobs:
           NEW: ${{ steps.deploy.outputs.new }}
           OLD: ${{ steps.live.outputs.old }}
           PERCENT: ${{ inputs.percent }}
-        run: bunx wrangler versions deploy "$NEW@$PERCENT" "$OLD" -y --message "$TAG at $PERCENT%"
+        run: |
+          bunx wrangler versions deploy "$NEW@$PERCENT" "$OLD" -y --message "$TAG at $PERCENT%"
+          # The rule may be missing, or made by hand in a way this cannot read: so test the outcome.
+          if ! sh .github/scripts/check-pinned.sh "${{ vars.PRODUCTION_URL }}"; then
+            bunx wrangler versions deploy "$OLD@100" -y --message "backed out of $TAG: visitors were not pinned"
+            echo "::error::One address got both versions, so a page from one can ask the other for scripts it lacks. Make the rule in docs/branches.md, then run this job again."; exit 1
+          fi
       - name: Report the rollout
         continue-on-error: true # the deploy has passed its smoke test; a failed report is not a failed deploy
         env:

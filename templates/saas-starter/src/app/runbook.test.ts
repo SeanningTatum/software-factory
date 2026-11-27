@@ -1,8 +1,13 @@
-import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 const noGithub = !existsSync(".github");
+// The workflow scripts need jq, which a GitHub runner has and an older macOS does not.
+const noJq = spawnSync("sh", ["-c", "command -v jq"]).status !== 0;
 
 describe("runbook config", () => {
   it("keeps Workers Logs on and marks the Worker for Logpush", () => {
@@ -48,6 +53,13 @@ describe("migrations", () => {
   it("ends db:generate with --name, which drizzle-kit refuses without a value", () => {
     const { scripts } = JSON.parse(read("package.json"));
     if (scripts["db:generate"]) expect(scripts["db:generate"]).toMatch(/ --name$/);
+  });
+
+  it.skipIf(noGithub)("names the restore point before production's migrations run", () => {
+    expect(read(".github/workflows/deploy.yml")).toMatch(
+      /time-travel restore DB --timestamp=\$\(date \+%s\)[^\n]*GITHUB_STEP_SUMMARY"\n\s+bun run db:migrate:remote/,
+    );
+    expect(read("docs/runbook.md")).toContain("d1 time-travel restore DB --timestamp=");
   });
 });
 
@@ -134,6 +146,12 @@ describe.skipIf(noGithub)("branch rules", () => {
 describe("gradual rollout", () => {
   const workflow = (name: string) => read(`.github/workflows/${name}.yml`);
 
+  it.skipIf(noGithub)("tags staging's deploys, so its events name a commit and not an id", () => {
+    expect(workflow("deploy")).toMatch(
+      /bun run deploy:staging --tag "staging-\$\{GITHUB_SHA::7\}"/,
+    );
+  });
+
   it("gives the Worker its version in both environments, which the smoke test reads back", () => {
     expect(
       read("wrangler.jsonc").match(/"version_metadata": \{ "binding": "CF_VERSION_METADATA" \}/g),
@@ -165,6 +183,76 @@ describe("gradual rollout", () => {
       expect(workflow("deploy")).toMatch(
         /versions deploy "\$new@0" "\$OLD@100"[\s\S]*name: Smoke test[\s\S]*Cloudflare-Workers-Version-Overrides: \$NAME=[\s\S]*'\.version\.id'[\s\S]*versions deploy "\$OLD@100"[\s\S]*name: Give the new version its share/,
       );
+    },
+  );
+
+  it.skipIf(noGithub || noJq)("backs out when one address gets both versions", () => {
+    expect(workflow("deploy")).toMatch(
+      /versions deploy "\$NEW@\$PERCENT" "\$OLD"[\s\S]*if ! sh \.github\/scripts\/check-pinned\.sh[\s\S]*versions deploy "\$OLD@100"[\s\S]*exit 1/,
+    );
+    // Stand-ins on PATH: curl answers with the ids given, and sleep does not wait.
+    const bin = mkdtempSync(join(tmpdir(), "pinned-"));
+    writeFileSync(join(bin, "sleep"), "#!/bin/sh\n", { mode: 0o755 });
+    const answeredBy = (...ids: Array<string>) => {
+      const bodies = ids.map((id) => `{"version":{"id":"${id}"}}`).join("");
+      writeFileSync(join(bin, "curl"), `#!/bin/sh\necho '${bodies}'\n`, { mode: 0o755 });
+      const script = "sh .github/scripts/check-pinned.sh https://app.test";
+      return spawnSync("sh", ["-c", `PATH="${bin}:$PATH" ${script}`]).status;
+    };
+    expect(answeredBy("a", "a", "a")).toBe(0);
+    expect(answeredBy("a", "b", "a")).toBe(1);
+  });
+
+  it.skipIf(noGithub || noJq)(
+    "makes the pinning rule before it migrates, and only when it is missing",
+    () => {
+      expect(workflow("deploy")).toMatch(
+        /name: Check a gradual rollout can start[\s\S]*sh \.github\/scripts\/pin-visitors\.sh "\$URL"[\s\S]*name: Migrate and deploy/,
+      );
+      // A stand-in for curl: it logs each call, and answers the ruleset read with $CODE and $RULES.
+      const bin = mkdtempSync(join(tmpdir(), "pin-"));
+      const log = join(bin, "calls");
+      writeFileSync(
+        join(bin, "curl"),
+        `#!/bin/sh
+out= url= method=GET
+while [ $# -gt 0 ]; do
+  case $1 in -o) out=$2; shift ;; -X) method=$2; shift ;; -w | -H | -d | --max-time) shift ;; http*) url=$1 ;; esac
+  shift
+done
+echo "$method $url" >> ${log}
+case "$method $url" in
+  "GET "*"zones?name="*) echo '{"result":[{"id":"z1"}]}' ;;
+  "GET "*entrypoint) echo "{\\"result\\":{\\"id\\":\\"rs1\\",\\"rules\\":$RULES}}" > "$out"; printf '%s' "$CODE" ;;
+  *) echo "{\\"success\\":$MADE}" ;;
+esac
+`,
+        { mode: 0o755 },
+      );
+      const writes = (code: number, rules: string, made = true) => {
+        writeFileSync(log, "");
+        const env = `PATH="${bin}:$PATH" CLOUDFLARE_API_TOKEN=t CODE=${code} RULES='${rules}' MADE=${made}`;
+        const ran = spawnSync("sh", [
+          "-c",
+          `${env} sh .github/scripts/pin-visitors.sh https://app.example.com/`,
+        ]);
+        expect(ran.status).toBe(made ? 0 : 1);
+        return read(log)
+          .split("\n")
+          .filter((call) => call.startsWith("POST"));
+      };
+      const pinned = (expression: string) =>
+        `[{"expression":${JSON.stringify(expression)},"action_parameters":{"headers":{"cloudflare-workers-version-key":{}}}}]`;
+      expect(writes(200, pinned("true"))).toEqual([]);
+      expect(writes(200, pinned('(http.host eq "other.example.com")'))).toEqual([
+        "POST https://api.cloudflare.com/client/v4/zones/z1/rulesets/rs1/rules",
+      ]);
+      expect(writes(404, "[]")).toEqual([
+        "POST https://api.cloudflare.com/client/v4/zones/z1/rulesets",
+      ]);
+      expect(writes(403, "[]")).toEqual([]);
+      // Known to be missing and refused: the one case that stops the release.
+      expect(writes(200, "[]", false)).toHaveLength(1);
     },
   );
 
