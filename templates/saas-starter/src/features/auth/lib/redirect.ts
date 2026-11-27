@@ -3,7 +3,6 @@ import { Schema } from "effect";
 /** A path on this site to go back to: starts with one "/", never "//" or "/\" (another host). */
 const LocalPath = Schema.String.check(Schema.isPattern(/^\/(?![/\\])/));
 
-/** The `?redirect=` search param of the sign-in page. */
 export const RedirectSearch = Schema.toStandardSchemaV1(
   Schema.Struct({ redirect: Schema.optionalKey(LocalPath) }),
 );

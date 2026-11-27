@@ -51,5 +51,4 @@ export const isExpectedChange = (from: Status, to: Status): boolean => {
   return getNextSnapshot(subscriptionMachine, snapshot, event).value === to;
 };
 
-/** Plans that count as paid right now. */
 export const isEntitled = (status: Status) => status === "active" || status === "trialing";

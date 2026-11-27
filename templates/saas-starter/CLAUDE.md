@@ -27,8 +27,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
     `errors.ts`, `layer.ts`, `nav.ts`, `viewer.ts`, `auth-plugins.ts`, `workflows.ts`, each with an
     optional sibling `*.test.ts`;
   - `*.machine.ts` only in `components/` or `machines/`, `*.spec.ts` only in `e2e/`;
-  - every feature has `feature.json` and `TIMELINE.md`. To change the list, set `featureLayout` in
-    `cf-saas-lint.json`.
+  - every feature has `feature.json` and `TIMELINE.md`. To change the list, edit `featureLayout`.
 - `"required": true` ones can't be removed: `observability`, `analytics`, `ui`, `consent`, `home`.
 - Imports (`cf-saas-blocks check`): a core module imports the kernel, `src/gen/`, `core/lib` and
   other core modules (an optional one only if its `requires` lists it); nothing in core imports a
@@ -64,6 +63,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
   `runResponse` from `src/app/run-effect.ts`.
 - One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
+- Comments say why, and say it once (rules `no-useless-comment`, `no-duplicate-comment`).
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
   `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
 - With `db`, name each migration for its change: `bun run db:generate add_invoices`. Bare, it fails.

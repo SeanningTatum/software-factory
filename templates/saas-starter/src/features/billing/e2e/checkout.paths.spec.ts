@@ -3,11 +3,6 @@ import { asVisitor } from "#/app/testing/e2e.ts";
 
 const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
-/**
- * Each test is its own visitor. The sign-up limiter allows 10 attempts a minute per IP; locally every
- * request comes from one address, so without this a second run inside a minute trips it.
- * (On Cloudflare the edge sets this header, so a client can't choose it.)
- */
 test.beforeEach(({ page }) => asVisitor(page));
 
 test.beforeEach(async ({ page }) => {

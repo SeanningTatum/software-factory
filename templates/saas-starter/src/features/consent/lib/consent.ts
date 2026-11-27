@@ -3,7 +3,6 @@ import type { ConsentChoice } from "../components/consent.machine.ts";
 export const CONSENT_COOKIE = "consent";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-/** Reads the consent choice out of a Cookie header. */
 export const readConsent = (cookieHeader: string | null | undefined): ConsentChoice | undefined => {
   const match = cookieHeader?.split(/;\s*/).find((part) => part.startsWith(`${CONSENT_COOKIE}=`));
   const value = match?.slice(CONSENT_COOKIE.length + 1);

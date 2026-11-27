@@ -55,7 +55,6 @@ export const readBody = Effect.fn("readBody")(function* (request: Request, maxBy
   });
 });
 
-/** Reads a multipart or urlencoded form no larger than `maxBytes`. */
 export const readForm = Effect.fn("readForm")(function* (request: Request, maxBytes: number) {
   const bytes = yield* readBytes(request, maxBytes);
   const contentType = request.headers.get("content-type") ?? "";

@@ -52,7 +52,7 @@ export const vitalEvent = (metric: Metric, path: string): BrowserEvent => ({
   path,
 });
 
-/** Starts web vitals reporting; each metric is sent once it is final. */
+/** Each metric is sent once it is final. */
 export const reportWebVitals = async (path: () => string) => {
   const { onCLS, onFCP, onINP, onLCP, onTTFB } = await import("web-vitals");
   const send = (metric: Metric) => sendBrowserEvents([vitalEvent(metric, path())]);
