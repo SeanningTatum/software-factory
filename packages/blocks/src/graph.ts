@@ -9,7 +9,10 @@ const lookup = (manifests: Manifests, name: string): BlockManifest => {
   return manifest;
 };
 
-/** The selected features plus everything they require, transitively. */
+/**
+ * The selected features plus everything they require, transitively, plus every `auto` feature
+ * whose requirements are then all present.
+ */
 export const withRequirements = (
   manifests: Manifests,
   selected: Iterable<string>,
@@ -21,6 +24,12 @@ export const withRequirements = (
     for (const dep of lookup(manifests, name).requires) visit(dep);
   };
   for (const name of selected) visit(name);
+  // Ascending passes until nothing joins: one auto feature may complete another's requirements.
+  for (let before = -1; before !== out.size; ) {
+    before = out.size;
+    for (const m of manifests.values())
+      if (m.auto && m.requires.every((dep) => out.has(dep))) out.add(m.name);
+  }
   return topoSort(manifests, [...out]);
 };
 
