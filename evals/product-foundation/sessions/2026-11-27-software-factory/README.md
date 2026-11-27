@@ -35,7 +35,7 @@ whole document, and the Words column above counts it that way. The Open section 
 the drafter must list, 192 words by round 3, so the drafter could not hold the total down.
 
 The limit is now 700 words before Open, in the prompt and in the check. By that count the rounds
-are 405, 495 and 586 words, and all three pass. No run has been made since the prompt changed.
+are 405, 495 and 586 words, and all three pass. Both golden cases were run again after the change and pass.
 
 ## What went wrong, or could be better
 
