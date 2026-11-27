@@ -6,6 +6,12 @@
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "--cwd", "templates/saas-starter", "dev"],
       "port": 3000
+    },
+    {
+      "name": "docs",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "apps/docs-website", "dev"],
+      "port": 3001
     }
   ]
 }

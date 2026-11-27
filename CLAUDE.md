@@ -9,6 +9,7 @@ that builds projects from it.
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `templates/saas-starter/` | The template, with every feature on. Its own `CLAUDE.md` holds the code rules.                                                |
 | `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `github`, `harness`. Ships the template, `claude/`, `.husky/`. |
+| `apps/docs-website/`      | The docs site: a project `create` made with the required features only. It keeps its own timelines, as any project does.      |
 | `packages/biome-config/`  | Shared Biome rules (published).                                                                                               |
 | `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                        |
 | `packages/lint/`          | `cf-saas-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |

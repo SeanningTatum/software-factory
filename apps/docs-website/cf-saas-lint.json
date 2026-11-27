@@ -1,0 +1,41 @@
+{
+  "allow": {
+    "no-throw": [
+      "src/features/auth/api/guard.ts",
+      "src/app/run-effect.ts",
+      "src/routes/__root.tsx",
+      "src/features/docs/routes/docs/$.tsx"
+    ],
+    "no-run-effect": [
+      "src/app/run-effect.ts",
+      "src/app/middleware.ts",
+      "src/features/*/workflows.ts",
+      "src/features/core/*/workflows.ts"
+    ],
+    "no-try-catch": [],
+    "no-repeated-api-path": ["src/app/body.ts"],
+    "one-component-per-file": ["src/features/core/ui/components/**", "src/routes/__root.tsx"],
+    "no-process-env": ["src/features/*/e2e/**", "src/app/machines.test.ts"]
+  },
+  "testExempt": [
+    "src/**/*.tsx",
+    "src/**/auth-plugins.ts",
+    "src/**/constants.ts",
+    "src/**/errors.ts",
+    "src/**/events.ts",
+    "src/**/layer.ts",
+    "src/**/nav.ts",
+    "src/**/schema.ts",
+    "src/**/viewer.ts",
+    "src/features/{*,core/*}/routes/**",
+    "src/features/{*,core/*}/lib/*-client.ts",
+    "src/features/{*,core/*}/api/guard.ts",
+    "src/features/{*,core/*}/api/loaders.ts",
+    "src/features/{*,core/*}/api/memory-*.ts",
+    "src/features/{*,core/*}/api/test-*.ts",
+    "src/features/{*,core/*}/workflows.ts",
+    "src/features/core/observability/lib/log-sink.ts",
+    "src/app/shell.ts",
+    "src/app/testing/**"
+  ]
+}

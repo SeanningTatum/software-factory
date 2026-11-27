@@ -33,9 +33,13 @@ jobs:
       # --ignore-scripts keeps dependencies' install scripts out of CI. The template's own
       # postinstall writes the types the typecheck reads.
       - run: bun run --cwd templates/saas-starter postinstall
+      - run: bun run --cwd apps/docs-website postinstall
       - run: bun run check
       - name: The template stays under its size budgets
         run: bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"
+      - name: The docs site stays under its size budgets
+        # bun run check built apps/docs-website into dist/.
+        run: bun run --cwd apps/docs-website size
       - name: Size table in the pull request's description
         # Every pull request here is on its way to a release, so each shows what it will ship.
         if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
@@ -64,14 +68,18 @@ jobs:
             exit 1
           fi
 
-  # The template's Playwright specs, against `vite dev` with local D1, R2 and KV.
-  e2e:
+  # Each app's Playwright specs, against `vite dev` (the template with local D1, R2 and KV).
+  e2e-apps:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [templates/saas-starter, apps/docs-website]
     defaults:
       run:
-        working-directory: templates/saas-starter
+        working-directory: ${{ matrix.app }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -85,14 +93,27 @@ jobs:
         run: |
           cp .dev.vars.example .dev.vars
           sed -i "s/^BETTER_AUTH_SECRET=.*/BETTER_AUTH_SECRET=$(openssl rand -hex 32)/" .dev.vars
+      # Only the template has a database.
       - run: bun run db:migrate:local
+        if: ${{ matrix.app == 'templates/saas-starter' }}
       - run: bun run test:e2e
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:
-          name: playwright-traces
-          path: templates/saas-starter/test-results/
+          name: playwright-traces-${{ strategy.job-index }}
+          path: ${{ matrix.app }}/test-results/
           retention-days: 7
+
+  # The rulesets require one check named e2e: it passes only when every app's specs did.
+  e2e:
+    if: ${{ always() }}
+    needs: e2e-apps
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          RESULT: ${{ needs.e2e-apps.result }}
+        run: test "$RESULT" = success
 
   # The CLI tools run on users' machines, Windows included: their path handling is tested there.
   windows:

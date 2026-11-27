@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import type { BetterAuthPlugin } from "better-auth";
 import { emailOTP } from "better-auth/plugins";
 import { Effect } from "effect";
