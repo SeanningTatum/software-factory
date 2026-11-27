@@ -55,8 +55,9 @@ with that same tool. Run from a global install, it uses Bun; pass `--pm npm`, `-
 ## Before you start
 
 The wizard asks for these as it goes, and every one can be left empty. Gather them first and one
-run deploys both environments, with staging working end to end. The Cloudflare token is set later with `create-tanstack-cf-saas github`
-or `gh secret set CLOUDFLARE_API_TOKEN`; the rest with `bun run setup`.
+run deploys both environments, with staging working end to end. The Cloudflare token is set later
+with `create-tanstack-cf-saas github` or `gh secret set CLOUDFLARE_API_TOKEN`; the rest with
+`bun run setup`.
 
 | What                                            | Needed for                        | Where to get it                                                                                                                                                 |
 | ----------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
