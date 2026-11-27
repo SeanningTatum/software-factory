@@ -83,7 +83,6 @@ export interface ScaffoldResult {
   readonly features: ReadonlyArray<string>;
 }
 
-/** Old block names, still accepted. */
 /**
  * One line per `auto` feature the choice half covers, such as auth without email: what is left
  * out, and what to add to get it.

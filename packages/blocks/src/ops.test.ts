@@ -160,6 +160,18 @@ describe("addBlock", () => {
     expect(existsSync(join(root, "src/features/core/kv"))).toBe(false);
   });
 
+  test("adds beside a feature the project wrote itself", () => {
+    const template = project();
+    const root = project();
+    removeBlock(root, "kv", { force: true });
+    mkdirSync(join(root, "src/features/invoices"), { recursive: true });
+    writeFileSync(
+      join(root, "src/features/invoices/feature.json"),
+      manifest("invoices", { requires: ["auth"] }),
+    );
+    expect(addBlock(root, template, "kv")).toEqual(["kv", "auth-kv"]);
+  });
+
   test("puts a core module back in core, with what it requires", () => {
     const template = project();
     const root = project();

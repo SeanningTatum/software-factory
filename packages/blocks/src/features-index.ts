@@ -1,6 +1,6 @@
+import { byCodeUnit } from "@software-factory/lint";
 import { enabledOrder } from "./generate.ts";
 import { CORE_DIR, FEATURES_DIR, type Feature, type Features, isCoreModule } from "./manifest.ts";
-import { byCodeUnit } from "./order.ts";
 import { timelinePath } from "./timeline.ts";
 
 export const FEATURES_INDEX = "FEATURES.md";

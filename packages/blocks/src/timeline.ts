@@ -1,10 +1,9 @@
 import { existsSync } from "node:fs";
 import { join, posix } from "node:path";
 // The timeline gate in lint reads the same markers, so they are defined there once.
-import { GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@software-factory/lint";
+import { byCodeUnit, GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@software-factory/lint";
 import { contributions, GEN_DIR, ROUTES_DIR } from "./generate.ts";
 import { type BlockManifest, type Feature, type Features, isCoreModule } from "./manifest.ts";
-import { byCodeUnit } from "./order.ts";
 import type { FeatureScan } from "./scan.ts";
 
 /** Where a feature's TIMELINE.md is, from the project root. */
@@ -44,7 +43,7 @@ const noted = (items: ReadonlyArray<readonly [string, string | undefined]>) =>
 const settings = (specs: BlockManifest["vars"]) =>
   noted(
     Object.entries(specs ?? {})
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => byCodeUnit(a, b))
       .map(([key, spec]) => [key, spec.required ? "required" : undefined] as const),
   );
 

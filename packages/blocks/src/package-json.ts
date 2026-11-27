@@ -1,3 +1,4 @@
+import { byCodeUnit } from "@software-factory/lint";
 import type { BlockManifest } from "./manifest.ts";
 
 export type PackageJson = {
@@ -10,7 +11,7 @@ export type PackageJson = {
 const fields = ["dependencies", "devDependencies", "scripts"] as const;
 
 const sorted = (record: Record<string, string>) =>
-  Object.fromEntries(Object.entries(record).sort(([a], [b]) => a.localeCompare(b)));
+  Object.fromEntries(Object.entries(record).sort(([a], [b]) => byCodeUnit(a, b)));
 
 /**
  * Adds every entry the blocks list that package.json lacks. Versions and scripts already there are

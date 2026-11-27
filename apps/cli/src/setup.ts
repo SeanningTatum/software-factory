@@ -17,6 +17,7 @@ import {
   WRANGLER_FILE,
 } from "@software-factory/blocks";
 import { applyEdits, modify, parse } from "jsonc-parser";
+import { capture } from "./run.ts";
 
 /** Runs wrangler. `input` goes to stdin, which is how secrets travel: never as arguments. */
 export type Wrangler = (
@@ -41,7 +42,7 @@ export const SECRET_BYTES = 36;
 export const GENERATED_SECRETS = new Set(["BETTER_AUTH_SECRET"]);
 
 /** Wrangler's flag for an environment: production is the top level, so it has none. */
-const envFlag = (env: EnvName) => (env === "production" ? [] : ["--env", env]);
+export const envFlag = (env: EnvName) => (env === "production" ? [] : ["--env", env]);
 
 const badEnv = (env: string) => `--env must be ${envNames.join(" or ")}, not "${env}".`;
 
@@ -559,3 +560,18 @@ export const accountId = (wrangler: Wrangler): string | undefined => {
 
 /** Whether wrangler is logged in. Plain `whoami` exits 0 even when it is not; `--json` does not. */
 export const isLoggedIn = (wrangler: Wrangler) => wrangler(["whoami", "--json"]).ok;
+
+/**
+ * Whether the checkout is staging's tip, changed in wrangler.jsonc at most: only then may setup
+ * deploy a live environment, because that build is the one CI would ship.
+ */
+export const isStagingTip = (root: string) => {
+  const git = capture("git", root);
+  const head = git(["rev-parse", "HEAD"]);
+  const staging = git(["rev-parse", "--verify", "--quiet", "origin/staging"]);
+  const others = ["--", ".", `:(exclude)${WRANGLER_FILE}`];
+  const status = git(["status", "--porcelain", "--untracked-files=no", ...others]);
+  return (
+    head.ok && staging.ok && status.ok && head.stdout === staging.stdout && !status.stdout.trim()
+  );
+};

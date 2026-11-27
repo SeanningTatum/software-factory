@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { parse } from "jsonc-parser";
 import type { BlockManifest } from "./manifest.ts";
-import { PLACEHOLDER_D1_ID, patchWrangler, setBindingField } from "./wrangler.ts";
+import { formattingOf, PLACEHOLDER_D1_ID, patchWrangler, setBindingField } from "./wrangler.ts";
 
 const d1: BlockManifest = {
   name: "d1",
@@ -160,5 +160,13 @@ describe("patchWrangler", () => {
     const json = parse(removed.text);
     expect(json.kv_namespaces).toEqual([{ binding: "HAND_MADE", id: "abc" }]);
     expect(json.env.staging).toEqual({});
+  });
+});
+
+describe("formattingOf", () => {
+  test("takes the indent from the first key, not from a block comment above it", () => {
+    const text = '/**\n * A header.\n */\n{\n  "name": "app"\n}\n';
+    expect(formattingOf(text)).toEqual({ insertSpaces: true, tabSize: 2, eol: "\n" });
+    expect(formattingOf('{\n\t"name": "app"\n}\n').insertSpaces).toBe(false);
   });
 });
