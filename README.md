@@ -52,6 +52,25 @@ Run through `npm create`, `pnpm create` or `bun create`, the wizard installs the
 with that same tool. Run from a global install, it uses Bun; pass `--pm npm`, `--pm pnpm` or
 `--pm yarn` to choose.
 
+## Before you start
+
+The wizard asks for these as it goes, and every one can be left empty and set later with
+`bun run setup`. Gather them first and one run takes the project from nothing to live.
+
+| What                                           | Needed for                       | Where to get it                                                                                                                                                  |
+| ---------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrangler login`                               | Cloudflare setup                 | Run `bunx wrangler login` once on this machine.                                                                                                                  |
+| `gh auth login`                                | The GitHub repository and rules  | Install [`gh`](https://cli.github.com) and sign in.                                                                                                              |
+| Cloudflare API token (`CLOUDFLARE_API_TOKEN`)  | Deploys from GitHub Actions      | My Profile → API Tokens → the "Edit Cloudflare Workers" template, plus Account → D1 → Edit with `db`. For gradual rollouts on your own domain, also Zone → Zone → Read and Zone → Transform Rules → Edit. |
+| PostHog project API key (`phc_…`) and its cloud | Analytics in PostHog (optional)  | PostHog → Project settings → Project API key. US or EU is in the address bar: `us.posthog.com` or `eu.posthog.com`.                                               |
+| Stripe secret key and Pro price id             | `billing`                        | [API keys](https://dashboard.stripe.com/apikeys) and [Products](https://dashboard.stripe.com/products). Use test keys: what you type here goes to staging only.  |
+| Stripe webhook signing secret                  | `billing`, after the first deploy | [Webhooks](https://dashboard.stripe.com/webhooks), pointed at `<APP_URL>/api/auth/stripe/webhook`. It needs the deployed URL, so leave it empty in the wizard. |
+
+Production's own Stripe keys, a real Turnstile secret, a Sentry DSN and an alert webhook are for
+later: `bun run setup --env production` asks for each one it doesn't have. GitHub Actions needs
+two of these keys in its own secrets too: `POSTHOG_KEY`, so each deploy reports to PostHog, and
+`ALERT_WEBHOOK_URL`, so a failed production deploy posts there. Set them with `gh secret set`.
+
 ## The wizard
 
 Run it with no arguments and it asks five things. Every one has a default, so Enter works all the
