@@ -57,6 +57,7 @@ stateDiagram-v2
 - 2026-11-27 — The plugins stay off until the `EMAIL` binding and `EMAIL_FROM` are both set; auth then works as it does without email. Why: requiring a verified address with no way to send the code would lock everyone out.
 - 2026-11-27 — A code for an address with no account sends nothing and makes no account (`disableSignUp`), and the page says the same thing either way. Why: sign-up has a Turnstile check a code would skip, and the answer must not reveal who has an account.
 - 2026-11-27 — Codes are stored hashed, last 5 minutes and allow 3 tries; the code paths are in auth's `CODE_PATHS`, limited per address like sign-in. Why: a 6-digit code is guessable without a cap, and each request sends a mail.
+- 2026-11-27 — A send that fails still answers success, and logs the warning `code mail not sent` with Email Service's error code. Why: Better Auth runs the send in the background and swallows its error, and an error shown only for real accounts would reveal who has one. `docs/runbook.md` says what each code means.
 - 2026-11-27 — The three pages share one `code` machine and form. Why: each is "give an email, get a code, confirm it"; only the last call differs.
 - 2026-11-27 — Auth's pages find these through `nav.ts` entries marked `sign-in-help` and `verify-email`. Why: the login and sign-up pages belong to auth, which can't import this feature.
 

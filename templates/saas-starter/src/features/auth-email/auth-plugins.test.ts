@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { AppEnv } from "#/app/env.ts";
 import { CODE_PATHS } from "#/features/auth/api/rate-limit.ts";
-import { handled, post } from "#/features/auth/api/test-auth.ts";
+import { env, handled, post } from "#/features/auth/api/test-auth.ts";
 import { authSchema } from "#/features/auth/schema.ts";
 import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb } from "#/features/core/db/api/test-database.ts";
@@ -98,5 +98,25 @@ describe("auth with email", () => {
       type: "sign-in",
     });
     expect(sent.length).toBe(before);
+  });
+
+  it("warns with Email Service's code when a send fails, since the answer is success either way", async () => {
+    const warnings: Array<Record<string, unknown>> = [];
+    const refused = Object.assign(new Error("no"), { code: "E_DAILY_LIMIT_EXCEEDED" });
+    const appEnv = {
+      ...env,
+      EMAIL: { send: () => Promise.reject(refused) },
+      EMAIL_FROM: "hello@example.com",
+    } as unknown as AppEnv;
+    const plugins = [
+      (d: Parameters<typeof authPlugins>[0]) =>
+        authPlugins({ ...d, onWarning: (_message, details) => void warnings.push(details) }),
+    ];
+    const body = { email: "kay@example.com", type: "sign-in" };
+    const { response } = await Effect.runPromise(
+      handled(db, post("/api/auth/email-otp/send-verification-otp", body), true, plugins, appEnv),
+    );
+    expect(response.status).toBe(200);
+    expect(warnings).toEqual([{ error: "EmailError", reason: "E_DAILY_LIMIT_EXCEEDED" }]);
   });
 });

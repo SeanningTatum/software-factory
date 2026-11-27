@@ -119,3 +119,27 @@ long you keep them and say so in your privacy policy; to drop rows older than a 
 ```bash
 bunx wrangler d1 execute DB --remote --command "DELETE FROM audit_log WHERE at < (unixepoch('now', '-1 year') * 1000)"
 ```
+
+## Codes that never arrive (`email`)
+
+Sign-up, password reset and sign-in by code each mail a 6-digit code. The page says "we sent it"
+whether or not the send worked, so a user who reports no mail is your only signal besides the logs.
+
+1. Search the logs for `code mail not sent`. Its `reason` is Cloudflare Email Service's error code:
+   - `E_SENDER_DOMAIN_NOT_AVAILABLE`, `E_SENDER_DOMAIN_NOT_CONFIGURED`: the domain in `EMAIL_FROM`
+     is not onboarded. Run `bunx wrangler email sending enable <domain>`.
+   - `E_RECIPIENT_PLAN_RESTRICTED`: the account is on Workers Free, which mails only verified
+     destination addresses. Move to Workers Paid.
+   - `E_DAILY_LIMIT_EXCEEDED`, `E_RATE_LIMIT_EXCEEDED`: the account's sending quota is spent; new
+     accounts start low. Ask Cloudflare for a higher limit.
+   - `E_RECIPIENT_SUPPRESSED`: that address bounced or complained before. Remove it from the
+     suppression list in the dashboard once the user confirms it works.
+   - `EMAIL_FROM` or `EMAIL (send_email binding)`: the setting is missing in this environment.
+2. No such line: the mail left Cloudflare. Ask the user to check spam, then look at the domain's
+   SPF, DKIM and DMARC records under Email Service in the dashboard.
+3. Until mail works, nobody new can sign in: an unverified address is refused. A user who is
+   locked out can be let in by hand:
+
+```bash
+bunx wrangler d1 execute DB --remote --command "UPDATE user SET email_verified = 1 WHERE email = '<address>'"
+```

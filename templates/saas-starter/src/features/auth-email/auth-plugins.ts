@@ -30,15 +30,28 @@ export const authEmailPlugins = (
     // A code for an address with no account would make one, past the sign-up form and its check.
     disableSignUp: true,
     storeOTP: "hashed",
-    // shortcut: awaited, so a failed send reaches the user but a known address answers slower
-    // than an unknown one; hand the send to waitUntil if that timing ever matters.
+    // Better Auth answers success even when this rejects, so the caller of `authEmailPlugins`
+    // must record a failed send itself; the page can't tell the user.
     sendVerificationOTP: ({ email, otp, type }) => send({ to: email, ...codeMail(type, otp) }),
   }),
   requireVerifiedEmail,
 ];
 
-export const authPlugins: AuthPluginFactory = ({ env }) => {
+export const authPlugins: AuthPluginFactory = ({ env, onWarning }) => {
   if (!binding(env, "EMAIL") || !setting(env, "EMAIL_FROM")) return [];
   const email = Email.fromEnv(env);
-  return authEmailPlugins((mail) => Effect.runPromise(email.send(mail)));
+  return authEmailPlugins((mail) =>
+    Effect.runPromise(
+      email.send(mail).pipe(
+        Effect.tapError((error) =>
+          Effect.sync(() =>
+            onWarning("code mail not sent", {
+              error: error._tag,
+              reason: error._tag === "EmailError" ? error.code : error.setting,
+            }),
+          ),
+        ),
+      ),
+    ),
+  );
 };
