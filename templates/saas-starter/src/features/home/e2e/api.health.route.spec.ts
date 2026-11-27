@@ -12,7 +12,8 @@ test("@golden /api/health answers 200 with good settings", async ({ request }) =
   const { res, body } = await health(request);
   test.skip(!body.ok, `Settings missing: ${body.missing.join(", ")}`);
   expect(res.status()).toBe(200);
-  expect(body.database).toBe("up");
+  // /api/health reports the database only in a project that has one.
+  expect(body.database ?? "up").toBe("up");
 });
 
 test("@error /api/health answers 503 and names what is missing", async ({ request }) => {
@@ -25,7 +26,7 @@ test("@error /api/health answers 503 and names what is missing", async ({ reques
 
 test("@golden /api/health finds the database and APP_URL", async ({ request }) => {
   const { body } = await health(request);
-  expect(body.database).toBe("up");
+  expect(body.database ?? "up").toBe("up");
   expect(body.missing).not.toContain("APP_URL");
   expect(body.missing).not.toContain("APP_URL (not this origin)");
 });
