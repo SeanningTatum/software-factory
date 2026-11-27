@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { loadManifests } from "./manifest.ts";
+import { byCodeUnit } from "./order.ts";
 import { boundaryProblems, ownerOf } from "./sync.ts";
 
 const manifest = (name: string, extra: Record<string, unknown> = {}) =>
@@ -42,7 +43,7 @@ const project = (files: Record<string, string>) => {
 const messages = (root: string) =>
   boundaryProblems(root)
     .map((p) => `${p.file}: ${p.message}`)
-    .sort((a, b) => a.localeCompare(b));
+    .sort(byCodeUnit);
 
 describe("ownerOf", () => {
   test("names the feature or core module, the app, gen, core/lib, or no one", () => {
