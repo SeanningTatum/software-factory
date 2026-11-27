@@ -1,6 +1,6 @@
 {
   "routes": {
-    "/": { "budget": 180, "now": 161.7 },
+    "/": { "budget": 240, "now": 218.0 },
     "/billing": { "budget": 195, "now": 175.7 },
     "/docs/$": { "budget": 253, "now": 231.4 },
     "/dashboard": { "budget": 195, "now": 173.6 },

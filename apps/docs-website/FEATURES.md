@@ -12,7 +12,7 @@ only. Shared pure helpers sit in `src/features/core/lib/`.
 
 - **analytics** (required): A typed event catalog, an Analytics service with console, PostHog and Analytics Engine adapters, the browser helpers that send page views and web vitals, and /api/events. Requires: nothing. [TIMELINE.md](src/features/core/analytics/TIMELINE.md)
 - **observability** (required): JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, an optional alert webhook, and /api/browser-report. Requires: nothing. [TIMELINE.md](src/features/core/observability/TIMELINE.md)
-- **ui** (required): shadcn/ui components, the cn helper, useHydrated, and the site header and footer. Requires: nothing. [TIMELINE.md](src/features/core/ui/TIMELINE.md)
+- **ui** (required): shadcn/ui components, the cn helper, useHydrated, and the site footer. Requires: nothing. [TIMELINE.md](src/features/core/ui/TIMELINE.md)
 
 ## Features
 
