@@ -31,5 +31,12 @@
       "required": false,
       "help": "https://posthog.com/docs/api"
     }
-  }
+  },
+  "setup": [
+    {
+      "id": "posthog",
+      "description": "To send events to PostHog, create a PostHog project and copy its project API key. Then run `setup --env staging --var ANALYTICS_PROVIDER=posthog`, and again with `--env production`: each asks for POSTHOG_KEY and uploads it to Cloudflare.",
+      "help": "https://posthog.com/docs/api"
+    }
+  ]
 }

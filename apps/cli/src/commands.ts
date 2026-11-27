@@ -346,8 +346,17 @@ export const create = async (args: CreateArgs) => {
   const cloudflare = args.yes ? undefined : await offerCloudflare(plan, context.features, pm);
   // The offer applies the rulesets in .github/, so without them there is nothing to offer.
   if (!args.yes && plan.git && plan.github) await offerGithub(plan);
+  printSetupSteps(plan.targetDir, cloudflare);
   p.note(steps.join("\n"), "Next");
   p.outro(closingLine(cloudflare, pm));
+};
+
+/** The steps a person takes by hand, such as making a PostHog project, from each feature's manifest. */
+const printSetupSteps = (root: string, cloudflare: ReadonlyArray<Item> | undefined) => {
+  // The Cloudflare table already lists them; without it they would go unsaid.
+  if (cloudflare) return;
+  for (const step of [...loadManifests(root).values()].flatMap((m) => m.setup ?? []))
+    p.log.info(`${step.description}${step.help ? pc.dim(` (${step.help})`) : ""}`);
 };
 
 /** The last line of create: what setup is still for, or that nothing is left. */
