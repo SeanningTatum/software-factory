@@ -1,6 +1,7 @@
 /** Packs this repo's packages the way npm would serve them, for projects made before they publish. */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
 export const repo = join(import.meta.dirname, "../../..");
@@ -21,21 +22,25 @@ const localPackages: Record<string, string> = {
  */
 export const packAll = (into: string, as = into): Record<string, string> => {
   mkdirSync(into, { recursive: true });
-  return Object.fromEntries(
+  // Each run packs into a fresh temp folder: bun takes no argument from the caller (S8705), and
+  // runs at the same time never share a tarball.
+  const staging = mkdtempSync(join(tmpdir(), "cf-saas-pack-"));
+  const specs = Object.fromEntries(
     Object.entries(localPackages).map(([name, rel]) => {
       const result = spawnSync(
         process.execPath,
-        ["pm", "pack", `--destination=${into}`, "--quiet"],
-        {
-          cwd: join(repo, rel),
-          encoding: "utf8",
-        },
+        ["pm", "pack", `--destination=${staging}`, "--quiet"],
+        { cwd: join(repo, rel), encoding: "utf8" },
       );
       if (result.status !== 0) throw new Error(`packing ${name} failed:\n${result.stderr}`);
-      const tarball = result.stdout.trim().split("\n").pop() ?? "";
-      return [name, `file:${as}/${basename(tarball)}`];
+      const tarball = basename(result.stdout.trim().split("\n").pop() ?? "");
+      // Copy, not rename: `into` may be on another device.
+      copyFileSync(join(staging, tarball), join(into, tarball));
+      return [name, `file:${as}/${tarball}`];
     }),
   );
+  rmSync(staging, { recursive: true, force: true });
+  return specs;
 };
 
 /**
