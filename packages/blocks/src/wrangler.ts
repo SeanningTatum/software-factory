@@ -15,9 +15,9 @@ export const PLACEHOLDER_D1_ID = "00000000-0000-0000-0000-000000000000";
 export const PLACEHOLDER_KV_ID = "00000000000000000000000000000000";
 const STAGING_NAMESPACE_OFFSET = 1000;
 
-/** The file's own indent: the first indented line's tab or spaces. */
+/** The file's own indent: the first indented key's tab or spaces, so a comment's ` * ` is not it. */
 export const formattingOf = (text: string): FormattingOptions => {
-  const indent = /^([ \t]+)\S/m.exec(text)?.[1] ?? "\t";
+  const indent = /^([ \t]+)"/m.exec(text)?.[1] ?? "\t";
   return indent.startsWith("\t")
     ? { insertSpaces: false, tabSize: 1, eol: "\n" }
     : { insertSpaces: true, tabSize: indent.length, eol: "\n" };
