@@ -377,6 +377,28 @@ const deployUnder = (file: string, env: EnvName, url: string, deploy: () => void
   }
 };
 
+/** appUrl drops the slash too, and the smoke test appends /api/health. */
+const withoutSlash = (url: string | undefined) => url?.replace(/\/+$/, "");
+
+/** Records a live environment's new URL, and deploys under it when `redeploy` allows. */
+const moveLive = (
+  root: string,
+  env: EnvName,
+  url: string,
+  redeploy: boolean,
+  deploy: () => void,
+  log: (line: string) => void,
+) => {
+  const file = join(root, WRANGLER_FILE);
+  if (!redeploy) {
+    writeFileSync(file, withVars(wranglerText(root), env, { APP_URL: url }));
+    log(`${env}: URL is now ${url}; its next deploy from CI carries it`);
+    return;
+  }
+  deployUnder(file, env, url, deploy);
+  log(`${env}: live at ${url}`);
+};
+
 /** Runs one of the project's package scripts and captures what it printed. */
 export type RunScript = (script: string) => { ok: boolean; stdout: string; stderr: string };
 
@@ -390,8 +412,9 @@ const WORKERS_DEV = /https:\/\/[a-z0-9-]+\.([a-z0-9-]+)\.workers\.dev/i;
  * address, the URL is written, and that environment deploys once more under it. The subdomain then
  * gives every other environment's address up front.
  *
- * An environment that has a URL deploys from here again only when it is given a new one, such as
- * the domain it moves to off workers.dev. Returns each URL it recorded, by environment.
+ * An environment that has a URL and is given a new one, such as the domain it moves to off
+ * workers.dev, deploys again only when `redeploy` says the checkout is what CI would ship. Else the
+ * URL is only recorded and the next deploy carries it. Returns each URL it recorded, by environment.
  */
 export const firstDeploy = (
   root: string,
@@ -399,6 +422,7 @@ export const firstDeploy = (
   script: RunScript,
   log: (line: string) => void,
   urls: Readonly<Partial<Record<EnvName, string>>> = {},
+  redeploy = false,
 ) => {
   const file = join(root, WRANGLER_FILE);
   const worker = (parse(wranglerText(root)) as { name: string }).name;
@@ -417,11 +441,10 @@ export const firstDeploy = (
   // Staging first: if a first deploy goes wrong, it goes wrong there.
   for (const env of (["staging", "production"] as const).filter((e) => envs.includes(e))) {
     const recorded = appUrl(root, env);
-    const given = urls[env];
+    const given = withoutSlash(urls[env]);
     if (recorded) {
       if (given && given !== recorded) {
-        deployUnder(file, env, given, () => deploy(env));
-        log(`${env}: live at ${given}`);
+        moveLive(root, env, given, redeploy, () => deploy(env), log);
         recordedNow[env] = given;
       }
       continue;
@@ -443,6 +466,12 @@ export const firstDeploy = (
 
 /** Whether `url` is a workers.dev address, where a gradual rollout cannot pin visitors. */
 export const onWorkersDev = (url: string) => /\.workers\.dev\/?$/i.test(url);
+
+/** Whether setup asks for `env`'s URL: it has none yet, or is still on workers.dev. */
+export const needsUrl = (root: string, env: EnvName) => {
+  const url = appUrl(root, env);
+  return !url || onWorkersDev(url);
+};
 
 /**
  * The step the closing note lists while production is on workers.dev: what a domain unlocks and

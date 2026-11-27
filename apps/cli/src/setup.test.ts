@@ -13,6 +13,7 @@ import {
   isReady,
   migrate,
   missingSecrets,
+  needsUrl,
   PRODUCTION_POSTHOG_KEY,
   provision,
   putSecret,
@@ -404,7 +405,7 @@ describe("firstDeploy", () => {
     expect(appUrl(dir, "staging")).toBe("https://saas-starter-staging.acme.workers.dev");
   });
 
-  test("an environment with its own domain deploys once under it, and again under a new one", () => {
+  test("an environment with its own domain deploys once under it, and a slash changes nothing", () => {
     const dir = project([]);
     const { ran, script } = deployer();
     const urls = { production: "https://app.example.com" };
@@ -412,13 +413,38 @@ describe("firstDeploy", () => {
     expect(ran).toEqual(["deploy"]);
     expect(appUrl(dir, "production")).toBe("https://app.example.com");
 
-    expect(firstDeploy(dir, ["production"], script, () => {}, urls)).toEqual({});
+    const slashed = { production: "https://app.example.com/" };
+    expect(firstDeploy(dir, ["production"], script, () => {}, slashed, true)).toEqual({});
     expect(ran).toEqual(["deploy"]);
+  });
+
+  test("a live environment's new URL deploys only when allowed, and is recorded either way", () => {
+    const dir = project([]);
+    const { ran, script } = deployer();
+    firstDeploy(dir, ["production"], script, () => {}, { production: "https://app.example.com" });
+    ran.length = 0;
 
     const moved = { production: "https://new.example.com" };
     expect(firstDeploy(dir, ["production"], script, () => {}, moved)).toEqual(moved);
-    expect(ran).toEqual(["deploy", "deploy"]);
+    expect(ran).toEqual([]);
     expect(appUrl(dir, "production")).toBe("https://new.example.com");
+
+    const again = { production: "https://other.example.com/" };
+    expect(firstDeploy(dir, ["production"], script, () => {}, again, true)).toEqual({
+      production: "https://other.example.com",
+    });
+    expect(ran).toEqual(["deploy"]);
+  });
+
+  test("asks for a URL while an environment has none or is on workers.dev", () => {
+    const dir = project([]);
+    const { script } = deployer();
+    expect(needsUrl(dir, "production")).toBe(true);
+    firstDeploy(dir, ["production", "staging"], script, () => {});
+    expect(needsUrl(dir, "production")).toBe(true);
+    firstDeploy(dir, ["production"], script, () => {}, { production: "https://app.example.com" });
+    expect(needsUrl(dir, "production")).toBe(false);
+    expect(needsUrl(dir, "staging")).toBe(true);
   });
 
   test("names the domain step while production is on workers.dev, and stops once it is not", () => {

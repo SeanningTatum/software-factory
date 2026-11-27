@@ -56,7 +56,7 @@ import {
   isReady,
   migrate,
   missingSecrets,
-  onWorkersDev,
+  needsUrl,
   PRODUCTION_POSTHOG_KEY,
   provision,
   type RunScript,
@@ -702,7 +702,14 @@ export const setup = async (args: SetupArgs) => {
     log: (line) => p.log.step(line),
   });
   const pm = detectPackageManager();
-  const recorded = firstDeploy(root, envs, runScript(pm, root), (line) => p.log.step(line), urls);
+  const recorded = firstDeploy(
+    root,
+    envs,
+    runScript(pm, root),
+    (line) => p.log.step(line),
+    urls,
+    isStagingTip(root),
+  );
   const changed = Object.keys(recorded).length > 0;
   if (changed) setGithubUrls(root, recorded);
   p.log.info("Where things stand:");
@@ -728,12 +735,26 @@ const setupUrls = async (
   const urls: Partial<Record<EnvName, string>> = given && envs[0] ? { [envs[0]]: given } : {};
   if (!canAsk) return urls;
   for (const env of envs) {
-    const recorded = appUrl(root, env);
-    if (urls[env] || (recorded && !onWorkersDev(recorded))) continue;
+    if (urls[env] || !needsUrl(root, env)) continue;
     const asked = await askUrl(env);
     if (asked) urls[env] = asked;
   }
   return urls;
+};
+
+/**
+ * Whether the checkout is staging's tip, changed in wrangler.jsonc at most: only then may setup
+ * deploy a live environment, because that build is the one CI would ship.
+ */
+const isStagingTip = (root: string) => {
+  const git = capture("git", root);
+  const head = git(["rev-parse", "HEAD"]);
+  const staging = git(["rev-parse", "--verify", "--quiet", "origin/staging"]);
+  const others = ["--", ".", `:(exclude)${WRANGLER_FILE}`];
+  const status = git(["status", "--porcelain", "--untracked-files=no", ...others]);
+  return (
+    head.ok && staging.ok && status.ok && head.stdout === staging.stdout && !status.stdout.trim()
+  );
 };
 
 /** Gives GitHub the URLs setup just recorded, when the project has a repository there. */
