@@ -4,7 +4,8 @@
   "managed": {
     "bindings": [
       "EVENTS_LIMITER",
-      "REPORT_LIMITER"
+      "REPORT_LIMITER",
+      "SEARCH_LIMITER"
     ],
     "vars": [
       "ANALYTICS_PROVIDER",

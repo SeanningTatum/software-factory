@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createFromSource } from "fumadocs-core/search/server";
-import { source } from "#/features/docs/lib/source.ts";
-
-const search = createFromSource(source);
+import { runResponse } from "#/app/run-effect.ts";
+import { searchDocs } from "#/features/docs/api/search.ts";
 
 export const Route = createFileRoute("/api/search")({
-  server: { handlers: { GET: ({ request }) => search.GET(request) } },
+  server: {
+    handlers: {
+      GET: ({ request, context }) => runResponse(context, searchDocs(request), "docs.search"),
+    },
+  },
 });

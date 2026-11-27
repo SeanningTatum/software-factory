@@ -3,5 +3,14 @@
   "title": "Docs",
   "description": "The documentation pages: MDX from content/docs, rendered with Fumadocs, with a sidebar and search.",
   "requires": [],
-  "files": ["content"]
+  "files": ["content"],
+  "bindings": [
+    {
+      "type": "ratelimit",
+      "binding": "SEARCH_LIMITER",
+      "namespace_id": "1005",
+      "limit": 60,
+      "period": 60
+    }
+  ]
 }
