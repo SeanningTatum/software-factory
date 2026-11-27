@@ -40,5 +40,12 @@ describe("anon id cookie", () => {
     const id = crypto.randomUUID();
     expect(readAnonId(anonIdCookie(id).split(";")[0])).toBe(id);
   });
-  it("clears with Max-Age=0", () => expect(clearAnonIdCookie).toContain("Max-Age=0"));
+  it("clears the cookie it set: same name and Path, Max-Age=0", () => {
+    const parts = (cookie: string) => cookie.split("; ").map((part) => part.split("=")[0]);
+    const path = (cookie: string) => cookie.split("; ").find((part) => part.startsWith("Path="));
+    const set = anonIdCookie(crypto.randomUUID());
+    expect(parts(clearAnonIdCookie)[0]).toBe(parts(set)[0]);
+    expect(path(clearAnonIdCookie)).toBe(path(set));
+    expect(clearAnonIdCookie.split("; ")).toContain("Max-Age=0");
+  });
 });
