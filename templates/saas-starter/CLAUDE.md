@@ -63,7 +63,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
   `runResponse` from `src/app/run-effect.ts`.
 - One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
-- Comments say why, and say it once (rules `no-useless-comment`, `no-duplicate-comment`).
+- Names say what the code does. A comment gives only a reason the code can't show, said once.
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
   `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
 - With `db`, name each migration for its change: `bun run db:generate add_invoices`. Bare, it fails.
