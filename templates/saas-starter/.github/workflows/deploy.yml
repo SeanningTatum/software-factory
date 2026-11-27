@@ -56,6 +56,8 @@ jobs:
       # writes the types the typecheck reads.
       - run: bun run postinstall
       - run: bun run check
+      - name: Check STAGING_URL is staging's APP_URL
+        run: sh .github/scripts/check-app-url.sh staging "${{ vars.STAGING_URL }}"
       - name: Migrate and deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -66,7 +68,13 @@ jobs:
           bun run deploy:staging --tag "staging-${GITHUB_SHA::7}"
       - name: Smoke test
         run: |
-          curl --fail-with-body --retry 5 --retry-delay 3 --max-time 15 "${{ vars.STAGING_URL }}/api/health"
+          if ! body=$(curl --fail-with-body --retry 5 --retry-delay 3 --max-time 15 "${{ vars.STAGING_URL }}/api/health"); then
+            echo "$body"
+            case $body in *'APP_URL (not this origin)'*)
+              echo "::error::staging's APP_URL is wrong in wrangler.jsonc (env.staging.vars). One set in the Cloudflare dashboard is overwritten by the next deploy." ;;
+            esac
+            exit 1
+          fi
           # A CSP with a nonce is sent only by a production build, so only a deploy can see it break.
           csp() {
             curl -sS --max-time 15 -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" "$1/" || return 1
@@ -107,6 +115,9 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile --ignore-scripts
+      # Again here: a push to production, or Run workflow, skips promote.yml.
+      - name: Check PRODUCTION_URL is production's APP_URL
+        run: sh .github/scripts/check-app-url.sh production "${{ vars.PRODUCTION_URL }}"
       # Before the migrations, so a refused rollout changes nothing.
       - name: Check a gradual rollout can start
         id: live
@@ -196,6 +207,9 @@ jobs:
             fi
             if [ -n "$NEW" ]; then bun run wrangler versions deploy "$OLD@100" -y --message "smoke test failed"
             else bun run wrangler rollback --message "smoke test failed" -y; fi
+            case ${body:-} in *'APP_URL (not this origin)'*)
+              echo "::error::production's APP_URL is wrong in wrangler.jsonc (the top-level vars). One set in the Cloudflare dashboard is overwritten by the next deploy." ;;
+            esac
             exit 1
           fi
       - name: Give the new version its share

@@ -62,6 +62,29 @@ Make the token in the Cloudflare dashboard (My Profile → API Tokens → the "E
 Workers" template, plus D1 edit if you use the database). The command names anything it could not
 work out and how to supply it. Until the account id is set, both deploy jobs skip and say nothing.
 
+## Move to your own domain
+
+On `workers.dev` production can only release `full`: a gradual rollout needs the rule in
+[It needs a custom domain and one rule](#it-needs-a-custom-domain-and-one-rule), and that rule
+needs a domain. Once the domain is on Cloudflare, add it to `wrangler.jsonc` as a route
+(`"routes": [{ "pattern": "example.com", "custom_domain": true }]`). In the same change, give
+`env.staging` its own `"routes": []`: an environment inherits the top-level routes, and staging
+deploys first, so without that line it takes the domain. Then run one command:
+
+```bash
+bunx create-tanstack-cf-saas setup --env production --var APP_URL=https://example.com
+```
+
+It writes the URL as production's `APP_URL`, deploys under it, and sets `PRODUCTION_URL` on
+GitHub. Run plain `setup` at a terminal and it asks for each environment's URL instead. Merge
+the changed `wrangler.jsonc` into `staging` before the next promotion: `promote.yml` and
+`deploy.yml` refuse to start while `PRODUCTION_URL` and production's `APP_URL` there differ,
+because `/api/health` answers 503 under any URL but `APP_URL`, and the smoke test would roll the
+release back.
+
+A variable changed only in the Cloudflare dashboard lasts until the next deploy from CI, which
+writes back what `wrangler.jsonc` holds.
+
 ## Ship a release
 
 ```mermaid
@@ -175,13 +198,7 @@ custom domain it also tests the outcome, whoever made the rule: once the new ver
 share, it calls `/api/health` a hundred times, and backs out if two versions answer. Start at 5%
 or more, where that check can tell.
 
-To move production to a domain, add it to `wrangler.jsonc` as a route
-(`"routes": [{ "pattern": "example.com", "custom_domain": true }]`) and set production's `APP_URL`
-to it. In the same change, give `env.staging` its own `"routes": []`: an environment inherits the
-top-level routes, and staging deploys first, so without that line it takes the domain. Merge
-that, run `bunx create-tanstack-cf-saas github` so `PRODUCTION_URL` follows `APP_URL`,
-then release it `full`. While the two differ, `/api/health` answers 503 and the smoke test rolls
-the release back.
+To move production to a domain first, see [Move to your own domain](#move-to-your-own-domain).
 
 ### What a gradual rollout cannot carry
 

@@ -9,6 +9,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 const noGithub = !existsSync(".github");
 // The workflow scripts need jq, which a GitHub runner has and an older macOS does not.
 const noJq = spawnSync("sh", ["-c", "command -v jq"]).status !== 0;
+const noBun = spawnSync("sh", ["-c", "command -v bun"]).status !== 0;
 
 describe("runbook config", () => {
   it("marks the Worker for Logpush", () => {
@@ -154,6 +155,38 @@ describe.skipIf(noGithub)("branch rules", () => {
     expect(workflow("deploy")).toMatch(
       /last=\$\(gh release list --exclude-drafts --limit 1 [^\n]*\) \|\| true\n[\s\S]*--generate-notes \$\{last:\+--notes-start-tag "\$last"\} \|\|\n\s+echo "::warning::/,
     );
+  });
+
+  it("checks each URL against its APP_URL before the tag and before the migrations", () => {
+    const check = (env: string) =>
+      `sh \\.github/scripts/check-app-url\\.sh ${env} "\\$\\{\\{ vars\\.${env.toUpperCase()}_URL \\}\\}"`;
+    expect(workflow("promote")).toMatch(new RegExp(`${check("production")}[\\s\\S]*git push`));
+    expect(workflow("deploy")).toMatch(
+      new RegExp(
+        ` {2}staging:\\n[\\s\\S]*${check("staging")}[\\s\\S]*name: Migrate and deploy[\\s\\S]* {2}production:\\n[\\s\\S]*${check("production")}[\\s\\S]*name: Migrate and deploy`,
+      ),
+    );
+    expect(workflow("deploy").match(/\*'APP_URL \(not this origin\)'\*\)/g)).toHaveLength(2);
+    expect(read("docs/branches.md")).toMatch(
+      /## Move to your own domain\n[\s\S]*create-tanstack-cf-saas setup --env production --var APP_URL=/,
+    );
+  });
+
+  it.skipIf(noBun)("refuses a URL that is not the environment's APP_URL, naming both", () => {
+    const dir = mkdtempSync(join(tmpdir(), "app-url-"));
+    writeFileSync(
+      join(dir, "wrangler.jsonc"),
+      `// a comment\n{ "vars": { "APP_URL": "https://example.com" },\n "env": { "staging": { "vars": { "APP_URL": "https://s.example.workers.dev" } } } }`,
+    );
+    const script = join(process.cwd(), ".github/scripts/check-app-url.sh");
+    const checked = (env: string, url: string) =>
+      spawnSync("sh", [script, env, url], { cwd: dir, encoding: "utf8" });
+    expect(checked("production", "https://example.com/").status).toBe(0);
+    expect(checked("staging", "https://s.example.workers.dev").status).toBe(0);
+    const wrong = checked("production", "https://app.example.com");
+    expect(wrong.status).toBe(1);
+    expect(wrong.stdout).toContain("PRODUCTION_URL is https://app.example.com");
+    expect(wrong.stdout).toContain("APP_URL in wrangler.jsonc is https://example.com");
   });
 
   it("keeps the production job's write token from the packages it installs", () => {
