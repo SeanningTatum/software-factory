@@ -11,6 +11,9 @@ Every workflow has a folder named after it:
 | `golden/<case>.json`    | A real output for each case. It must pass the checks.                                                         |
 | `bad/<case>-<why>.json` | A real output that went wrong. The checks must refuse it, which proves they can fail.                         |
 
+A workflow's folder may also hold `sessions/<date>-<product>/`: the inputs, outputs and cost of a
+real session with a founder, and what it showed. It is a record to learn from; no test reads it.
+
 `apps/cli/src/workflow-blocks.test.ts` holds every workflow to this, so `bun run check` fails one
 with no cases, a case with no saved output, or a saved output that breaks a check.
 
@@ -42,8 +45,11 @@ One run per case can pass or fail by luck. If a check fails once in a few runs, 
 | 2026-11-27 | product-foundation | second-round | 2 of 2 | 0           | 0        | pass               | 237,193 |
 | 2026-11-27 | product-foundation | first-round  | 3 of 3 | 0           | 0        | pass               | 410,004 |
 | 2026-11-27 | product-foundation | second-round | 2 of 2 | 0           | 0        | pass               | 402,881 |
+| 2026-11-27 | product-foundation | first-round  | 3 of 3 | 0           | 0        | pass               | 399,370 |
+| 2026-11-27 | product-foundation | second-round | 2 of 2 | 0           | 0        | pass               | 399,228 |
 
 The first two rows are the outputs kept in `bad/`; the fixes that followed are the settled list
 handed to the readers and the 30-character limit on an option. The third and fifth rows reused a
-cached draft; the fifth replaced the third once that limit was in the schema. The last two rows are the first runs with
-eleven sections and four readers, and are the outputs now in `golden/`.
+cached draft; the fifth replaced the third once that limit was in the schema. The sixth and seventh rows are the first runs with
+eleven sections and four readers. The last two came after the limit became 700 words before the Open
+section, and are the outputs now in `golden/`.

@@ -1,0 +1,193 @@
+{
+  "run": {
+    "tokens": 419523,
+    "agents": 5,
+    "toolCalls": 12,
+    "ms": 40610
+  },
+  "args": {
+    "feedback": [
+      {
+        "question": "The reason to leave single skills is that an agency needs one shared setup, so what makes a solo developer, working alone, want a whole factory?",
+        "answer": "Set up once, reuse every idea"
+      },
+      {
+        "question": "Is the solo developer building their own SaaS ideas, client work for others, or both?",
+        "answer": "Both"
+      },
+      {
+        "question": "At the moment a solo developer starts a new idea, what do they reach for today instead of single skills?",
+        "answer": "start blank, create t3, or start from a template, or just copy a set of skills vs starting from a factory that is proven and eval'd to create high quality, predictable designs and code. (the founder's own words, typed in place of the offered options)"
+      },
+      {
+        "question": "Should the factory refuse team features such as multi-user permissions or shared agency config, given the solo developer is primary?",
+        "answer": "Defer past Feb 2027"
+      },
+      {
+        "question": "Anti-goal 3 gives no reason for never hosting; what reason can a new hosted idea, such as a template gallery site, be judged against?",
+        "answer": "Hosted docs only are fine"
+      },
+      {
+        "question": "Anti-goal 3 bans a hosted or paid version; does it also rule out paid add-ons such as premium features, support or consulting?",
+        "answer": "Rule out all paid offers"
+      },
+      {
+        "question": "How will you count outside repos using the factory, given you will never run a hosted service that sees them?",
+        "answer": "I would just ask the community, and / or have private testers (the founder's own words, typed in place of the offered options)"
+      },
+      {
+        "question": "What result by 27 February 2027 would tell you people do not want a whole factory and you should stop or change course?",
+        "answer": "No stop point yet"
+      },
+      {
+        "question": "Does 'anyone not on Cloudflare' include developers with no account yet who would deploy there to use this?",
+        "answer": "No account yet is fine"
+      },
+      {
+        "question": "What should the SaaS's end users and the developer's teammates feel, beyond simple, composable and succinct?",
+        "answer": "Team clear, users polished"
+      },
+      {
+        "question": "How many of your own client projects will start from the factory by 27 February 2027?",
+        "answer": "3 projects"
+      },
+      {
+        "question": "Is 50 stars by 27 February 2027 the real bar, given 1000 is due nine months later?",
+        "answer": "Raise to 150 and 1000"
+      }
+    ]
+  },
+  "output": {
+    "markdown": "# Product foundation\n\n## Product\nA software factory starter built on Cloudflare, for solo developers who want a sensible factory from the start instead of treating each project as bespoke work; the name is a working name (\"software factory\", or closer, \"cf-saas-software-factory starter\"), and the founder is not affiliated with Cloudflare.\n\n## Problem\nPeople vibe code, or cannot build their own software factory because the effort is ginormous. Today they invoke skills and plugins by hand and build their own environment. They use Matt Pocock's skills one by one, or similar tools one by one, including a set from a Y Combinator founder. At a new idea they start blank, use create-t3-app, start from a template, or copy a set of skills. They have nothing to build on top of, so each person becomes the bottleneck instead of a factory. The factory is proven and eval'd to give high quality, predictable designs and code.\n\n## Persona\nSolo developer. Alone, at a laptop, with a new idea, building their own SaaS ideas and client work for others. Wants a software factory to start from: set up once, reuse every idea. What stops them: they have nothing to build on top of.\n\n## Core scenario\nA solo developer has an app idea and starts a SaaS, every time they have one. They need the latest and greatest tools and workflows. Today they search GitHub links and invoke each skill by hand. Done: they initialize their own factory and get to work.\n\n## Also affected\nTeammates, on the developer experience side: they should find it clear. Users of the SaaS products built this way: they should find them polished. Startup teams and agency leads also want a factory to start from; team features such as multi-user permissions or shared agency config are deferred past February 2027.\n\n## Not for\nAnyone not on Cloudflare. A developer with no Cloudflare account yet is fine.\n\n## Feel\nSimple, composable, succinct. Never complex, bloated or too much.\n\n## Goals\n1. By 27 February 2027: 150 GitHub stars.\n2. By 27 February 2027: 5 outside repos using it, and 2 to 3 SaaS examples from our internal users.\n3. By 27 February 2027: 3 of our own client projects start from the factory.\n4. By 27 November 2027: 1000 GitHub stars, and 3 examples of ours plus 5 from outsiders. Hope for traction, with people using it as a framework like shadcn, plugging in features.\n\nEarns by: free and open source; the return is faster client work for us, meaning fewer bugs and more production-ready work instead of AI slop. Maybe a donation page; Buy Me a Coffee would be nice to have.\n\n## Anti-goals\n1. Custom skills and custom plugins. We ship workflows, not skills and plugins. We make nothing new; we build a factory for how existing skills and plugins work together. A skill bundled with a workflow is fine if it is useless outside that workflow.\n2. Building on any host but Cloudflare. Cloudflare has the best developer experience: add services via wrangler and test locally with the same API. This keeps it a true software factory. Non-Cloudflare services such as Stripe are allowed; only other hosts are banned.\n3. A hosted or paid version of the factory (a platform, dashboard or SaaS), and all paid offers. Never. Hosted docs only are fine.\n\n## Assumptions\n- People want a whole factory, not single skills. Not proven.\n- Others share the problem. So far the evidence is the founder's own repeated pain.\n\n## Open\n- Product: the name is not fixed.\n- Problem: the Y Combinator founder's skill set is unnamed; the founder forgot the name.\n- Problem: vibe coders are named as unable to build a factory themselves, but whether they are users is not said.\n- Goals: no stop point is set for February 2027; nothing says what result means change course.\n- Goals: \"fewer bugs, more production ready\" has no measure.\n- Goals: no number is set for donations, and a donation page pulls against the ban on all paid offers.\n- Goals: outside repos are counted by asking the community or private testers; no exact method or proof is set.\n- Goals: 5 outside repos by February 2027 and 5 outsider examples by November 2027 are the same number nine months apart, and 2 to 3 examples of ours against 3 barely differ; one target may be too low. It is not said if an outside repo and an outsider example are the same.\n- Anti-goals: no reason is given for never building a hosted or paid version.\n- Assumptions: no test is set for whether people want a whole factory.\n",
+    "gaps": [
+      "Product: the name is not fixed.",
+      "Problem: the Y Combinator founder's skill set is unnamed; the founder forgot the name.",
+      "Problem: vibe coders are named as unable to build a factory themselves, but whether they are users is not said.",
+      "Goals: no stop point is set for February 2027; nothing says what result means change course.",
+      "Goals: \"fewer bugs, more production ready\" has no measure.",
+      "Goals: no number is set for donations, and a donation page pulls against the ban on all paid offers.",
+      "Goals: outside repos are counted by asking the community or private testers; no exact method or proof is set.",
+      "Goals: 5 outside repos by February 2027 and 5 outsider examples by November 2027 are the same number nine months apart, and 2 to 3 examples of ours against 3 barely differ; one target may be too low. It is not said if an outside repo and an outsider example are the same.",
+      "Anti-goals: no reason is given for never building a hosted or paid version.",
+      "Assumptions: no test is set for whether people want a whole factory."
+    ],
+    "questions": [
+      {
+        "section": "Persona",
+        "question": "Does the solo developer write and review the code themselves, or mostly direct an AI to write it (vibe coding)?",
+        "why": "The Problem names vibe coders but never says if they are users, so two readers picture a different person at the laptop.",
+        "options": [
+          "Writes and reviews code",
+          "Directs AI, reviews little",
+          "Both, a range of skill",
+          "Not vibe coders"
+        ]
+      },
+      {
+        "section": "Core scenario",
+        "question": "Is the moment you write for the first-time setup of the factory, or starting each new idea from a factory already set up?",
+        "why": "The scenario says \"every time they have one\" yet ends with \"they initialize their own factory\", so readers picture different moments and different Done states.",
+        "options": [
+          "First-time factory setup",
+          "Each new idea, factory exists",
+          "Both, setup is the first idea",
+          "Each idea; setup is elsewhere"
+        ]
+      },
+      {
+        "section": "Not for",
+        "question": "Should Not for also turn away developers who want a different framework or language than the one the template is built on?",
+        "why": "Not for names only Cloudflare, so a Next.js or non-TypeScript developer on Cloudflare would sign up and then find the factory is not for them.",
+        "options": [
+          "Yes, fixed stack, say so",
+          "No, stack is swappable",
+          "Stack fixed; not in Not for",
+          "Name only the core stack"
+        ]
+      },
+      {
+        "section": "Goals",
+        "question": "Does a donation page such as Buy Me a Coffee stay in, given anti-goal 3 rules out all paid offers?",
+        "why": "The earning line allows a donation page while the anti-goal bans every paid offer, so one of the two must change or gain an exception.",
+        "options": [
+          "Donations OK, not an offer",
+          "No donation page, drop it",
+          "Decide after February 2027"
+        ]
+      },
+      {
+        "section": "Goals",
+        "question": "Are the 3 client projects in goal 3 the same as the 2 to 3 SaaS examples of ours in goal 2?",
+        "why": "If they are the same, goal 2 and the 'ours' count in goal 4 double-count one set of projects and the real target is lower than it reads.",
+        "options": [
+          "Same projects, count once",
+          "Separate, examples are public",
+          "Examples are some clients"
+        ]
+      },
+      {
+        "section": "Anti-goals",
+        "question": "Is a managed data service outside Cloudflare, such as Neon, Supabase or Turso, allowed like Stripe, or does it count as another host?",
+        "why": "Anti-goal 2 bans other hosts but allows services, and a database that holds the app's data is the most tempting case on that line.",
+        "options": [
+          "Allowed, like Stripe",
+          "Banned: data stays on CF",
+          "Allowed for non-core data only"
+        ]
+      },
+      {
+        "section": "Anti-goals",
+        "question": "Does the ban on all paid offers also cover a donation page such as Buy Me a Coffee?",
+        "why": "Earns by and Anti-goals now contradict each other, so a feature like a sponsor badge cannot be judged until one wins.",
+        "options": [
+          "Donations are fine",
+          "No donation page either",
+          "Donations only, no perks"
+        ]
+      },
+      {
+        "section": "Anti-goals",
+        "question": "Should the factory refuse to run a hosted registry of community features, as shadcn does, given Goal 4 hopes for people plugging in features?",
+        "why": "A hosted registry is the obvious step toward Goal 4 but may break the ban on a hosted version.",
+        "options": [
+          "Refuse: features live in git",
+          "Static hosted registry is fine",
+          "Decide when traction comes"
+        ]
+      },
+      {
+        "section": "Assumptions",
+        "question": "Besides yourself, who have you seen or heard hit this problem, and would any of them say they would switch?",
+        "why": "The only evidence is the founder's own pain, so the document cannot yet say the problem is real for others, and a few named people would change Problem and Assumptions.",
+        "options": [
+          "Nobody yet, only me",
+          "1 to 2 people I know",
+          "3+, some say they'd switch",
+          "Others hit it, won't switch"
+        ]
+      },
+      {
+        "section": "Problem",
+        "question": "Which of your repeated pains is the worst: a bespoke setup per idea, inconsistent code quality, or time lost choosing tools?",
+        "why": "The Problem lists several pains, and naming the worst tells readers what the factory must fix first and what would make someone leave create-t3-app.",
+        "options": [
+          "Rebuilding setup each idea",
+          "Inconsistent code quality",
+          "Time lost choosing tools",
+          "Re-teaching AI each project"
+        ]
+      },
+      {
+        "section": "Assumptions",
+        "question": "If people want single skills or a plain template and not a whole factory, would you still build this for your own client work?",
+        "why": "This decides whether the whole-factory assumption ends the product or only ends the outside-adoption goals.",
+        "options": [
+          "Yes, it pays off for us alone",
+          "Yes, drop the outside goals",
+          "No, I would stop",
+          "Unsure, decide at a set date"
+        ]
+      }
+    ]
+  }
+}
