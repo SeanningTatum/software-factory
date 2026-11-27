@@ -54,22 +54,25 @@ with that same tool. Run from a global install, it uses Bun; pass `--pm npm`, `-
 
 ## Before you start
 
-The wizard asks for these as it goes, and every one can be left empty and set later with
-`bun run setup`. Gather them first and one run takes the project from nothing to live.
+The wizard asks for these as it goes, and every one can be left empty. Gather them first and one
+run deploys both environments, with staging working end to end. The Cloudflare token is set later with `create-tanstack-cf-saas github`
+or `gh secret set CLOUDFLARE_API_TOKEN`; the rest with `bun run setup`.
 
-| What                                            | Needed for                        | Where to get it                                                                                                                                                                                           |
-| ----------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wrangler login`                                | Cloudflare setup                  | Run `bunx wrangler login` once on this machine.                                                                                                                                                           |
-| `gh auth login`                                 | The GitHub repository and rules   | Install [`gh`](https://cli.github.com) and sign in.                                                                                                                                                       |
-| Cloudflare API token (`CLOUDFLARE_API_TOKEN`)   | Deploys from GitHub Actions       | My Profile → API Tokens → the "Edit Cloudflare Workers" template, plus Account → D1 → Edit with `db`. For gradual rollouts on your own domain, also Zone → Zone → Read and Zone → Transform Rules → Edit. |
-| PostHog project API key (`phc_…`) and its cloud | Analytics in PostHog (optional)   | PostHog → Project settings → Project API key. US or EU is in the address bar: `us.posthog.com` or `eu.posthog.com`.                                                                                       |
-| Stripe secret key and Pro price id              | `billing`                         | [API keys](https://dashboard.stripe.com/apikeys) and [Products](https://dashboard.stripe.com/products). Use test keys: what you type here goes to staging only.                                           |
-| Stripe webhook signing secret                   | `billing`, after the first deploy | [Webhooks](https://dashboard.stripe.com/webhooks), pointed at `<APP_URL>/api/auth/stripe/webhook`. It needs the deployed URL, so leave it empty in the wizard.                                            |
+| What                                            | Needed for                        | Where to get it                                                                                                                                                 |
+| ----------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrangler login`                                | Cloudflare setup                  | Run `bunx wrangler login` once on this machine.                                                                                                                 |
+| `gh auth login`                                 | The GitHub repository and rules   | Install [`gh`](https://cli.github.com) and sign in.                                                                                                             |
+| Cloudflare API token (`CLOUDFLARE_API_TOKEN`)   | Deploys from GitHub Actions       | My Profile → API Tokens → the "Edit Cloudflare Workers" template, plus Account → D1 → Edit with `db`.                                                           |
+| PostHog project API key (`phc_…`) and its cloud | Analytics in PostHog (optional)   | PostHog → Project settings → Project API key. US or EU is in the address bar: `eu.posthog.com` is EU, `us.posthog.com` or `app.posthog.com` is US.              |
+| Stripe secret key and Pro price id              | `billing`                         | [API keys](https://dashboard.stripe.com/apikeys) and [Products](https://dashboard.stripe.com/products). Use test keys: what you type here goes to staging only. |
+| Stripe webhook signing secret                   | `billing`, after the first deploy | [Webhooks](https://dashboard.stripe.com/webhooks), pointed at `<APP_URL>/api/auth/stripe/webhook`. It needs the deployed URL, so leave it empty in the wizard.  |
 
 Production's own Stripe keys, a real Turnstile secret, a Sentry DSN and an alert webhook are for
-later: `bun run setup --env production` asks for each one it doesn't have. GitHub Actions needs
-two of these keys in its own secrets too: `POSTHOG_KEY`, so each deploy reports to PostHog, and
-`ALERT_WEBHOOK_URL`, so a failed production deploy posts there. Set them with `gh secret set`.
+later: `bun run setup --env production` asks for each one it doesn't have. Production's own Pro
+price id is a setting, not a key, so pass it: `--var STRIPE_PRICE_PRO=price_…`. GitHub Actions
+needs two of these keys in its own secrets too: `POSTHOG_KEY`, so each deploy reports to PostHog,
+and `ALERT_WEBHOOK_URL`, so a failed production deploy posts there. Set them with `gh secret set`.
+On PostHog's EU cloud, also run `gh variable set POSTHOG_HOST --body https://eu.i.posthog.com`.
 
 ## The wizard
 
