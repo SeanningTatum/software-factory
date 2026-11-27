@@ -1,5 +1,5 @@
 /**
- * Runs the real CLI from this repo, the way `bunx create-software-factory` will run once it is
+ * Runs the real CLI from this repo, the way `bunx @seanningtatum/create-software-factory` will run once it is
  * published. New projects depend on the @seanningtatum packages, which are not on npm yet, so
  * this copies the bundled template, packs them into the copy's `.packs/`, points the copy at them
  * by relative path, and hands the copy to the CLI through SOFTWARE_FACTORY_TEMPLATE_DIR (an internal
@@ -57,7 +57,13 @@ if (!dirGiven && existsSync(join(target, "software-factory.json"))) {
 run(
   "Building the packages and the CLI",
   "bunx",
-  ["turbo", "run", "build", "--filter=./packages/*", "--filter=create-software-factory"],
+  [
+    "turbo",
+    "run",
+    "build",
+    "--filter=./packages/*",
+    "--filter=@seanningtatum/create-software-factory",
+  ],
   repo,
 );
 

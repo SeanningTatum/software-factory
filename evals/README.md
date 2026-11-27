@@ -21,7 +21,7 @@ them. Before you merge a change to a workflow's script:
 
 1. Run the workflow once per case, with the case's `args`.
 2. Save each result over `golden/<case>.json`.
-3. Run `bun run --filter create-software-factory test`. A failure is a real fault in the output:
+3. Run `bun run --filter @seanningtatum/create-software-factory test`. A failure is a real fault in the output:
    fix the prompt or the schema, not the saved file. An output worth keeping as a warning goes in
    `bad/`.
 4. Add a row below.

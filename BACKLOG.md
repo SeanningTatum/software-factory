@@ -104,7 +104,7 @@ Rules for a good item:
 
 **Done when:**
 
-- [ ] `bunx create-software-factory my-app` installs and runs with no local files.
+- [ ] `bunx @seanningtatum/create-software-factory my-app` installs and runs with no local files.
 - [ ] `release.yml` publishes on a merged changeset.
 
 **Where:** `.github/workflows/release.yml`, `.changeset/`.

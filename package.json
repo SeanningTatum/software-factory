@@ -20,7 +20,7 @@
     "teardown": "bun apps/cli/scripts/teardown.ts",
     "prepare": "husky",
     "changeset": "changeset",
-    "release": "turbo run build --filter=./packages/* --filter=create-software-factory && changeset publish",
+    "release": "turbo run build --filter=./packages/* --filter=@seanningtatum/create-software-factory && changeset publish",
     "promote": "sh scripts/promote.sh"
   },
   "devDependencies": {

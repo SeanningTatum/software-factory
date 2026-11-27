@@ -12,7 +12,7 @@ const localPackages: Record<string, string> = {
   "@seanningtatum/software-factory-lint": "packages/lint",
   "@seanningtatum/software-factory-tsconfig": "packages/tsconfig",
   // Projects run `setup` from their own copy of the CLI. Build it before packing: it ships dist/.
-  "create-software-factory": "apps/cli",
+  "@seanningtatum/create-software-factory": "apps/cli",
 };
 
 /**

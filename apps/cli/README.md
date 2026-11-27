@@ -12,9 +12,9 @@ Today it makes one kind of product: a SaaS on [TanStack Start](https://tanstack.
 You need Node 20.19 or newer, [Bun](https://bun.sh) 1.4 or newer, and git.
 
 ```bash
-npm install -g create-software-factory
-bun add -g create-software-factory
-pnpm add -g create-software-factory
+npm install -g @seanningtatum/create-software-factory
+bun add -g @seanningtatum/create-software-factory
+pnpm add -g @seanningtatum/create-software-factory
 ```
 
 Then, in any folder:
@@ -23,8 +23,8 @@ Then, in any folder:
 create-software-factory my-saas
 ```
 
-Or run it once without installing: `npm create software-factory@latest`,
-`bun create software-factory` or `pnpm create software-factory`.
+Or run it once without installing: `npm create @seanningtatum/software-factory@latest`,
+`bun create @seanningtatum/software-factory` or `pnpm create @seanningtatum/software-factory`.
 
 ## What it asks
 
