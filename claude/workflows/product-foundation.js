@@ -98,7 +98,7 @@ Rules:
 - Everything missing, or too vague to act on, goes in the Open section and nowhere else, one line each, as "- <Section>: <what is missing>". Return the same lines in "gaps". With nothing open, the section holds "Nothing."
 - Where two things the founder said pull against each other, keep both as said and add an Open line that names the conflict.
 - Keep the founder's own words where they are clear. Plain short words, active voice, no marketing language.
-- Under 550 words.
+- Under 700 words, not counting the Open section.
 
 Return the document in "markdown".`,
   { label: "draft", schema: DRAFT },

@@ -11,7 +11,7 @@ const HEADINGS = [
   "Assumptions",
   "Open",
 ];
-const MAX_WORDS = 550;
+const MAX_WORDS = 700;
 const MAX_QUESTIONS = 12;
 const MAX_OPTION_CHARS = 30;
 
@@ -25,9 +25,10 @@ export const check = (testCase, output) => {
 
   const found = [...markdown.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
   if (found.join("|") !== HEADINGS.join("|")) failures.push(`headings are ${found.join(", ")}`);
-  if (words(markdown) > MAX_WORDS) failures.push(`document is ${words(markdown)} words`);
 
   const beforeOpen = markdown.split(/^## Open$/m)[0];
+  if (words(beforeOpen) > MAX_WORDS)
+    failures.push(`document is ${words(beforeOpen)} words before Open`);
   if (/\bOpen:/.test(beforeOpen)) failures.push("an open item sits outside the Open section");
   const listed = (markdown.split(/^## Open$/m)[1] ?? "").match(/^- /gm)?.length ?? 0;
   if (listed !== gaps.length) failures.push(`Open lists ${listed} items, gaps has ${gaps.length}`);
