@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prune } from "@tanstack-cf-saas/blocks";
@@ -11,6 +12,7 @@ import {
   firstDeploy,
   isLoggedIn,
   isReady,
+  isStagingTip,
   migrate,
   missingSecrets,
   needsUrl,
@@ -478,5 +480,32 @@ describe("firstDeploy", () => {
       /no workers\.dev address/,
     );
     expect(appUrl(dir, "staging")).toBeUndefined();
+  });
+});
+
+describe("isStagingTip", () => {
+  const repo = () => {
+    const dir = mkdtempSync(join(tmpdir(), "tip-"));
+    const git = (...args: Array<string>) =>
+      spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: dir });
+    writeFileSync(join(dir, "a.txt"), "a\n");
+    writeFileSync(join(dir, "wrangler.jsonc"), "{}\n");
+    git("init", "--quiet", "-b", "staging");
+    git("add", "-A");
+    git("commit", "--quiet", "--no-verify", "-m", "first");
+    return { dir, git };
+  };
+
+  test("is true only on staging's tip with nothing but wrangler.jsonc changed", () => {
+    const { dir, git } = repo();
+    expect(isStagingTip(dir)).toBe(false);
+    git("update-ref", "refs/remotes/origin/staging", "HEAD");
+    expect(isStagingTip(dir)).toBe(true);
+    writeFileSync(join(dir, "wrangler.jsonc"), '{ "name": "x" }\n');
+    expect(isStagingTip(dir)).toBe(true);
+    writeFileSync(join(dir, "a.txt"), "changed\n");
+    expect(isStagingTip(dir)).toBe(false);
+    git("commit", "--quiet", "--no-verify", "-am", "second");
+    expect(isStagingTip(dir)).toBe(false);
   });
 });

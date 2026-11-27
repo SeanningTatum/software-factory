@@ -62,6 +62,7 @@ import {
   PRODUCTION_POSTHOG_KEY,
   provision,
   type RunScript,
+  isStagingTip,
   readiness,
   setupEnvs,
   typedSettings,
@@ -237,17 +238,17 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
 const PROJECT_KEY = /^phc_\S+$/;
 const PROJECT_OR_PERSONAL_KEY = /^ph[cx]_\S+$/;
 
-const askPosthogKey = async (message: string, personal = false) =>
-  cancelled(
-    await p.text({
-      message,
-      defaultValue: "",
-      validate: (v) =>
-        !v || (personal ? PROJECT_OR_PERSONAL_KEY : PROJECT_KEY).test(v.trim())
-          ? undefined
-          : `A project API key starts with phc_ (PostHog → Project settings)${personal ? ", a personal API key with phx_" : ""}`,
-    }),
-  ).trim();
+/** Masked when a personal key may be typed: it can change every project in the organization. */
+const askPosthogKey = async (message: string, personal = false) => {
+  const validate = (v: string | undefined) =>
+    !v || (personal ? PROJECT_OR_PERSONAL_KEY : PROJECT_KEY).test(v.trim())
+      ? undefined
+      : `A project API key starts with phc_ (PostHog → Project settings)${personal ? ", a personal API key with phx_" : ""}`;
+  const answer = personal
+    ? await p.password({ message, validate })
+    : await p.text({ message, defaultValue: "", validate });
+  return (cancelled(answer) ?? "").trim();
+};
 
 const askPosthog = async (name: string): Promise<Record<string, string>> => {
   const first = await askPosthogKey(
@@ -553,7 +554,13 @@ const offerCloudflare = async (
     return undefined;
   } finally {
     // Also after a failure: the ids of what was made must reach the first push, not placeholders.
-    if (plan.git) await commitWrangler(plan.targetDir);
+    // A refused commit must not end create here, before it says what was made.
+    if (plan.git)
+      await commitWrangler(plan.targetDir).catch((error: Error) =>
+        p.log.warn(
+          `${error.message}\nCommit ${WRANGLER_FILE} yourself: it holds the ids of what was made.`,
+        ),
+      );
   }
 };
 
@@ -706,9 +713,14 @@ export const setup = async (args: SetupArgs) => {
   const vars = Object.fromEntries(
     args.vars.map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)]),
   );
-  const fromEnv = [...loadManifests(root).values()]
-    .flatMap((m) => Object.keys(m.secrets ?? {}))
-    .filter((key) => process.env[key]);
+  const secrets = [...loadManifests(root).values()].flatMap((m) => Object.keys(m.secrets ?? {}));
+  // A --var lands in wrangler.jsonc, which is committed.
+  const secretVars = Object.keys(vars).filter((key) => secrets.includes(key));
+  if (secretVars.length)
+    throw new Error(
+      `${secretVars.join(", ")} ${secretVars.length > 1 ? "are secrets" : "is a secret"}, and a --var is written to ${WRANGLER_FILE}. Set it in your shell or type it when setup asks.`,
+    );
+  const fromEnv = secrets.filter((key) => process.env[key]);
   const envs = setupEnvs(args.env, [...Object.keys(vars).map((k) => `--var ${k}`), ...fromEnv]);
   if (!loggedIn) throw new Error("Log in first: npx wrangler login");
   p.intro(pc.inverse(" setup "));
@@ -769,21 +781,6 @@ const setupUrls = async (
     if (asked) urls[env] = asked;
   }
   return urls;
-};
-
-/**
- * Whether the checkout is staging's tip, changed in wrangler.jsonc at most: only then may setup
- * deploy a live environment, because that build is the one CI would ship.
- */
-const isStagingTip = (root: string) => {
-  const git = capture("git", root);
-  const head = git(["rev-parse", "HEAD"]);
-  const staging = git(["rev-parse", "--verify", "--quiet", "origin/staging"]);
-  const others = ["--", ".", `:(exclude)${WRANGLER_FILE}`];
-  const status = git(["status", "--porcelain", "--untracked-files=no", ...others]);
-  return (
-    head.ok && staging.ok && status.ok && head.stdout === staging.stdout && !status.stdout.trim()
-  );
 };
 
 /** Gives GitHub the URLs setup just recorded, when the project has a repository there. */
