@@ -11,9 +11,9 @@ describe("Uploads", () => {
   it("stores a valid file under the user's prefix and lists it", async () => {
     const { bucket } = memoryBucket();
     const uploads = Uploads.make(bucket, undefined);
-    const stored = await Effect.runPromise(uploads.upload("u1", png("my cat!.png")));
+    const stored = await Effect.runPromise(uploads.upload("u1", png('my "cat"!.png')));
     expect(stored.id).toMatch(/^\d{13}-[0-9a-f-]{36}$/);
-    expect(stored.name).toBe("my cat_.png");
+    expect(stored.name).toBe("my _cat_.png");
     const listed = await Effect.runPromise(uploads.list("u1"));
     expect(listed.files.map((f) => f.id)).toEqual([stored.id]);
     expect((await Effect.runPromise(uploads.list("u2"))).files).toEqual([]);

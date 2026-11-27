@@ -268,7 +268,6 @@ export class Auth extends Context.Service<
             const refused = yield* refuseIfLimited(incoming, path);
             if (refused) return refused;
           }
-          // Sign-out ends the session, so read whose it was first.
           if (path === SIGN_OUT) yield* Effect.result(currentUser);
           const response = yield* serve(incoming, path);
           return yield* afterResponse(incoming.method, path, response);
