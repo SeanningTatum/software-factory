@@ -15,7 +15,6 @@ export class AnalyticsDeliveryError extends Schema.TaggedError<AnalyticsDelivery
   },
 ) {}
 
-/** Adapters never fail the request: the service logs and drops errors. */
 export interface AnalyticsAdapter {
   readonly name: string;
   readonly send: (batch: ReadonlyArray<Captured>) => Effect.Effect<void, AnalyticsDeliveryError>;

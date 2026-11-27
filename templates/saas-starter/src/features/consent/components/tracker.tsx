@@ -8,9 +8,6 @@ import {
 } from "#/features/core/analytics/lib/browser.ts";
 import { useConsent } from "./consent-banner.tsx";
 
-/**
- * Consent also gives a signed-out visitor a random id, so their page views count as one visitor.
- */
 export function AnalyticsTracker() {
   const { granted } = useConsent();
   const path = useRouterState({ select: (s) => s.location.pathname });

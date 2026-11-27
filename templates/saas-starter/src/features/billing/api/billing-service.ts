@@ -12,7 +12,6 @@ export interface BillingState {
   /** Gate on this; it is the one place that decides. */
   readonly entitled: boolean;
   readonly plan: string;
-  /** Set while there is a subscription to manage, even when not entitled. */
   readonly status: string | undefined;
   readonly cancelAtPeriodEnd: boolean;
   readonly plans: ReadonlyArray<Pick<Plan, "name" | "label">>;
@@ -48,7 +47,6 @@ export class Billing extends Context.Service<
               ),
             ),
         );
-        // A user can hold several live rows (past_due or unpaid beside active): the entitled one wins.
         const entitledRow = rows.find((row) => isStatus(row.status) && isEntitled(row.status));
         const current = entitledRow ?? rows[0];
         const entitled = Boolean(entitledRow);

@@ -14,7 +14,6 @@ const CREATED = 201;
 export const Route = createFileRoute("/api/uploads/")({
   server: {
     handlers: {
-      /** Upload one file as multipart form data under the field "file". */
       POST: ({ request, context }) =>
         runResponse(
           context,

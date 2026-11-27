@@ -5,9 +5,6 @@ export interface WorkerVersion {
   readonly tag?: string;
 }
 
-/**
- * During a gradual rollout two versions serve production; this says which one a request reached.
- */
 export const workerVersion = (env: object): WorkerVersion | undefined => {
   const meta = binding<{ id?: string; tag?: string }>(env, "CF_VERSION_METADATA");
   if (!meta?.id) return undefined;

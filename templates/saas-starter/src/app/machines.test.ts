@@ -38,7 +38,6 @@ describe("state machines", () => {
   });
 
   it("every *.machine.ts exports its machine", () => {
-    // One built inside an exported function is never seen here, so nothing below would check it.
     const found = new Set(machines.map((m) => m.path));
     expect(Object.keys(modules).filter((path) => !found.has(path))).toEqual([]);
   });

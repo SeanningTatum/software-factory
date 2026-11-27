@@ -209,8 +209,6 @@ describe("Auth", () => {
     expect(JSON.parse(rows[0]?.details ?? "")).toEqual({ method: "email" });
   });
 
-  // Billing's plan changes take this path, with the subscription's user id; auth can ship without
-  // billing, so the test sends an auth event.
   it("leaves one audit row for an outcome a plugin reports for a user", async () => {
     const plugin: AuthPluginFactory = ({ onEvent }) => [
       {
@@ -272,8 +270,6 @@ describe("Auth", () => {
     expect(rows).toEqual([]);
   });
 
-  // The subscription paths come from the Stripe plugin and need the billing schema, so they are
-  // checked against the plugin's own route list, not served here.
   it.each(LIMITED_PATHS.filter((path) => !path.includes("/subscription/")))(
     "rate limits %s, a route Better Auth really serves",
     async (path) => {

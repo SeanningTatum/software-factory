@@ -4,7 +4,6 @@ export interface Credentials {
   readonly email: string;
   readonly password: string;
   readonly name?: string;
-  /** Single-use, so each submit needs a fresh one. */
   readonly captcha?: string;
 }
 

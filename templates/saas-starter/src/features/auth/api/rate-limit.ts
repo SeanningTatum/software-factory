@@ -22,11 +22,7 @@ export class AuthRateLimiter extends Context.Service<
 
 export const SIGN_IN = "/api/auth/sign-in/email";
 
-/**
- * Paths that take a password, create an account, or make several Stripe calls (the account-wide
- * Stripe quota is shared); only these are rate limited. Add `/api/auth/request-password-reset`
- * here once a reset sender is wired.
- */
+/** Add `/api/auth/request-password-reset` here once a reset sender is wired. */
 export const LIMITED_PATHS = [
   SIGN_IN,
   "/api/auth/sign-up/email",

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-/** `children` go on the right, e.g. the cookie settings button. */
 export function SiteFooter({ children }: { children?: ReactNode }) {
   return (
     <footer className="border-t">

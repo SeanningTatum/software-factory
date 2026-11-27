@@ -3,7 +3,6 @@ import type { BrowserEvent } from "../events.ts";
 
 export const EVENTS_ENDPOINT = "/api/events";
 
-/** Set only after consent. */
 export const ANON_ID_COOKIE = "aid";
 const ANON_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -20,14 +19,12 @@ export const anonIdCookie = (id: string) =>
   `${ANON_ID_COOKIE}=${id}; Path=/; Max-Age=${ONE_YEAR}; SameSite=Lax; Secure`;
 export const clearAnonIdCookie = `${ANON_ID_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
 
-/** Ids only; never an email or name. */
 export const browserDistinctId = (
   userId: string | undefined,
   cookies: string | null,
   requestId: string,
 ) => userId ?? `anon:${readAnonId(cookies) ?? requestId}`;
 
-/** Sends browser events to our own endpoint, so no third-party host joins the CSP. */
 export const sendBrowserEvents = (events: ReadonlyArray<BrowserEvent>) => {
   const body = JSON.stringify({ events });
   if (navigator.sendBeacon?.(EVENTS_ENDPOINT, new Blob([body], { type: "application/json" })))

@@ -7,7 +7,6 @@ export interface ConsentInput {
   readonly optedOut: boolean;
 }
 
-/** Only browser events wait for consent; server events for signed-in flows don't. */
 export const consentMachine = setup({
   types: {
     context: {} as { stored: ConsentChoice | undefined; optedOut: boolean },
@@ -15,7 +14,6 @@ export const consentMachine = setup({
     events: {} as { type: "ACCEPT" } | { type: "DECLINE" } | { type: "REOPEN" },
   },
   actions: {
-    /** The component provides the cookie write. */
     persist: (_, _params: { choice: ConsentChoice }) => undefined,
   },
   guards: {

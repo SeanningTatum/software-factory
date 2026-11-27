@@ -4,10 +4,6 @@ interface UpdatedEvent {
   readonly data: { readonly previous_attributes?: object };
 }
 
-/**
- * The Stripe plugin hands over the row after it was written, so the old status has to come from the
- * event's `previous_attributes`; it is missing when the status didn't change.
- */
 export const unexpectedChange = (
   event: UpdatedEvent,
   to: string,

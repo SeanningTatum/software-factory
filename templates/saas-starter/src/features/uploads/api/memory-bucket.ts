@@ -1,6 +1,5 @@
 import type { Bucket } from "./uploads.ts";
 
-/** Lists in key order and pages with a cursor, as R2 does. */
 export const memoryBucket = () => {
   const store = new Map<
     string,

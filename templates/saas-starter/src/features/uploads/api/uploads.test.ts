@@ -51,7 +51,6 @@ describe("Uploads", () => {
 
   const seed = (store: ReturnType<typeof memoryBucket>["store"], count: number) => {
     for (let i = 0; i < count; i++) {
-      // As upload names them: the later the file, the lower its key.
       store.set(`users/u1/${String(99_999 - i).padStart(5, "0")}`, {
         bytes: new ArrayBuffer(1),
         contentType: "image/png",

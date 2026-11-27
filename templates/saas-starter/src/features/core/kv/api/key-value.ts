@@ -16,7 +16,6 @@ export class KvError extends Schema.TaggedError<KvError>()("KvError", {
   cause: Schema.Defect(),
 }) {}
 
-/** KV's own floor for expiring keys. */
 const MIN_TTL_SECONDS = 60;
 
 const codec = <S extends Schema.Codec<unknown, unknown>>(schema: S) =>
@@ -51,7 +50,6 @@ export class KeyValue extends Context.Service<
               ? Effect.succeedNone
               : Schema.decodeUnknownEffect(codec(schema))(raw).pipe(
                   Effect.map(Option.some),
-                  // A value written by an older schema is treated as a miss, not an error.
                   Effect.catch(() => Effect.succeedNone),
                 ),
           ),

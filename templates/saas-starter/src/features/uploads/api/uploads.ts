@@ -22,7 +22,6 @@ export class StorageError extends Schema.TaggedError<StorageError>()("StorageErr
 }) {}
 
 export interface StoredFile {
-  /** What /api/uploads/$id takes. */
   readonly id: string;
   readonly name: string;
   readonly contentType: string;
@@ -67,12 +66,7 @@ export interface Bucket {
 const HEAD_BYTES = 16;
 const NAME_MAX = 200;
 
-/** Every user's files live under their own prefix, so one user can never name another's file. */
 const prefixFor = (userId: string) => `users/${userId}/`;
-/**
- * R2 lists keys in order, so a key starts with its time counted down: the newest file sorts first
- * on every page. Thirteen digits last until the year 2286.
- */
 const newestFirst = (millis: number) => String(9_999_999_999_999 - millis).padStart(13, "0");
 const safeName = (name: string) => name.replace(/[^\w.\- ]+/g, "_").slice(0, NAME_MAX) || "file";
 
@@ -109,7 +103,6 @@ export class Uploads extends Context.Service<
       yield* checkLimit(limiter, userId);
       const early = check(file);
       if (early) return yield* reject(early);
-      // One keys-only list call, capped at the limit: R2 stops there however many files exist.
       const held = yield* call("count", () =>
         bucket.list({ prefix: prefixFor(userId), limit: MAX_FILES_PER_USER }),
       );
@@ -157,7 +150,6 @@ export class Uploads extends Context.Service<
       return new Response(object.body, {
         headers: {
           "content-type": object.httpMetadata?.contentType ?? "application/octet-stream",
-          // The name was reduced to [\w.\- ] at upload, so it is safe inside the quotes.
           "content-disposition": `attachment; filename="${object.customMetadata?.name ?? "file"}"`,
           "x-content-type-options": "nosniff",
         },

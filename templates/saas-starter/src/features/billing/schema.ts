@@ -1,6 +1,5 @@
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-/** `referenceId` is the user's id. */
 export const subscription = sqliteTable(
   "subscription",
   {

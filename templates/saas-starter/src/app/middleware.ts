@@ -12,11 +12,8 @@ const nonces = new WeakMap<Request, string>();
 export const nonceFor = (request: Request) => nonces.get(request);
 
 /**
- * Start checks `Sec-Fetch-Site`, then `Origin`, then `Referer` against the request's own origin.
- * API routes (`/api/auth/*`, `/api/events`, webhooks) are not server functions, so the filter
- * leaves them alone.
- * shortcut: a call with none of those headers is refused; allow it only if a non-browser
- * client must call server functions.
+ * shortcut: a server function call with none of `Sec-Fetch-Site`, `Origin` or `Referer` is refused;
+ * allow it only if a non-browser client must call server functions.
  */
 export const csrf = createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" });
 

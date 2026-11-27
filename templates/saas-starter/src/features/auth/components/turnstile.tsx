@@ -22,7 +22,6 @@ declare global {
 const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 let loading: Promise<TurnstileApi> | undefined;
 
-/** Added from our own script, which the CSP's nonce allows. */
 const load = () => {
   loading ??= new Promise<TurnstileApi>((resolve, reject) => {
     const script = document.createElement("script");
@@ -44,7 +43,6 @@ interface Props {
   readonly onToken: (token: string | undefined) => void;
 }
 
-/** Mount it with a new `key` to get a fresh token: each one works once. */
 export function Turnstile({ siteKey, onToken }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const report = useRef(onToken);

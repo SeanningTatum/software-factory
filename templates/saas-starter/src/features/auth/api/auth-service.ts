@@ -39,7 +39,6 @@ export class Auth extends Context.Service<
     readonly handle: (
       request: Request,
     ) => Effect.Effect<Response, AuthServiceError | Unauthorized | NotConfigured>;
-    /** Also tags the request's logs with the user id. */
     readonly currentUser: Effect.Effect<SessionUser | undefined, AuthServiceError>;
     readonly requireUser: Effect.Effect<
       SessionUser,
@@ -187,17 +186,14 @@ export class Auth extends Context.Service<
               discard: true,
             },
           );
-          // A webhook answered 5xx will be retried, and the retry queues the same events again.
           if (path === WEBHOOK && response.status >= SERVER_ERROR) pending.length = 0;
           yield* flushPending;
           if (!events.some(({ event }) => RESETS_ANON_ID.has(event._tag))) return response;
-          // A new anonymous id once a session starts or ends, so it is never tied to two users.
           const reset = new Response(response.body, response);
           reset.headers.append("set-cookie", clearAnonIdCookie);
           return reset;
         });
 
-        /** Read from a copy, so Better Auth still gets the body. */
         const emailOf = (incoming: Request) =>
           Effect.promise(() =>
             (incoming.clone().json() as Promise<{ email?: unknown } | null>)
@@ -207,11 +203,6 @@ export class Auth extends Context.Service<
               .catch(() => undefined),
           );
 
-        /**
-         * Sign-up is three D1 writes (user, credential account, session) with no transaction. If a
-         * 5xx left a user with no password, delete it: re-signing up would say "exists" and there is
-         * no password reset.
-         */
         const dropHalfSignUp = (email: string | undefined) =>
           email
             ? database
@@ -241,7 +232,6 @@ export class Auth extends Context.Service<
           incoming: Request,
           path: string,
         ) {
-          // Sign-in is also limited per account, so many addresses cannot guess one password.
           const keys = [limitKey(incoming.headers, path)];
           if (path === SIGN_IN) {
             const email = yield* emailOf(incoming);
@@ -251,7 +241,6 @@ export class Auth extends Context.Service<
             Effect.forEach(keys, (key) => limiter.check(key), { discard: true }),
           );
           if (limited._tag === "Success") return undefined;
-          // Analytics only: an audit row per blocked attempt would let a flood grow the table.
           yield* Effect.forEach(
             authEvents("POST", path, 429, null),
             ({ event }) => analytics.capture(event),
