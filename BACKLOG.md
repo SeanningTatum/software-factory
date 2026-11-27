@@ -86,7 +86,7 @@ Rules for a good item:
 - **Size:** S
 - **Needs you:** A decision: which skills, agents and hooks ship
 
-**Why:** `claude/` is a stand-in with three files. Four scorecard areas cannot move until a real one is in.
+**Why:** `claude/` is a stand-in. Four scorecard areas cannot move until a real one is in.
 
 **Done when:**
 

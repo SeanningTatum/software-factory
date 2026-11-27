@@ -395,6 +395,7 @@ export const create = async (args: CreateArgs) => {
       ? [runCommand(pm, "db:migrate:local").flat().join(" ")]
       : []),
     runCommand(pm, "dev").flat().join(" "),
+    ...foundationStep(plan.claude),
   ];
   const unset = blankSettings(plan.targetDir, context.features).filter(
     (b) => !plan.devVars?.[b.key],
@@ -413,6 +414,9 @@ export const create = async (args: CreateArgs) => {
   printNext(plan.targetDir, steps, pm);
   p.outro(closingLine(cloudflare, pm));
 };
+
+const foundationStep = (claude: boolean) =>
+  claude ? ["", "Before you build: open Claude Code here and run /foundation."] : [];
 
 const printSetupSteps = (root: string, cloudflare: ReadonlyArray<Item> | undefined) => {
   // The Cloudflare table already lists these steps.

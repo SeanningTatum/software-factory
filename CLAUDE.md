@@ -84,6 +84,14 @@ asks for them, so a change to a hook is a change to what `create` hands out.
 and records a hash per file in `harness.lock.json`; `create-tanstack-cf-saas harness check|sync`
 compares and refreshes it. They are plain files in this repo, not a submodule.
 
+Its workflows are blocks, like features: a script in `claude/workflows/` does the agent work and a
+command in `claude/commands/` owns every stop for the human. `claude/README.md` has the rules for
+adding one. `/foundation` is the first; the others build on the file it writes.
+
+**A workflow ships only with a golden test.** `evals/<name>/` holds its cases, checks and saved real
+outputs; `bun run check` fails a script in `claude/workflows/` without them. After a change to a
+prompt, run the cases again and replace the saved outputs (`evals/README.md`).
+
 The skills and agents for work on this repo live in the Home Repo, `claude-config`, which points
 here. Start sessions there.
 
