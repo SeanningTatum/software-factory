@@ -12,9 +12,8 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
     and helpers: `api/`, `lib/`, `machines/`, the top-level files below, and server routes under
     `routes/api/` only) and `ui` (components only: `components/`, `lib/`, `feature.json`,
     `TIMELINE.md`, `constants.ts`; no machines). No core module has `e2e/` or a page.
-  - `src/features/core/lib/` holds pure helpers that two or more features use: flat `.ts` files,
-    each with a sibling test, no `feature.json`. Plain functions and Effect functions only: no
-    services, layers or React (rule `shared-lib`). It imports only `src/app`.
+  - `src/features/core/lib/`: pure helpers two or more features use, flat `.ts` files with tests,
+    no `feature.json`, services, layers or React (rule `shared-lib`). It imports only `src/app`.
   - `src/features/<name>/` is a feature: `consent`, `home`, `auth`, `billing`, `uploads`, `workflows`.
 - Names are unique across both levels; `core` and `lib` are reserved. Tools find a folder by name.
 - A feature or module owns its folder and the paths its `feature.json` lists in `files`, and
@@ -57,11 +56,12 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 ## Code
 
 - Effect for everything on the server. Services are `Context.Service` classes with a static `layer`.
-  Errors are `Schema.TaggedError` classes in the error channel, each listed in its feature's
-  `errors.ts` with a status and a safe message. Validation is Effect Schema; zod is banned.
-- No `throw`, `try/catch`, `process.env` or `Effect.run*` outside the edges listed in
-  `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
-  `runResponse` from `src/app/run-effect.ts`.
+  Errors are `Schema.TaggedError` classes, declared in their feature's `errors.ts` with a status and
+  a safe message (rule `error-placement`). Validation is Effect Schema; zod is banned.
+- No `throw`, `try/catch`, `process.env` or `Effect.run*` outside the edges in `cf-saas-lint.json`.
+  Server functions live in `api/` (rule `server-fn-placement`); they and server routes run effects
+  through `runEffect` / `runResponse` from `src/app/run-effect.ts`. Write each `/api/` path once,
+  in its feature's `constants.ts` (rule `no-repeated-api-path`).
 - One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
 - Names say what the code does. Comment only to stop a wrong change (rule `no-useless-comment`).
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
@@ -70,11 +70,11 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - Log with `Effect.log*`, never `console`. Every line already carries the request id and user.
 - With `auth`, sign-ins, sign-outs and plan changes pass through `Auth.handle` into analytics and
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
-- Every flow a user can see, and every lifecycle, is an XState machine in a `*.machine.ts` file with a
-  unit test. Machines that drive UI sit in a feature's `components/` and also need
-  `e2e/<name>.paths.spec.ts` in that feature. Name event handlers (rule `no-inline-handler`).
+- Every flow a user can see, and every lifecycle, is an XState machine in a tested `*.machine.ts`;
+  UI ones sit in `components/` with `e2e/<name>.paths.spec.ts`. Code beside a machine derives its
+  event types (`derived-machine-types`). A `.tsx` holds one component, no class, no inline handler
+  (`one-component-per-file`, `class-placement`, `no-inline-handler`).
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
-  `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
-  personal data in event properties.
-- Every source file under `src/app` and `src/features` has a sibling `*.test.ts` unless
-  `cf-saas-lint.json` exempts it.
+  `metric`, its success measure and the events behind it (a test checks both); no personal data.
+- Every source file in `src/app` and `src/features` has a sibling `*.test.ts` unless `cf-saas-lint.json`
+  exempts it. A test runs code; one that only restates constants fails (`no-restating-test`).

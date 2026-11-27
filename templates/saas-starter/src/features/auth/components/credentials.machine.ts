@@ -1,4 +1,5 @@
 import { assign, fromPromise, setup } from "xstate";
+import { ChallengeRequired } from "../errors.ts";
 
 export interface Credentials {
   readonly email: string;
@@ -6,9 +7,6 @@ export interface Credentials {
   readonly name?: string;
   readonly captcha?: string;
 }
-
-/** The server wants a Turnstile token with this sign-in; the form shows the check from then on. */
-export class ChallengeRequired extends Error {}
 
 export const credentialsMachine = setup({
   types: {

@@ -1,5 +1,10 @@
+import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
-import type { WorkflowError } from "./api/onboarding-service.ts";
+
+export class WorkflowError extends Schema.TaggedError<WorkflowError>()("WorkflowError", {
+  operation: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
 export type Errors = WorkflowError;
 

@@ -1,11 +1,11 @@
 import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
+import { SIGN_IN, SIGN_OUT, SIGN_UP } from "../constants.ts";
 
 export interface Captured {
   readonly event: AnalyticsEvent;
   readonly distinctId?: string;
 }
 
-export const SIGN_OUT = "/api/auth/sign-out";
 const TOO_MANY = 429;
 const CREDENTIAL_FAILURES = new Set([401, 403]);
 
@@ -29,7 +29,7 @@ type Rule = (
 const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   {
     method: "POST",
-    path: "/api/auth/sign-up/email",
+    path: SIGN_UP,
     rule: (status, userId) =>
       isOk(status)
         ? [{ event: { _tag: "sign_up_completed", method: "email" }, distinctId: userId }]
@@ -37,7 +37,7 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   },
   {
     method: "POST",
-    path: "/api/auth/sign-in/email",
+    path: SIGN_IN,
     rule: (status, userId, code) =>
       isOk(status)
         ? [{ event: { _tag: "sign_in_succeeded", method: "email" }, distinctId: userId }]

@@ -43,6 +43,7 @@ Rules for a good item:
 | B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
 | B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
 | B-24 | A live project moves to its own domain in one run | Deployment        | M    | A custom domain       |
+| B-25 | The kernel's body cap knows no feature's path     | Features          | S    | no                    |
 
 ## Now
 
@@ -191,3 +192,18 @@ Rules for a good item:
 - [ ] `docs/branches.md` has a short "Move to your own domain" section that names the one command.
 
 **Where:** `apps/cli/src/commands.ts` (the URL question in the `create` wizard, the `setup` command, `deployInputs`), `apps/cli/src/setup.ts` (`firstDeploy`), `apps/cli/src/github.ts` (`setDeploySettings`), `templates/saas-starter/docs/branches.md`. Tracked as https://github.com/SeanningTatum/tanstack-cf-saas-starter/issues/47.
+
+### B-25 · The kernel's body cap knows no feature's path
+
+- **Area:** Features
+- **Size:** S
+- **Needs you:** no
+
+**Why:** `src/app/body.ts` raises the request size cap for paths under `/api/uploads`, so the kernel names an optional feature. Remove uploads and the branch stays behind; rename its route and uploads get the 1 MB cap.
+
+**Done when:**
+
+- [ ] A feature declares its own body cap (in `feature.json` or a contribution file) and `cf-saas-blocks sync` writes it to `src/gen/`.
+- [ ] `src/app/body.ts` reads the generated caps and no longer appears under `no-repeated-api-path` in `cf-saas-lint.json`.
+
+**Where:** `templates/saas-starter/src/app/body.ts`, `packages/blocks/src/generate.ts`.

@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { outsideCall } from "#/features/core/lib/call.ts";
-import { type AnalyticsAdapter, AnalyticsDeliveryError, properties } from "../adapter.ts";
+import { AnalyticsDeliveryError } from "../../errors.ts";
+import { type AnalyticsAdapter, properties } from "../adapter.ts";
 
 export const posthogAdapter = (
   apiKey: string,

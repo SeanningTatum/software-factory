@@ -1,31 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { Effect, Schema } from "effect";
-import { runEffect } from "#/app/run-effect.ts";
-import { Auth } from "#/features/auth/api/auth-service.ts";
 import { ensureSignedIn } from "#/features/auth/api/guard.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "#/features/core/ui/components/card.tsx";
-import { type FilePage, Uploads } from "#/features/uploads/api/uploads.ts";
+import { CursorSearch, listFiles } from "#/features/uploads/api/loaders.ts";
+import type { FilePage } from "#/features/uploads/api/uploads.ts";
 import { UploadPanel } from "#/features/uploads/components/upload-panel.tsx";
-
-const CursorSearch = Schema.toStandardSchemaV1(
-  Schema.Struct({ cursor: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(512))) }),
-);
-
-const listFiles = createServerFn({ method: "GET" })
-  .validator(CursorSearch)
-  .handler(({ context, data }) =>
-    runEffect(
-      context,
-      Effect.gen(function* () {
-        const auth = yield* Auth;
-        const user = yield* auth.requireUser;
-        const uploads = yield* Uploads;
-        return yield* uploads.list(user.id, data.cursor);
-      }),
-      "uploads.page",
-    ),
-  );
 
 export const Route = createFileRoute("/uploads")({
   beforeLoad: ensureSignedIn,

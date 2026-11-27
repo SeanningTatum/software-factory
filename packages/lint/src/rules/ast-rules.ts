@@ -1,7 +1,8 @@
 import ts from "@typescript/typescript6";
+import { placeOf } from "../place.ts";
 import type { Rule } from "./types.ts";
 
-const lineOf = (source: ts.SourceFile, node: ts.Node) =>
+export const lineOf = (source: ts.SourceFile, node: ts.Node) =>
   source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
 
 const visit = (node: ts.Node, fn: (n: ts.Node) => void) => {
@@ -9,7 +10,7 @@ const visit = (node: ts.Node, fn: (n: ts.Node) => void) => {
   ts.forEachChild(node, (child) => visit(child, fn));
 };
 
-const collect = (source: ts.SourceFile, match: (n: ts.Node) => string | undefined) => {
+export const collect = (source: ts.SourceFile, match: (n: ts.Node) => string | undefined) => {
   const out: Array<{ line: number; message: string }> = [];
   visit(source, (n) => {
     const message = match(n);
@@ -180,4 +181,150 @@ export const noInlineHandler: Rule = {
         ? "name this function above the JSX and pass it: `onClick={handleClick}`"
         : undefined,
     ),
+};
+
+const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
+
+const hasJsx = (node: ts.Node): boolean =>
+  ts.isJsxElement(node) ||
+  ts.isJsxSelfClosingElement(node) ||
+  ts.isJsxFragment(node) ||
+  ts.forEachChild(node, hasJsx) === true;
+
+/** The function a top-level const holds, through wrappers like `memo(...)`. */
+const heldFunction = (e: ts.Expression | undefined): ts.Node | undefined => {
+  if (!e) return undefined;
+  if (ts.isArrowFunction(e) || ts.isFunctionExpression(e)) return e;
+  return ts.isCallExpression(e) ? heldFunction(e.arguments.find(ts.isFunctionLike)) : undefined;
+};
+
+/** Top-level PascalCase functions that render JSX, with the node each starts at. */
+const componentsOf = (source: ts.SourceFile) =>
+  source.statements.flatMap((s): Array<{ name: string; node: ts.Node }> => {
+    if (ts.isFunctionDeclaration(s) && s.name && PASCAL.test(s.name.text) && hasJsx(s))
+      return [{ name: s.name.text, node: s }];
+    if (!ts.isVariableStatement(s)) return [];
+    return s.declarationList.declarations.flatMap((d) => {
+      const fn = heldFunction(d.initializer);
+      return ts.isIdentifier(d.name) && PASCAL.test(d.name.text) && fn && hasJsx(fn)
+        ? [{ name: d.name.text, node: d }]
+        : [];
+    });
+  });
+
+export const oneComponentPerFile: Rule = {
+  id: "one-component-per-file",
+  description: "A .tsx file declares one component; each other one gets a file of its own.",
+  check: ({ file, source }) => {
+    if (!file.endsWith(".tsx")) return [];
+    const [first, ...rest] = componentsOf(source);
+    return rest.map(({ name, node }) => ({
+      line: lineOf(source, node),
+      message: `${name} is a second component beside ${first?.name}; move it to its own .tsx file`,
+    }));
+  },
+};
+
+const isClass = (n: ts.Node) => ts.isClassDeclaration(n) || ts.isClassExpression(n);
+
+const insideFunction = (node: ts.Node): boolean => {
+  for (let cur = node.parent; cur; cur = cur.parent) if (ts.isFunctionLike(cur)) return true;
+  return false;
+};
+
+export const classPlacement: Rule = {
+  id: "class-placement",
+  description:
+    "Classes (errors, services) sit at the top of a .ts module: never in React files or components/, never inside a function.",
+  check: ({ file, source }) =>
+    collect(source, (n) => {
+      if (!isClass(n)) return undefined;
+      if (file.endsWith(".tsx") || file.includes("/components/"))
+        return "no classes beside React: components are functions; put errors in the feature's errors.ts and services in api/";
+      return insideFunction(n)
+        ? "declare classes at the top of a module, not inside a function"
+        : undefined;
+    }),
+};
+
+/** The class a heritage clause extends, without type arguments or calls: `Schema.TaggedError`. */
+const baseName = (e: ts.Expression): string => {
+  if (ts.isCallExpression(e)) return baseName(e.expression);
+  if (ts.isExpressionWithTypeArguments(e)) return baseName(e.expression);
+  return ts.isPropertyAccessExpression(e) ? e.name.text : ts.isIdentifier(e) ? e.text : "";
+};
+
+const extendsError = (n: ts.ClassLikeDeclaration) =>
+  (n.heritageClauses ?? []).some(
+    (h) =>
+      h.token === ts.SyntaxKind.ExtendsKeyword &&
+      h.types.some((t) => /Error(Class)?$/.test(baseName(t.expression))),
+  );
+
+export const errorPlacement: Rule = {
+  id: "error-placement",
+  description:
+    "Error classes live in their feature's errors.ts (src/app/errors.ts for the kernel), beside their status.",
+  check: ({ file, source, config }) => {
+    const place = placeOf(config.featureLayout, file);
+    const home =
+      place && place.kind !== "loose" && place.kind !== "lib"
+        ? `${config.featureLayout.dir}/${place.folder}/errors.ts`
+        : "src/app/errors.ts";
+    if (file === home) return [];
+    return collect(source, (n) =>
+      isClass(n) && extendsError(n as ts.ClassLikeDeclaration)
+        ? `move ${(n as ts.ClassLikeDeclaration).name?.text ?? "this error"} to ${home}`
+        : undefined,
+    );
+  },
+};
+
+export const serverFnPlacement: Rule = {
+  id: "server-fn-placement",
+  description: "A feature's server functions live in its api/; pages only call them.",
+  check: ({ file, source, config }) => {
+    const place = placeOf(config.featureLayout, file);
+    if (!place || place.inner.startsWith("api/")) return [];
+    return collect(source, (n) =>
+      calledName(n) === "createServerFn"
+        ? `move this server function to ${config.featureLayout.dir}/${place.folder}/api/ and import it here`
+        : undefined,
+    );
+  },
+};
+
+/** Whether the file can reach a machine to derive from: it imports xstate or a `*.machine.ts`. */
+const importsMachine = (source: ts.SourceFile) =>
+  source.statements.some(
+    (s) =>
+      ts.isImportDeclaration(s) &&
+      ts.isStringLiteral(s.moduleSpecifier) &&
+      /^(xstate|@xstate\/react)$|\.machine(\.ts)?$/.test(s.moduleSpecifier.text),
+  );
+
+/** `{ type: "START"; ... }` written as a type: an event shape. */
+const isEventType = (n: ts.Node) =>
+  ts.isTypeLiteralNode(n) &&
+  n.members.some(
+    (m) =>
+      ts.isPropertySignature(m) &&
+      m.name.getText() === "type" &&
+      m.type !== undefined &&
+      ts.isLiteralTypeNode(m.type) &&
+      ts.isStringLiteral(m.type.literal),
+  );
+
+export const derivedMachineTypes: Rule = {
+  id: "derived-machine-types",
+  description:
+    "A machine's events are declared once, in its *.machine.ts; code beside it derives them instead of writing them again.",
+  check: ({ file, source }) => {
+    if (file.endsWith(".machine.ts") || !importsMachine(source)) return [];
+    return collect(source, (n) =>
+      isEventType(n)
+        ? 'derive this event type from the machine: EventFrom<typeof machine>, or ActorRefFrom<typeof machine>["send"] for send'
+        : undefined,
+    );
+  },
 };

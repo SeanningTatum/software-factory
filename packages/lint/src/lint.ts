@@ -2,9 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "@typescript/typescript6";
 import { type LintConfig, loadConfig } from "./config.ts";
-import { byCodeUnit, walk } from "./files.ts";
+import { byCodeUnit, TEST_FILE, walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";
+import { noRepeatedApiPath } from "./rules/api-paths.ts";
 import {
+  classPlacement,
+  derivedMachineTypes,
+  errorPlacement,
   externalCallSpan,
   fileSize,
   noInlineHandler,
@@ -13,12 +17,15 @@ import {
   noRunEffect,
   noThrow,
   noTryCatch,
+  oneComponentPerFile,
+  serverFnPlacement,
 } from "./rules/ast-rules.ts";
 import { noDuplicateComment, noUselessComment } from "./rules/comments.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
 import { rulesFile } from "./rules/rules-file.ts";
 import { sharedLib } from "./rules/shared-lib.ts";
 import { testMap } from "./rules/test-map.ts";
+import { noRestatingTest } from "./rules/test-rules.ts";
 import type { Finding, ProjectRule, Rule } from "./rules/types.ts";
 
 export const rules: ReadonlyArray<Rule> = [
@@ -29,10 +36,16 @@ export const rules: ReadonlyArray<Rule> = [
   externalCallSpan,
   noNestedYield,
   noInlineHandler,
+  oneComponentPerFile,
+  classPlacement,
+  errorPlacement,
+  serverFnPlacement,
+  derivedMachineTypes,
   noUselessComment,
   fileSize,
   testMap,
   sharedLib,
+  noRestatingTest,
 ];
 
 /** Rules over the whole file list, not one source file. */
@@ -40,6 +53,7 @@ export const projectRules: ReadonlyArray<ProjectRule> = [
   featureLayout,
   rulesFile,
   noDuplicateComment,
+  noRepeatedApiPath,
 ];
 
 /** Rules that tests may break: they throw from mocks and run effects directly. */
@@ -49,8 +63,11 @@ const SOURCE_ONLY = new Set([
   "no-run-effect",
   "external-call-span",
   "no-inline-handler",
+  "one-component-per-file",
+  "class-placement",
+  "error-placement",
+  "derived-machine-types",
 ]);
-const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
 const fileFindings = (
   root: string,

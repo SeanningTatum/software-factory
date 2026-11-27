@@ -1,5 +1,13 @@
+import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
-import type { AuthServiceError } from "./api/auth-service.ts";
+
+export class AuthServiceError extends Schema.TaggedError<AuthServiceError>()("AuthServiceError", {
+  operation: Schema.String,
+  cause: Schema.Defect(),
+}) {}
+
+/** The server wants a Turnstile token with this sign-in; the form shows the check from then on. */
+export class ChallengeRequired extends Error {}
 
 export type Errors = AuthServiceError;
 

@@ -200,6 +200,113 @@ describe("lint", () => {
     ]);
   });
 
+  test("reports a second component in a .tsx file, not helpers, wrapped consts or a test", () => {
+    const body = [
+      "const label = (n: number) => String(n);",
+      "export function List() { return <ul />; }",
+      "export const Item = memo(() => <li />);",
+      "const Empty = () => null;",
+      'export const Route = createFileRoute("/")({ component: List });',
+    ].join("\n");
+    const root = project({ "src/core/list.tsx": body, "src/core/list.test.tsx": body });
+    expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/list.tsx:one-component-per-file:3",
+    ]);
+  });
+
+  test("reports classes in React files or inside functions, not at the top of a .ts module", () => {
+    const root = project({
+      "src/core/a.tsx": "export class Store {}\nexport const A = () => <div />;",
+      "src/features/x/components/b.machine.ts": "export class Ctx {}",
+      "src/core/c.ts": "export class Top {}\nexport const make = () => class Inner {};",
+    });
+    const found = lint(root).filter((f) => f.rule === "class-placement");
+    expect(found.map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/a.tsx:class-placement:1",
+      "src/core/c.ts:class-placement:2",
+      "src/features/x/components/b.machine.ts:class-placement:1",
+    ]);
+  });
+
+  test("sends error classes to their feature's errors.ts and leaves other classes alone", () => {
+    const tagged = 'export class Boom extends Schema.TaggedError<Boom>()("Boom", {}) {}';
+    const root = project({
+      "src/features/uploads/api/uploads.ts": `${tagged}\nexport class Uploads extends Context.Service<Uploads, {}>()("Uploads") {}`,
+      "src/features/uploads/errors.ts": tagged,
+      "src/features/uploads/api/errors.ts": tagged,
+      "src/features/core/kv/api/kv.ts":
+        'export class KvError extends Data.TaggedError("KvError") {}',
+      "src/app/edge.ts": "export class PublicError extends Error {}",
+    });
+    const found = lint(root).filter((f) => f.rule === "error-placement");
+    expect(found.map((f) => `${f.file}:${f.line}:${f.message}`)).toEqual([
+      "src/app/edge.ts:1:move PublicError to src/app/errors.ts",
+      "src/features/core/kv/api/kv.ts:1:move KvError to src/features/core/kv/errors.ts",
+      "src/features/uploads/api/errors.ts:1:move Boom to src/features/uploads/errors.ts",
+      "src/features/uploads/api/uploads.ts:1:move Boom to src/features/uploads/errors.ts",
+    ]);
+  });
+
+  test("keeps a feature's server functions in its api/, and leaves the kernel alone", () => {
+    const fn = 'export const get = createServerFn({ method: "GET" }).handler(() => 1);';
+    const root = project({
+      "src/features/x/routes/page.tsx": fn,
+      "src/features/x/api/loaders.ts": fn,
+      "src/app/shell.ts": fn,
+    });
+    const found = lint(root).filter((f) => f.rule === "server-fn-placement");
+    expect(found.map((f) => `${f.file}:${f.line}:${f.message}`)).toEqual([
+      "src/features/x/routes/page.tsx:1:move this server function to src/features/x/api/ and import it here",
+    ]);
+  });
+
+  test("reports an /api/ path written in two files, but not a route's own declaration, a test or an allowed file", () => {
+    const root = project({
+      "src/a.ts":
+        'export const A = "/api/thing";\nexport const B = "/api/once";\nexport const C = "/login";',
+      "src/b.ts": 'fetch("/api/thing");\nfetch("/login");',
+      "src/route.ts": 'export const Route = createFileRoute("/api/once")({});',
+      "src/c.test.ts": 'fetch("/api/once");',
+      "src/kernel.ts": 'fetch("/api/once");',
+      "cf-saas-lint.json": JSON.stringify({ allow: { "no-repeated-api-path": ["src/kernel.ts"] } }),
+    });
+    const found = lint(root).filter((f) => f.rule === "no-repeated-api-path");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual(["src/a.ts:1", "src/b.ts:1"]);
+    expect(found[0]?.message).toBe(
+      '"/api/thing" is also in src/b.ts; export it once from the feature\'s constants.ts',
+    );
+  });
+
+  test("reports a test that only checks imported constants against literals", () => {
+    const body = [
+      'import { A, B, f } from "./c.ts";',
+      'it("restates", () => { for (const p of [A, B]) expect(p).toMatch(/^\\//); });',
+      'test("restates too", () => expect(A).not.toBe("b"));',
+      'it("relates two constants", () => expect(A).toBeLessThanOrEqual(B));',
+      'it("runs code", () => { expect(A).toBe("a"); expect(f(1)).toBe(2); });',
+      'it("checks a mock", async () => { await f(1); expect(A).toHaveBeenCalledWith(429); });',
+    ].join("\n");
+    const root = project({ "src/core/c.test.ts": body, "src/core/c.ts": body });
+    const found = lint(root).filter((f) => f.rule === "no-restating-test");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual([
+      "src/core/c.test.ts:2",
+      "src/core/c.test.ts:3",
+    ]);
+  });
+
+  test("reports an event type written beside a machine, not in the machine or a file without one", () => {
+    const send = 'export type Send = (event: { type: "START"; plan: string }) => void;';
+    const root = project({
+      "src/features/x/components/button.tsx": `import type { m } from "./m.machine.ts";\n${send}`,
+      "src/features/x/components/m.machine.ts": `import { setup } from "xstate";\n${send}`,
+      "src/features/x/api/webhook.ts": send,
+    });
+    const found = lint(root).filter((f) => f.rule === "derived-machine-types");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual([
+      "src/features/x/components/button.tsx:2",
+    ]);
+  });
+
   test("reports commented-out code, TODOs, dividers and empty comments, not prose or directives", () => {
     const body = [
       "// const old = compute();",

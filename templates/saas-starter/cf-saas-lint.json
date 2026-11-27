@@ -12,11 +12,14 @@
       "src/features/core/*/workflows.ts"
     ],
     "no-try-catch": [],
+    "no-repeated-api-path": ["src/app/body.ts"],
+    "one-component-per-file": ["src/features/core/ui/components/**", "src/routes/__root.tsx"],
     "no-process-env": ["src/features/*/e2e/**", "src/app/machines.test.ts"]
   },
   "testExempt": [
     "src/**/*.tsx",
     "src/**/auth-plugins.ts",
+    "src/**/constants.ts",
     "src/**/errors.ts",
     "src/**/events.ts",
     "src/**/layer.ts",
@@ -26,6 +29,7 @@
     "src/features/{*,core/*}/routes/**",
     "src/features/{*,core/*}/lib/*-client.ts",
     "src/features/{*,core/*}/api/guard.ts",
+    "src/features/{*,core/*}/api/loaders.ts",
     "src/features/{*,core/*}/api/memory-*.ts",
     "src/features/{*,core/*}/api/test-*.ts",
     "src/features/{*,core/*}/workflows.ts",

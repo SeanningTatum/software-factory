@@ -1,10 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { getSiteKey } from "#/features/auth/api/guard.ts";
-import {
-  ChallengeRequired,
-  type Credentials,
-} from "#/features/auth/components/credentials.machine.ts";
+import type { Credentials } from "#/features/auth/components/credentials.machine.ts";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
+import { ChallengeRequired } from "#/features/auth/errors.ts";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
 import { afterSignIn, RedirectSearch } from "#/features/auth/lib/redirect.ts";
 import {

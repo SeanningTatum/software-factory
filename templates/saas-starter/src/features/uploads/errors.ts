@@ -1,5 +1,19 @@
+import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
-import type { FileLimitReached, StorageError, UploadRejected } from "./api/uploads.ts";
+
+export class UploadRejected extends Schema.TaggedError<UploadRejected>()("UploadRejected", {
+  reason: Schema.Literals(["empty", "too_large", "unsupported_type", "type_mismatch"]),
+}) {}
+
+export class FileLimitReached extends Schema.TaggedError<FileLimitReached>()(
+  "FileLimitReached",
+  {},
+) {}
+
+export class StorageError extends Schema.TaggedError<StorageError>()("StorageError", {
+  operation: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
 export type Errors = UploadRejected | FileLimitReached | StorageError;
 

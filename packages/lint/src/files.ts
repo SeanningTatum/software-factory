@@ -28,5 +28,8 @@ export const importSpecifiers = (text: string): ReadonlyArray<string> => {
   return ts.preProcessFile(text, true, true).importedFiles.map((f) => f.fileName);
 };
 
+/** Test and spec files: rules that tests may break skip them, and test-only rules read only them. */
+export const TEST_FILE = /\.(test|spec)\.tsx?$/;
+
 /** Sorts strings by code unit, as `sort()` does, so output does not change with the machine's locale. */
 export const byCodeUnit = (a: string, b: string) => Number(a > b) - Number(a < b);
