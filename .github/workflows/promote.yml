@@ -24,7 +24,9 @@ jobs:
       - run: sh scripts/promote.sh "$TAG"
         env:
           TAG: ${{ inputs.tag }}
-      # A push made with GITHUB_TOKEN starts no workflow, so release.yml is started by hand.
-      - run: gh workflow run release.yml --ref production
+      # A push made with GITHUB_TOKEN starts no workflow, so release.yml and docs.yml are started by hand.
+      - run: |
+          gh workflow run release.yml --ref production
+          gh workflow run docs.yml --ref production
         env:
           GH_TOKEN: ${{ github.token }}
