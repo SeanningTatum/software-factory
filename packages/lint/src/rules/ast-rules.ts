@@ -279,3 +279,17 @@ export const errorPlacement: Rule = {
     );
   },
 };
+
+export const serverFnPlacement: Rule = {
+  id: "server-fn-placement",
+  description: "A feature's server functions live in its api/; pages only call them.",
+  check: ({ file, source, config }) => {
+    const place = placeOf(config.featureLayout, file);
+    if (!place || place.inner.startsWith("api/")) return [];
+    return collect(source, (n) =>
+      calledName(n) === "createServerFn"
+        ? `move this server function to ${config.featureLayout.dir}/${place.folder}/api/ and import it here`
+        : undefined,
+    );
+  },
+};

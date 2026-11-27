@@ -245,6 +245,52 @@ describe("lint", () => {
     ]);
   });
 
+  test("keeps a feature's server functions in its api/, and leaves the kernel alone", () => {
+    const fn = 'export const get = createServerFn({ method: "GET" }).handler(() => 1);';
+    const root = project({
+      "src/features/x/routes/page.tsx": fn,
+      "src/features/x/api/loaders.ts": fn,
+      "src/app/shell.ts": fn,
+    });
+    const found = lint(root).filter((f) => f.rule === "server-fn-placement");
+    expect(found.map((f) => `${f.file}:${f.line}:${f.message}`)).toEqual([
+      "src/features/x/routes/page.tsx:1:move this server function to src/features/x/api/ and import it here",
+    ]);
+  });
+
+  test("reports an /api/ path written in two files, but not a route's own declaration, a test or an allowed file", () => {
+    const root = project({
+      "src/a.ts":
+        'export const A = "/api/thing";\nexport const B = "/api/once";\nexport const C = "/login";',
+      "src/b.ts": 'fetch("/api/thing");\nfetch("/login");',
+      "src/route.ts": 'export const Route = createFileRoute("/api/once")({});',
+      "src/c.test.ts": 'fetch("/api/once");',
+      "src/kernel.ts": 'fetch("/api/once");',
+      "cf-saas-lint.json": JSON.stringify({ allow: { "no-repeated-api-path": ["src/kernel.ts"] } }),
+    });
+    const found = lint(root).filter((f) => f.rule === "no-repeated-api-path");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual(["src/a.ts:1", "src/b.ts:1"]);
+    expect(found[0]?.message).toBe(
+      '"/api/thing" is also in src/b.ts; export it once from the feature\'s constants.ts',
+    );
+  });
+
+  test("reports a test that only checks imported constants against literals", () => {
+    const body = [
+      'import { A, B, f } from "./c.ts";',
+      'it("restates", () => { for (const p of [A, B]) expect(p).toMatch(/^\\//); });',
+      'test("restates too", () => expect(A).not.toBe("b"));',
+      'it("relates two constants", () => expect(A).toBeLessThanOrEqual(B));',
+      'it("runs code", () => { expect(A).toBe("a"); expect(f(1)).toBe(2); });',
+    ].join("\n");
+    const root = project({ "src/core/c.test.ts": body, "src/core/c.ts": body });
+    const found = lint(root).filter((f) => f.rule === "no-restating-test");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual([
+      "src/core/c.test.ts:2",
+      "src/core/c.test.ts:3",
+    ]);
+  });
+
   test("reports commented-out code, TODOs, dividers and empty comments, not prose or directives", () => {
     const body = [
       "// const old = compute();",

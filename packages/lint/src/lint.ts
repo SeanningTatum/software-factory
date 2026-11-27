@@ -4,6 +4,7 @@ import ts from "@typescript/typescript6";
 import { type LintConfig, loadConfig } from "./config.ts";
 import { byCodeUnit, walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";
+import { noRepeatedApiPath } from "./rules/api-paths.ts";
 import {
   classPlacement,
   errorPlacement,
@@ -16,12 +17,14 @@ import {
   noThrow,
   noTryCatch,
   oneComponentPerFile,
+  serverFnPlacement,
 } from "./rules/ast-rules.ts";
 import { noDuplicateComment, noUselessComment } from "./rules/comments.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
 import { rulesFile } from "./rules/rules-file.ts";
 import { sharedLib } from "./rules/shared-lib.ts";
 import { testMap } from "./rules/test-map.ts";
+import { noRestatingTest } from "./rules/test-rules.ts";
 import type { Finding, ProjectRule, Rule } from "./rules/types.ts";
 
 export const rules: ReadonlyArray<Rule> = [
@@ -35,10 +38,12 @@ export const rules: ReadonlyArray<Rule> = [
   oneComponentPerFile,
   classPlacement,
   errorPlacement,
+  serverFnPlacement,
   noUselessComment,
   fileSize,
   testMap,
   sharedLib,
+  noRestatingTest,
 ];
 
 /** Rules over the whole file list, not one source file. */
@@ -46,6 +51,7 @@ export const projectRules: ReadonlyArray<ProjectRule> = [
   featureLayout,
   rulesFile,
   noDuplicateComment,
+  noRepeatedApiPath,
 ];
 
 /** Rules that tests may break: they throw from mocks and run effects directly. */
