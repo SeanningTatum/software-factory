@@ -10,10 +10,21 @@ const write = (root: string, path: string, text: string) => {
   writeFileSync(join(root, path), text);
 };
 
-const git = (root: string, ...args: Array<string>) =>
-  spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
-    cwd: root,
-  });
+/**
+ * Runs git for the test's setup and fails loudly when git does. On Windows something can hold
+ * .git/index.lock for a moment, so a failed call gets two more tries first.
+ */
+const git = (root: string, ...args: Array<string>) => {
+  for (let attempt = 1; ; attempt++) {
+    const out = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    if (out.status === 0) return;
+    if (attempt === 3) throw new Error(`git ${args.join(" ")} failed:\n${out.stderr}`);
+    Bun.sleepSync(250);
+  }
+};
 
 /** A repo with one commit holding feature kv and its timeline. */
 const repo = () => {
