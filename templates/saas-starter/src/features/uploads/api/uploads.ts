@@ -1,25 +1,12 @@
-import { Context, DateTime, Effect, Layer, Schema } from "effect";
+import { Context, DateTime, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured, NotFound, type RateLimited } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { checkLimit, type Limiter } from "#/features/core/lib/rate-limit.ts";
 import { MAX_FILES_PER_USER, PAGE_SIZE } from "../constants.ts";
+import { FileLimitReached, StorageError, UploadRejected } from "../errors.ts";
 import { type AllowedType, check, type Rejection } from "../lib/validate.ts";
-
-export class UploadRejected extends Schema.TaggedError<UploadRejected>()("UploadRejected", {
-  reason: Schema.Literals(["empty", "too_large", "unsupported_type", "type_mismatch"]),
-}) {}
-
-export class FileLimitReached extends Schema.TaggedError<FileLimitReached>()(
-  "FileLimitReached",
-  {},
-) {}
-
-export class StorageError extends Schema.TaggedError<StorageError>()("StorageError", {
-  operation: Schema.String,
-  cause: Schema.Defect(),
-}) {}
 
 export interface StoredFile {
   readonly id: string;

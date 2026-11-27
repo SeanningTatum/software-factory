@@ -1,5 +1,5 @@
 import { and, eq, notExists, sql } from "drizzle-orm";
-import { Cause, Context, DateTime, Effect, ErrorReporter, Layer, Schema } from "effect";
+import { Cause, Context, DateTime, Effect, ErrorReporter, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured, Unauthorized } from "#/app/errors.ts";
 import { CurrentRequest } from "#/app/request.ts";
@@ -10,6 +10,7 @@ import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins, featureAuthTables } from "#/gen/auth-plugins.ts";
+import { AuthServiceError } from "../errors.ts";
 import { authEvents, SIGN_OUT } from "../lib/auth-events.ts";
 import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
@@ -21,11 +22,6 @@ const SIGN_UP = "/api/auth/sign-up/email";
 const WEBHOOK = "/api/auth/stripe/webhook";
 const SERVER_ERROR = 500;
 const RESETS_ANON_ID = new Set([...IDENTIFIES, "signed_out"]);
-
-export class AuthServiceError extends Schema.TaggedError<AuthServiceError>()("AuthServiceError", {
-  operation: Schema.String,
-  cause: Schema.Defect(),
-}) {}
 
 export interface SessionUser {
   readonly id: string;

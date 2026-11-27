@@ -1,8 +1,9 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
+import { WorkflowError } from "../errors.ts";
 import type { OnboardingParams } from "./onboarding.ts";
 
 export interface WorkflowBinding {
@@ -11,11 +12,6 @@ export interface WorkflowBinding {
 }
 
 const instanceIdFor = (userId: string) => `onboarding-${userId}`;
-
-export class WorkflowError extends Schema.TaggedError<WorkflowError>()("WorkflowError", {
-  operation: Schema.String,
-  cause: Schema.Defect(),
-}) {}
 
 export class Onboarding extends Context.Service<
   Onboarding,

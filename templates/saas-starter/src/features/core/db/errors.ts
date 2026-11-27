@@ -1,5 +1,10 @@
+import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
-import type { DatabaseError } from "./api/database.ts";
+
+export class DatabaseError extends Schema.TaggedError<DatabaseError>()("DatabaseError", {
+  operation: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
 export type Errors = DatabaseError;
 

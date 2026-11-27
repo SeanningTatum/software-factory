@@ -1,17 +1,13 @@
 import { drizzle } from "drizzle-orm/d1";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
+import { DatabaseError } from "../errors.ts";
 
 export type Db = BaseSQLiteDatabase<"async", unknown>;
-
-export class DatabaseError extends Schema.TaggedError<DatabaseError>()("DatabaseError", {
-  operation: Schema.String,
-  cause: Schema.Defect(),
-}) {}
 
 export class Database extends Context.Service<
   Database,

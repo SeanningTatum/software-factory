@@ -52,6 +52,22 @@ export const errorStatus = { ...coreErrorStatus, ...featureErrorStatus } satisfi
   ErrorInfo
 >;
 
+export interface FailureBody {
+  readonly error: string;
+  readonly message: string;
+  readonly requestId: string;
+}
+
+export class PublicError extends Error {
+  constructor(
+    readonly status: number,
+    readonly body: FailureBody,
+  ) {
+    super(body.message);
+    this.name = "PublicError";
+  }
+}
+
 export const INTERNAL: ErrorInfo = { status: 500, message: "Something went wrong on our side." };
 
 export const errorInfo = (tag: string): ErrorInfo =>

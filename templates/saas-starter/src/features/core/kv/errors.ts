@@ -1,5 +1,11 @@
+import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
-import type { KvError } from "./api/key-value.ts";
+
+export class KvError extends Schema.TaggedError<KvError>()("KvError", {
+  operation: Schema.String,
+  key: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
 export type Errors = KvError;
 

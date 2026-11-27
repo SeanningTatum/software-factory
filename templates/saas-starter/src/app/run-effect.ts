@@ -1,28 +1,20 @@
 import { setResponseStatus } from "@tanstack/react-start/server";
 import { Cause, Effect, ErrorReporter, Exit, Option } from "effect";
-import { type AppError, type ErrorInfo, errorInfo, INTERNAL, RateLimited } from "./errors.ts";
+import {
+  type AppError,
+  type ErrorInfo,
+  errorInfo,
+  type FailureBody,
+  INTERNAL,
+  PublicError,
+  RateLimited,
+} from "./errors.ts";
 import { parentSpanFor, type RequestInfo } from "./request.ts";
 import type { AppRuntime, AppServices } from "./runtime.ts";
 
 export interface EdgeContext {
   readonly runtime: AppRuntime;
   readonly request: RequestInfo;
-}
-
-export interface FailureBody {
-  readonly error: string;
-  readonly message: string;
-  readonly requestId: string;
-}
-
-export class PublicError extends Error {
-  constructor(
-    readonly status: number,
-    readonly body: FailureBody,
-  ) {
-    super(body.message);
-    this.name = "PublicError";
-  }
 }
 
 export const describeFailure = (

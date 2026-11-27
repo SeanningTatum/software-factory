@@ -3,18 +3,13 @@ import { CloudflareEnv } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
+import { KvError } from "../errors.ts";
 
 export interface KvNamespace {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
 }
-
-export class KvError extends Schema.TaggedError<KvError>()("KvError", {
-  operation: Schema.String,
-  key: Schema.String,
-  cause: Schema.Defect(),
-}) {}
 
 const MIN_TTL_SECONDS = 60;
 

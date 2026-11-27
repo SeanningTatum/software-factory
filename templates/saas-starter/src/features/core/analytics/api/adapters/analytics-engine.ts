@@ -1,5 +1,6 @@
 import { Effect } from "effect";
-import { type AnalyticsAdapter, AnalyticsDeliveryError, properties } from "../adapter.ts";
+import { AnalyticsDeliveryError } from "../../errors.ts";
+import { type AnalyticsAdapter, properties } from "../adapter.ts";
 
 export interface DataPointWriter {
   writeDataPoint(point: {

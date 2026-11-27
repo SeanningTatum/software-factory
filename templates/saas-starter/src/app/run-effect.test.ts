@@ -1,15 +1,9 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { LoggerLayer } from "#/features/core/observability/api/log.ts";
-import { NotFound, RateLimited } from "./errors.ts";
+import { NotFound, PublicError, RateLimited } from "./errors.ts";
 import { requestInfoFrom } from "./request.ts";
-import {
-  describeFailure,
-  type EdgeContext,
-  PublicError,
-  runEffect,
-  runResponse,
-} from "./run-effect.ts";
+import { describeFailure, type EdgeContext, runEffect, runResponse } from "./run-effect.ts";
 import type { AppRuntime } from "./runtime.ts";
 
 vi.mock("@tanstack/react-start/server", () => ({ setResponseStatus: vi.fn() }));

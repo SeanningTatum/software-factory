@@ -1,4 +1,5 @@
-import { type Effect, Schema } from "effect";
+import type { Effect } from "effect";
+import type { AnalyticsDeliveryError } from "../errors.ts";
 import type { AnalyticsEvent } from "../lib/catalog.ts";
 
 export interface Captured {
@@ -6,14 +7,6 @@ export interface Captured {
   readonly distinctId: string;
   readonly timestamp: string;
 }
-
-export class AnalyticsDeliveryError extends Schema.TaggedError<AnalyticsDeliveryError>()(
-  "AnalyticsDeliveryError",
-  {
-    provider: Schema.String,
-    cause: Schema.Defect(),
-  },
-) {}
 
 export interface AnalyticsAdapter {
   readonly name: string;

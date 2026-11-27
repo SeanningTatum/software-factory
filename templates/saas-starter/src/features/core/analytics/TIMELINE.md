@@ -12,7 +12,7 @@ A typed event catalog, an Analytics service with console, PostHog and Analytics 
 - Vars: `ANALYTICS_PROVIDER`, `POSTHOG_HOST`
 - Secrets: `POSTHOG_KEY`
 - Also owns: none
-- Feeds: `src/gen/layers.ts`, `src/gen/events.ts`, `src/gen/routes.ts`
+- Feeds: `src/gen/layers.ts`, `src/gen/errors.ts`, `src/gen/events.ts`, `src/gen/routes.ts`
 - Routes: `/api/events`
 - Services: `Analytics`
 - Errors: `AnalyticsDeliveryError`
