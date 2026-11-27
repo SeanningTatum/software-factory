@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { CloudflareEnv, setting } from "#/app/env.ts";
+import { type AppEnv, CloudflareEnv, setting } from "#/app/env.ts";
 import { selectAdapter } from "#/features/core/analytics/api/analytics.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
@@ -18,7 +18,7 @@ export interface Readiness {
   readonly warnings?: ReadonlyArray<string>;
 }
 
-const analyticsWarning = (env: Parameters<typeof selectAdapter>[0]) => {
+const analyticsWarning = (env: AppEnv) => {
   const provider = setting(env, "ANALYTICS_PROVIDER");
   return provider && provider !== "none" && selectAdapter(env).name === "none"
     ? [`ANALYTICS_PROVIDER is ${provider}, but its key or binding is missing: analytics is off`]
