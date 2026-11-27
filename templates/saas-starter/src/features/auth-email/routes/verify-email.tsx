@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import type { Confirmation } from "#/features/auth-email/components/code.machine.ts";
 import { CodeForm } from "#/features/auth-email/components/code-form.tsx";

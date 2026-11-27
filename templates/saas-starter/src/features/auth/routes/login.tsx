@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { navFor } from "#/app/nav.ts";
 import { getSiteKey } from "#/features/auth/api/guard.ts";

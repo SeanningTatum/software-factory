@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { convert } from "html-to-text";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";

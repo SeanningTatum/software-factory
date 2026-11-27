@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
 
