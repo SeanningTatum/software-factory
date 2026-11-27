@@ -71,10 +71,10 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - With `auth`, sign-ins, sign-outs and plan changes pass through `Auth.handle` into analytics and
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
 - Every flow a user can see, and every lifecycle, is an XState machine in a tested `*.machine.ts`;
-  UI ones sit in `components/` with `e2e/<name>.paths.spec.ts`, and code beside a machine derives its
-  event types (`EventFrom`, `ActorRefFrom`). A `.tsx` holds one component, no class, no inline handler.
+  UI ones sit in `components/` with `e2e/<name>.paths.spec.ts`. Code beside a machine derives its
+  event types (`derived-machine-types`). A `.tsx` holds one component, no class, no inline handler
+  (`one-component-per-file`, `class-placement`, `no-inline-handler`).
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
-  `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
-  personal data in event properties.
+  `metric`, its success measure and the events behind it (a test checks both); no personal data.
 - Every source file in `src/app` and `src/features` has a sibling `*.test.ts` unless `cf-saas-lint.json`
   exempts it. A test runs code; one that only restates constants fails (`no-restating-test`).
