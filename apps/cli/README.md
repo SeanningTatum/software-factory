@@ -1,9 +1,11 @@
 # create-software-factory
 
-Build a SaaS on Cloudflare from building blocks. One command asks what your product needs (a
-database, sign-in, billing, file uploads, background jobs) and hands you a working
-[TanStack Start](https://tanstack.com/start) app with those parts wired together, tested, and ready
-to deploy to Cloudflare Workers.
+A software factory for Cloudflare Workers, made to be run with Claude Code. You compose a product
+from blocks (a database, sign-in, billing, file uploads, background jobs). The factory wires them
+together, tests them and deploys the result, and the same blocks, checks and workflows keep
+working on the project after day one, for you and for a coding agent.
+
+Today it makes one kind of product: a SaaS on [TanStack Start](https://tanstack.com/start).
 
 ## Install
 
