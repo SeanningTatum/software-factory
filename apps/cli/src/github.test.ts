@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   type Cli,
+  keepPlaceholders,
   openSetupIssues,
   setDeploySettings,
   setUrlVariables,
@@ -43,6 +44,14 @@ const fakeGithub = () => {
 };
 
 const options = { name: () => "my-app", visibility: "private" as const, log: () => {} };
+
+describe("keepPlaceholders", () => {
+  test("escapes a bare placeholder and leaves one inside backticks alone", () => {
+    expect(keepPlaceholders("at <APP_URL>/hook, then `enable <domain>` for <you>")).toBe(
+      "at &lt;APP_URL>/hook, then `enable <domain>` for &lt;you>",
+    );
+  });
+});
 
 describe("openSetupIssues", () => {
   const issues = [

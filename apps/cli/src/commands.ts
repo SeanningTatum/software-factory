@@ -18,6 +18,7 @@ import {
   DEPLOY_SECRET,
   DEPLOY_SWITCH,
   hasSecret,
+  keepPlaceholders,
   readRulesets,
   requireGh,
   setUrlVariables,
@@ -440,7 +441,7 @@ const setupIssues = (root: string) =>
   [...loadManifests(root).values()].flatMap((m) =>
     (m.setup ?? []).map((step) => ({
       title: `${m.title} setup: ${step.id}`,
-      body: `${step.description}\n${step.help ? `\n${step.help}\n` : ""}\nNo command can do or check this step. Close this issue when it is done.`,
+      body: `${keepPlaceholders(step.description)}\n${step.help ? `\n${step.help}\n` : ""}\nNo command can do or check this step. Close this issue when it is done.`,
     })),
   );
 

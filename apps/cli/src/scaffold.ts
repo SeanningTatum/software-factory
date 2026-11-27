@@ -97,7 +97,10 @@ export const missedAuto = (
     .filter((m) => m.requires.some((r) => features.includes(r)))
     .map((m) => {
       const have = m.requires.filter((r) => features.includes(r)).join(", ");
-      const missing = m.requires.filter((r) => !features.includes(r)).join(", ");
+      // An auto requirement can't be chosen; it arrives with what it requires.
+      const missing = m.requires
+        .filter((r) => !features.includes(r) && !manifests.get(r)?.auto)
+        .join(", ");
       return `${have} without ${missing} leaves out "${m.title}": ${m.description} Choose ${missing} too, or run \`add ${missing}\` later.`;
     });
 

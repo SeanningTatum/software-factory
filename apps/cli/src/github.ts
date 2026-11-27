@@ -33,6 +33,16 @@ export interface SetupIssue {
 export const SETUP_LABEL = "setup";
 
 /**
+ * GitHub drops a bare `<placeholder>` as an unknown HTML tag, so `<` is escaped, except inside
+ * backticks, where GitHub shows the text as it is and an escape would show too.
+ */
+export const keepPlaceholders = (markdown: string) =>
+  markdown
+    .split("`")
+    .map((part, i) => (i % 2 ? part : part.replaceAll("<", "&lt;")))
+    .join("`");
+
+/**
  * Opens an issue for each step that has none yet, open or closed, matched by title: a step you
  * closed stays closed when this runs again. Never fails the command; the project is on GitHub
  * either way.

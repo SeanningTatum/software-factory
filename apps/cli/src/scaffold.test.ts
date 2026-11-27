@@ -456,7 +456,12 @@ describe("missedAuto", () => {
   const manifests = new Map([
     block("auth"),
     block("email"),
-    block("auth-email", { title: "Auth emails", requires: ["auth", "email"], auto: true }),
+    block("email-templates", { requires: ["email"], auto: true }),
+    block("auth-email", {
+      title: "Auth emails",
+      requires: ["auth", "email", "email-templates"],
+      auto: true,
+    }),
   ]);
 
   test("says what auth without email leaves out, and how to get it", () => {
@@ -465,7 +470,7 @@ describe("missedAuto", () => {
     ]);
   });
   test("is quiet when the auto feature is on, or when nothing it needs is", () => {
-    expect(missedAuto(manifests, ["auth", "email", "auth-email"])).toEqual([]);
+    expect(missedAuto(manifests, ["auth", "email", "email-templates", "auth-email"])).toEqual([]);
     expect(missedAuto(manifests, [])).toEqual([]);
   });
 });
