@@ -1,0 +1,7 @@
+{
+  "name": "docs",
+  "title": "Docs",
+  "description": "The documentation pages: MDX from content/docs, rendered with Fumadocs, with a sidebar and search.",
+  "requires": [],
+  "files": ["content"]
+}
