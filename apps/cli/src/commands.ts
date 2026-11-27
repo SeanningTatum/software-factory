@@ -53,6 +53,7 @@ import {
   isReady,
   migrate,
   missingSecrets,
+  PRODUCTION_POSTHOG_KEY,
   provision,
   type RunScript,
   readiness,
@@ -217,11 +218,10 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
   return values;
 };
 
-const askPosthog = async (): Promise<Record<string, string>> => {
-  const key = cancelled(
+const askPosthogKey = async (message: string) =>
+  cancelled(
     await p.text({
-      message:
-        "PostHog project API key, to send analytics from staging and production (phc_…; leave empty to skip)",
+      message,
       defaultValue: "",
       validate: (v) =>
         !v || /^phc_\S+$/.test(v.trim())
@@ -229,7 +229,19 @@ const askPosthog = async (): Promise<Record<string, string>> => {
           : "A project API key starts with phc_ (PostHog → Project settings)",
     }),
   ).trim();
-  if (!key) return {};
+
+const askPosthog = async (): Promise<Record<string, string>> => {
+  const staging = await askPosthogKey(
+    "PostHog project API key for staging, which dev reports to as well (phc_…; leave empty to skip)",
+  );
+  if (!staging) return {};
+  const production = await askPosthogKey(
+    "PostHog project API key for production, from a project of its own (leave empty to use staging's)",
+  );
+  if (!production)
+    p.log.warn(
+      "Production shares staging's PostHog project, so staging's traffic counts in its numbers.",
+    );
   const host = cancelled(
     await p.select({
       message: "Which PostHog cloud is the project in?",
@@ -239,7 +251,11 @@ const askPosthog = async (): Promise<Record<string, string>> => {
       ],
     }),
   );
-  return { POSTHOG_KEY: key, POSTHOG_HOST: host };
+  return {
+    POSTHOG_KEY: staging,
+    [PRODUCTION_POSTHOG_KEY]: production || staging,
+    POSTHOG_HOST: host,
+  };
 };
 
 type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";

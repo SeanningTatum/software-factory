@@ -12,6 +12,7 @@ import {
   isReady,
   migrate,
   missingSecrets,
+  PRODUCTION_POSTHOG_KEY,
   provision,
   putSecret,
   readiness,
@@ -289,15 +290,19 @@ describe("settings typed during create", () => {
     expect(typedSettings(blanks, typed, "production")).toEqual({ secrets: {}, vars: {} });
   });
 
-  test("except the PostHog key, which both environments get", () => {
-    const withPosthog = { ...typed, POSTHOG_KEY: "phc_test" };
+  test("except PostHog's, where each environment gets the key typed for it", () => {
+    const withPosthog = {
+      ...typed,
+      POSTHOG_KEY: "phc_staging",
+      [PRODUCTION_POSTHOG_KEY]: "phc_prod",
+    };
     expect(typedSettings(blanks, withPosthog, "production")).toEqual({
-      secrets: { POSTHOG_KEY: "phc_test" },
+      secrets: { POSTHOG_KEY: "phc_prod" },
       vars: {},
     });
     expect(typedSettings(blanks, withPosthog, "staging").secrets).toEqual({
       STRIPE_SECRET_KEY: "typed-test-key",
-      POSTHOG_KEY: "phc_test",
+      POSTHOG_KEY: "phc_staging",
     });
   });
 });

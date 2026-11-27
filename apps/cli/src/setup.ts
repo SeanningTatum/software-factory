@@ -438,6 +438,9 @@ export const setupEnvs = (
   return envNames;
 };
 
+/** Where `create` keeps production's PostHog key; POSTHOG_KEY holds staging's, which dev uses. */
+export const PRODUCTION_POSTHOG_KEY = "POSTHOG_KEY_PRODUCTION";
+
 /**
  * What the settings typed during `create` give one environment. They were typed for local use, so
  * they are test data: staging gets them, production never does.
@@ -455,7 +458,8 @@ export const typedSettings = (
       }),
     );
   const secrets = pick(true);
-  if (typed?.POSTHOG_KEY) secrets.POSTHOG_KEY = typed.POSTHOG_KEY;
+  const posthog = typed?.[env === "production" ? PRODUCTION_POSTHOG_KEY : "POSTHOG_KEY"];
+  if (posthog) secrets.POSTHOG_KEY = posthog;
   return { vars: pick(false), secrets };
 };
 
