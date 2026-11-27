@@ -37,14 +37,12 @@ Rules for a good item:
 | B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
 | B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
 | B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision            |
-| B-09 | A tagged promotion deploys production             | Deployment        | S    | A test project        |
 | B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
 | B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 | B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
 | B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
 | B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
 | B-24 | A live project moves to its own domain in one run | Deployment        | M    | A custom domain       |
-| B-23 | A gradual rollout runs on a real project          | Deployment        | M    | A custom domain       |
 
 ## Now
 
@@ -95,22 +93,6 @@ Rules for a good item:
 - [ ] A new project gets those files in `.claude/` and `harness check` is clean.
 
 **Where:** `claude/`, `apps/cli/scripts/bundle-template.ts`.
-
-### B-09 · A tagged promotion deploys production
-
-- **Area:** Deployment
-- **Size:** S
-- **Needs you:** A test project made with `bun run try`, set up on Cloudflare and GitHub
-
-**Why:** On 2026-11-25 a test project went the whole way to staging: `create` made its resources, migrated and deployed both environments, and its first push ran `deploy.yml` green on staging with the smoke test. Both rulesets are active on its repository. The second half has never run: `production` has never moved to a tagged commit of `staging`, and no one has run `setup` twice.
-
-**Done when:**
-
-- [ ] A second `bun run setup` on a project that is already set up changes nothing.
-- [ ] A push that moves `production` to a `staging` commit without a tag deploys nothing: `deploy.yml` stops at its tag check.
-- [ ] The tagged push in `docs/branches.md` moves `production` to `staging`'s tip, `deploy.yml` deploys production, and its smoke test passes.
-
-**Where:** `apps/cli/src/setup.ts`, `apps/cli/src/github.ts`, `templates/saas-starter/.github/`.
 
 ### B-10 · The packages are on npm
 
@@ -208,22 +190,4 @@ Rules for a good item:
 - [ ] `setup.test.ts`, `github.test.ts` and `create.machine.test.ts` hold the question, the variable, the closing line and the reminder.
 - [ ] `docs/branches.md` has a short "Move to your own domain" section that names the one command.
 
-**Where:** `apps/cli/src/commands.ts` (the URL question in the `create` wizard, the `setup` command, `deployInputs`), `apps/cli/src/setup.ts` (`firstDeploy`), `apps/cli/src/github.ts` (`setDeploySettings`), `templates/saas-starter/docs/branches.md`. Do it before B-23, which needs a project on its own domain. Tracked as https://github.com/SeanningTatum/tanstack-cf-saas-starter/issues/47.
-
-### B-23 · A gradual rollout runs on a real project
-
-- **Area:** Deployment
-- **Size:** M
-- **Needs you:** A test project on a custom domain in Cloudflare, with the Transform Rule from `docs/branches.md`
-
-**Why:** New projects can release to a share of visitors: the promote button takes `gradual`, and `rollout.yml` raises the share or backs out. Its steps have run only against stand-ins for `wrangler` and `curl` on a laptop. No real Worker has served two versions, so a wrong flag or a Cloudflare limit would first show in someone's production.
-
-**Done when:**
-
-- [ ] Promote with `gradual` at 10: the run's summary shows two versions at 10 and 90, and `/api/health` asked for the new version by id answers with that id.
-- [ ] With the Transform Rule in place, twenty page loads from one address all get scripts from one version.
-- [ ] Rollout to `100` leaves one version; a second gradual release then `back out` leaves the old one.
-- [ ] With `POSTHOG_KEY` set, PostHog shows `deployment_rolled_out` for each step and `app_version` on page views.
-- [ ] A release that adds a Workflows binding goes out `gradual`, or the docs say it cannot.
-
-**Where:** `templates/saas-starter/.github/workflows/deploy.yml`, `rollout.yml`, `.github/scripts/report-rollout.sh`, `docs/branches.md`.
+**Where:** `apps/cli/src/commands.ts` (the URL question in the `create` wizard, the `setup` command, `deployInputs`), `apps/cli/src/setup.ts` (`firstDeploy`), `apps/cli/src/github.ts` (`setDeploySettings`), `templates/saas-starter/docs/branches.md`. Tracked as https://github.com/SeanningTatum/tanstack-cf-saas-starter/issues/47.

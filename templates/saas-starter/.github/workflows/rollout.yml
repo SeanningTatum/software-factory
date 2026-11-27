@@ -37,13 +37,13 @@ jobs:
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           TO: ${{ inputs.to }}
         run: |
-          live=$(bunx wrangler deployments status --json)
+          live=$(bun run wrangler deployments status --json)
           if [ "$(jq '.versions | length' <<<"$live")" != 2 ]; then
             echo "::error::No gradual rollout is running: one version serves all of production."; exit 1
           fi
           # Of the two versions, the new one is the one uploaded last.
           pair=$(for id in $(jq -r '.versions[].version_id' <<<"$live"); do
-            bunx wrangler versions view "$id" --json
+            bun run wrangler versions view "$id" --json
           done | jq -s 'sort_by(.metadata.created_on)')
           # A failed read above leaves one version here, and "back out" would then pick the new one.
           if [ "$(jq 'length' <<<"$pair")" != 2 ]; then
@@ -53,9 +53,9 @@ jobs:
           new=$(jq -r '.[1].id' <<<"$pair")
           tag=$(jq -r '.[1].annotations["workers/tag"] // .[1].id' <<<"$pair")
           case $TO in
-            "back out") bunx wrangler versions deploy "$old@100" -y --message "backed out of $tag"; TO=0 ;;
-            100) bunx wrangler versions deploy "$new@100" -y --message "$tag at 100%" ;;
-            *) bunx wrangler versions deploy "$new@$TO" "$old" -y --message "$tag at $TO%" ;;
+            "back out") bun run wrangler versions deploy "$old@100" -y --message "backed out of $tag"; TO=0 ;;
+            100) bun run wrangler versions deploy "$new@100" -y --message "$tag at 100%" ;;
+            *) bun run wrangler versions deploy "$new@$TO" "$old" -y --message "$tag at $TO%" ;;
           esac
           sh .github/scripts/report-rollout.sh "$tag" "$TO" ||
             echo "::warning::The traffic moved, but the report did not run."
