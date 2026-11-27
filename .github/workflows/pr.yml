@@ -21,10 +21,12 @@ jobs:
         with:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
       # As in check.yml: build the packages, then install again to link cf-saas-lint's bin.
-      - run: bunx turbo run build --filter='./packages/*'
-      - run: bun install --frozen-lockfile
+      - run: bun run turbo run build --filter='./packages/*'
+      - run: bun install --frozen-lockfile --ignore-scripts
+      # As in check.yml: no dependency install scripts, then the template's own postinstall.
+      - run: bun run --cwd templates/saas-starter postinstall
       - run: bun run check
       - name: No keys in the code
         env:

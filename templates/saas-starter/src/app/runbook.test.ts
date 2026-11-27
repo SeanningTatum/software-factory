@@ -173,7 +173,7 @@ describe("gradual rollout", () => {
     expect(workflow("deploy")).toMatch(/^concurrency: deploy-\$\{\{ github\.ref_name \}\}$/m);
     expect(rollout).toMatch(/^concurrency: deploy-production$/m);
     expect(rollout).toMatch(/^ {4}environment:\n {6}name: production$/m);
-    expect(rollout).toMatch(/"back out"\) bunx wrangler versions deploy "\$old@100"/);
+    expect(rollout).toMatch(/"back out"\) bun run wrangler versions deploy "\$old@100"/);
     expect(rollout).toMatch(/jq 'length' <<<"\$pair"\)" != 2 \][\s\S]*case \$TO in/);
   });
 
