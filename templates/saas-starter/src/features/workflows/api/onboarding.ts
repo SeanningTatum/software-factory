@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Effect, ErrorReporter, Schema } from "effect";
 import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import { stepOrder } from "../machines/onboarding.machine.ts";
 
@@ -29,6 +29,18 @@ const work: Record<string, (params: OnboardingParams) => Effect.Effect<void, nev
 
 const WAIT = "1 days" as const;
 
+// Cloudflare retries a failed step itself; without this the failure leaves no log or report.
+const traced = (name: string, effect: Effect.Effect<void, never, Analytics>) =>
+  effect.pipe(
+    Effect.tapCause((cause) =>
+      Effect.logError("onboarding step failed", cause).pipe(
+        Effect.andThen(ErrorReporter.report(cause)),
+      ),
+    ),
+    Effect.withSpan(`workflow.onboarding.${name}`),
+    Effect.annotateLogs({ step: name }),
+  );
+
 export const runOnboarding = async (
   params: OnboardingParams,
   steps: Steps,
@@ -36,15 +48,18 @@ export const runOnboarding = async (
 ) => {
   for (const name of stepOrder()) {
     const stepWork = work[name];
-    if (stepWork) await steps.run(name, () => runEffect(stepWork(params)));
+    if (stepWork) await steps.run(name, () => runEffect(traced(name, stepWork(params))));
     else await steps.sleep(name, WAIT);
   }
   await steps.run("complete", () =>
     runEffect(
-      Effect.gen(function* () {
-        const analytics = yield* Analytics;
-        yield* analytics.capture({ _tag: "onboarding_completed" }, params.userId);
-      }),
+      traced(
+        "complete",
+        Effect.gen(function* () {
+          const analytics = yield* Analytics;
+          yield* analytics.capture({ _tag: "onboarding_completed" }, params.userId);
+        }),
+      ),
     ),
   );
 };

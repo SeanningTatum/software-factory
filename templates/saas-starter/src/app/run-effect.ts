@@ -51,9 +51,11 @@ export const runExit = <A, E extends AppError>(
   context.runtime.runPromiseExit(
     effect.pipe(
       Effect.tapCause((cause) => {
-        const { info } = describeFailure(cause, context.request.id);
+        const { info, body } = describeFailure(cause, context.request.id);
         if (info.status < SERVER_ERROR)
-          return Effect.logInfo("request failed", { status: info.status });
+          return Effect.logInfo("request failed").pipe(
+            Effect.annotateLogs({ status: info.status, error: body.error }),
+          );
         return Effect.logError("request failed", cause).pipe(
           Effect.andThen(ErrorReporter.report(cause)),
         );

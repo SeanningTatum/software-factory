@@ -11,6 +11,17 @@ What to do when production breaks. Skip a section if your project lacks the feat
 - Workers Logs is on in `wrangler.jsonc` (`observability.enabled`). Cloudflare keeps those logs
   3 days on the Free plan and 7 on Workers Paid, then deletes them. Past that, only the export
   below has them.
+- Traces are on too (`observability.traces`, in beta): each request's calls to D1, KV, R2 and
+  outside APIs, with timings, under Workers → your Worker → Observability → Traces.
+  From 1 December 2026 Cloudflare bills stored traces, so production keeps one request in ten
+  (`traces.head_sampling_rate`: 0.1) and staging keeps all of them (1). The choice is made when a
+  request starts, so a kept trace has every span. Logs are never sampled: every request keeps its
+  lines and its request id. To trace a production bug that is rare, raise the rate and redeploy;
+  `env.staging` repeats the whole `observability` block, so change each block on its own.
+- Issues is on (`observability.issues`, free in its beta). It groups uncaught exceptions, 5xx
+  responses and Error log lines into issues in the dashboard, without Sentry.
+- `observability.redact_query_string` strips query strings from request URLs in Workers Logs and
+  traces.
 - Set the repository secret `ALERT_WEBHOOK_URL` (the same webhook) so a failed production deploy
   posts there too. Without it the deploy step does nothing extra.
 - Responses of 500 or more that never reach the reporter (the Worker dies before it runs) send no
@@ -46,8 +57,8 @@ curl "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/logpush/jobs" \
 
 Logs stay in R2 until you delete them. Add an R2 lifecycle rule (bucket → Settings → Object
 lifecycle rules) that expires objects after the time you want, for example 90 days. The app's
-own log lines are redacted, but Cloudflare's `Event` field holds each request's URL, query string
-included, so treat the bucket as private.
+own log lines are redacted, but Cloudflare's `Event` field holds each request's URL. Cloudflare
+doesn't say whether `redact_query_string` reaches Logpush, so treat the bucket as private.
 
 ## Find a request
 

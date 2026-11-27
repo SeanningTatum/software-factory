@@ -1,5 +1,6 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import { LoggerLayer } from "#/features/core/observability/api/log.ts";
 import { NotFound, RateLimited } from "./errors.ts";
 import { requestInfoFrom } from "./request.ts";
 import {
@@ -45,6 +46,18 @@ describe("runResponse", () => {
     );
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("30");
+  });
+
+  it("logs which error a client failure was", async () => {
+    const lines: Array<Record<string, unknown>> = [];
+    const base = context();
+    const runtime = ManagedRuntime.make(
+      LoggerLayer(base.request, "Info", (_level, line) => void lines.push(line)),
+    ) as unknown as AppRuntime;
+    await runResponse({ ...base, runtime }, Effect.fail(new NotFound({ what: "user" })));
+    expect(lines).toContainEqual(
+      expect.objectContaining({ message: "request failed", status: 404, error: "NotFound" }),
+    );
   });
 
   it("hides a defect behind a plain 500", async () => {
