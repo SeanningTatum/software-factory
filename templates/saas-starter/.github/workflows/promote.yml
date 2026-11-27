@@ -31,6 +31,10 @@ jobs:
         with:
           ref: staging # staging's tip, whichever branch the button was pressed on
           fetch-depth: 0 # a push from a shallow clone can be refused
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # A domain set on GitHub but not in wrangler.jsonc fails the smoke test after the tag is spent.
+      - name: Check PRODUCTION_URL is production's APP_URL
+        run: sh .github/scripts/check-app-url.sh production "${{ vars.PRODUCTION_URL }}"
       - name: Tag staging's tip and move production to it
         env:
           TAG: ${{ inputs.tag }}

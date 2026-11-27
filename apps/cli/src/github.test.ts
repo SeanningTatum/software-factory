@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Cli, setDeploySettings, setupGithub } from "./github.ts";
+import { type Cli, setDeploySettings, setUrlVariables, setupGithub } from "./github.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../../../templates/saas-starter");
 const ok = (stdout = "") => ({ ok: true, stdout, stderr: "" });
@@ -179,5 +179,22 @@ describe("setDeploySettings", () => {
     const set = recorder(["CLOUDFLARE_API_TOKEN"]);
     expect(setDeploySettings(set.gh, {}, undefined, () => {})).toEqual([]);
     expect(set.calls.some((c) => c.args[1] === "set")).toBe(false);
+  });
+});
+
+describe("setUrlVariables", () => {
+  test("sets only the variables for the URLs given", () => {
+    const fake = fakeGithub();
+    const lines: Array<string> = [];
+    setUrlVariables(fake.gh, { production: "https://app.example.com" }, (l) => lines.push(l));
+    expect(fake.calls).toEqual(["gh variable set PRODUCTION_URL --body https://app.example.com"]);
+    expect(lines).toEqual(["variable PRODUCTION_URL: https://app.example.com"]);
+  });
+
+  test("stops when gh refuses", () => {
+    const refusing: Cli = () => fail("HTTP 403");
+    expect(() => setUrlVariables(refusing, { staging: "https://s.example.com" }, () => {})).toThrow(
+      /STAGING_URL/,
+    );
   });
 });
