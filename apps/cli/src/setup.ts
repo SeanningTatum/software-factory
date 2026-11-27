@@ -377,8 +377,13 @@ const deployUnder = (file: string, env: EnvName, url: string, deploy: () => void
   }
 };
 
-/** appUrl drops the slash too, and the smoke test appends /api/health. */
-const withoutSlash = (url: string | undefined) => url?.replace(/\/+$/, "");
+/** No trailing slash: the smoke test appends /api/health. A loop, since `/+$` backtracks. */
+const withoutSlash = (url: string | undefined) => {
+  if (!url) return url;
+  let trimmed = url;
+  while (trimmed.endsWith("/")) trimmed = trimmed.slice(0, -1);
+  return trimmed;
+};
 
 /** Records a live environment's new URL, and deploys under it when `redeploy` allows. */
 const moveLive = (
@@ -537,10 +542,7 @@ export const typedSettings = (
 export const appUrl = (root: string, env: EnvName): string | undefined => {
   const value = varsFor(wranglerText(root), env).APP_URL;
   if (isBlank(value) || isLocalOnly("APP_URL", value)) return undefined;
-  // The smoke test appends /api/health, so no trailing slash.
-  let url = String(value);
-  while (url.endsWith("/")) url = url.slice(0, -1);
-  return url;
+  return withoutSlash(String(value));
 };
 
 /** The Cloudflare account wrangler is logged in to, when there is exactly one to choose. */
