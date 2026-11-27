@@ -11,7 +11,7 @@ import { SiteFooter } from "#/features/core/ui/components/site-footer.tsx";
 import { SiteHeader } from "#/features/core/ui/components/site-header.tsx";
 import appCss from "../styles.css?url";
 
-export const APP_NAME = "Docs Website";
+export const APP_NAME = "Software Factory for Cloudflare Workers";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,6 +19,11 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
+      {
+        name: "description",
+        content:
+          "Compose a SaaS from blocks with one command: TanStack Start on Cloudflare Workers, with a harness for Claude Code.",
+      },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
