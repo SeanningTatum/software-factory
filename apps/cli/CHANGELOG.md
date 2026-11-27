@@ -1,5 +1,18 @@
 # create-tanstack-cf-saas
 
+## 0.3.0
+
+### Minor Changes
+
+- 254eaf1: `github` (and the wizard's GitHub step) opens one issue, labelled `setup`, for each setup step no command can do or check, such as onboarding the email sending domain or adding the Stripe webhook. An issue is opened once: a step that already has one, open or closed, is skipped when the command runs again. `create` now heads those steps "Still to do by hand before you go live".
+- 798ee27: New projects get their first workflow block: `/foundation` interviews the founder about the product, the persona, goals and anti-goals, runs the `product-foundation` workflow to draft the document and find what is vague, puts those questions back to the founder, and writes `docs/product/FOUNDATION.md` only after a yes. Later UI, UX and product workflows read that file first. The same yes puts the product sentence at the top of the README, and `create` ends by pointing to `/foundation`.
+- 254eaf1: A new optional `email` module sends transactional mail through Cloudflare Email Service's `send_email` binding, with no API key; `wrangler dev` simulates it. Choose it with `auth` and you also get the `auth-email` feature: a mailed 8-digit code, in a shared React Email layout (`email-templates`: `MailLayout` and `renderMail`, for your own mails too), verifies each new address before its first sign-in, resets a forgotten password (`/forgot-password`) and signs in without one (`/sign-in-code`). `auth-email` is never listed: it is on whenever both are, `add email` brings it to a project that has auth, and `remove email` takes it out. `create` warns when auth is chosen without email, since auth alone has no password reset.
+
+### Patch Changes
+
+- d129ac5: The template's `/api/health` spec decides by the project: with a `drizzle.config.ts` the response must report the database as up, and without one it must not report it. A lost `DB` binding now fails the spec.
+- 504990d: The template passes the `no-comment` rule again: the email and auth files that keep their comments open with `// cf-saas-lint allow comments`.
+
 ## 0.2.1
 
 ### Patch Changes

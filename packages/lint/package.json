@@ -1,6 +1,6 @@
 {
   "name": "@tanstack-cf-saas/lint",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "House lint rules for tanstack-cf-saas projects: Effect rules, the test map and the state machine gate",
   "license": "MIT",
   "type": "module",

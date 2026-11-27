@@ -1,6 +1,6 @@
 {
   "name": "@tanstack-cf-saas/blocks",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Feature manifests and the generators that wire features into a tanstack-cf-saas project",
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@tanstack-cf-saas/lint": "^0.2.0",
+    "@tanstack-cf-saas/lint": "^0.3.0",
     "effect": "^4.1.5",
     "jsonc-parser": "^3.3.1"
   },
