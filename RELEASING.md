@@ -51,19 +51,19 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
 
 ## When it goes wrong
 
-| You see                                                   | Do this                                                                                                          |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| The version pull request's checks are missing or stale.   | Close and reopen it. A push by Actions starts no checks.                                                         |
-| `promote` says "unversioned changesets".                  | Do step 1 first.                                                                                                 |
-| `promote` says "production did not move".                 | `check.yml` or `blocks.yml` has not passed on `staging`'s tip: wait, or fix it, then run it again.               |
-| The same, and git says "non-fast-forward".                | `production` has a commit `staging` lacks. Rebuild it: see below.                                                |
-| `git tag` says the tag exists.                            | The CLI's version did not change. Pass a name: `bun run promote v0.1.1`.                                         |
-| `release.yml` fails at "On staging, with a version tag".  | `production` moved without `bun run promote`. Tag that commit `v…`, re-run the job.                              |
-| A release leaves the CLI out, or npm refuses its `0.2.0`. | `0.2.0` was used on 2026-11-26 and npm never frees a number. Set the CLI to `0.2.1` in the version pull request. |
-| Publish fails with 401 or 403.                            | The token expired or lacks the scope. Replace `NPM_TOKEN`, re-run the job.                                       |
-| `docs.yml` fails its smoke test.                          | Production rolled back; the npm release still went out. Read the job's `/api/health` answer, fix, promote again. |
-| Publish failed part way.                                  | Re-run the job. It skips versions already on npm.                                                                |
-| A bad version is live.                                    | Fix forward with a new release. `npm deprecate` the bad one; never unpublish.                                    |
+| You see                                                   | Do this                                                                                                                                                                       |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The version pull request's checks are missing or stale.   | Close and reopen it. A push by Actions starts no checks.                                                                                                                      |
+| `promote` says "unversioned changesets".                  | Do step 1 first.                                                                                                                                                              |
+| `promote` says "production did not move".                 | `check.yml` or `blocks.yml` has not passed on `staging`'s tip: wait, or fix it, then run it again.                                                                            |
+| The same, and git says "non-fast-forward".                | `production` has a commit `staging` lacks. Rebuild it: see below.                                                                                                             |
+| `git tag` says the tag exists.                            | The CLI's version did not change. Pass a name: `bun run promote v0.1.1`.                                                                                                      |
+| `release.yml` fails at "On staging, with a version tag".  | `production` moved without `bun run promote`. Tag that commit `v…`, re-run the job.                                                                                           |
+| A release leaves the CLI out, or npm refuses its `0.2.0`. | `0.2.0` was used on 2026-11-26 and npm never frees a number. Set the CLI to `0.2.1` in the version pull request.                                                              |
+| Publish fails with 401 or 403.                            | The token expired or lacks the scope. Replace `NPM_TOKEN`, re-run the job.                                                                                                    |
+| `docs.yml` fails its smoke test.                          | On production it rolled back, and the npm release still went out; on staging the broken version stays up until the next push. Read the job's `/api/health` answer and fix it. |
+| Publish failed part way.                                  | Re-run the job. It skips versions already on npm.                                                                                                                             |
+| A bad version is live.                                    | Fix forward with a new release. `npm deprecate` the bad one; never unpublish.                                                                                                 |
 
 **Rebuilding `production`.** If a commit ever lands on `production` first, the branches cannot share
 a head again until it is gone. In the `production` ruleset turn off "Restrict deletions", delete the

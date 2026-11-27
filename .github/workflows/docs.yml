@@ -15,8 +15,7 @@ permissions:
 concurrency: docs-${{ github.ref_name }}
 jobs:
   deploy:
-    # !created: the push that makes production deploys nothing; the first promotion does.
-    if: ${{ vars.CLOUDFLARE_ACCOUNT_ID != '' && (github.ref_name == 'staging' || (github.ref_name == 'production' && !github.event.created)) }}
+    if: ${{ vars.CLOUDFLARE_ACCOUNT_ID != '' && (github.ref_name == 'staging' || github.ref_name == 'production') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -51,7 +50,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/deploy.ndjson
           TAG: ${{ steps.release.outputs.tag }}
-          GIVEN: ${{ github.ref_name == 'production' && vars.DOCS_PRODUCTION_URL || vars.DOCS_STAGING_URL }}
+          # One condition per branch: `a && b || c` would give production staging's URL when b is empty.
+          GIVEN: ${{ github.ref_name == 'production' && vars.DOCS_PRODUCTION_URL || github.ref_name == 'staging' && vars.DOCS_STAGING_URL || '' }}
         run: |
           if [ "$GITHUB_REF_NAME" = production ]; then bun run deploy --tag "$TAG" --message "$TAG"
           else bun run deploy:staging --tag "staging-${GITHUB_SHA::7}"; fi
