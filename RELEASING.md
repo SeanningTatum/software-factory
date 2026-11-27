@@ -43,11 +43,11 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
   them. In the Cloudflare dashboard make an API token from the "Edit Cloudflare Workers" template,
   then run `gh secret set CLOUDFLARE_API_TOKEN` and paste it, and
   `gh variable set CLOUDFLARE_ACCOUNT_ID --body <account id>`. Until that variable is set the job
-  is skipped. On a custom domain, set `DOCS_STAGING_URL` or `DOCS_PRODUCTION_URL` to it so the smoke
-  test checks the domain; without them it checks `workers.dev`. Both domains are named in
-  `apps/docs-website/wrangler.jsonc`, so both variables must be set: `DOCS_STAGING_URL` to
-  `https://staging.createsoftwarefactory.dev` and `DOCS_PRODUCTION_URL` to
-  `https://createsoftwarefactory.dev`.
+  is skipped. The smoke test calls the domain named in
+  `apps/docs-website/wrangler.jsonc`: `staging.createsoftwarefactory.dev` and
+  `createsoftwarefactory.dev`. It fails on a redirect, so while Cloudflare Access guards a domain,
+  make an Access service token, allow it in a Service Auth policy, and set it with
+  `gh secret set DOCS_ACCESS_CLIENT_ID` and `gh secret set DOCS_ACCESS_CLIENT_SECRET`.
 - **Branch rules.** Applied from `.github/rulesets/`. After you edit one, find its id with
   `gh api 'repos/{owner}/{repo}/rulesets'` and send it:
   `gh api --method PUT 'repos/{owner}/{repo}/rulesets/<id>' --input .github/rulesets/<file>`.

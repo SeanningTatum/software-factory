@@ -1,8 +1,10 @@
 # Deploys apps/docs-website: a push to staging to the docs-website-staging Worker, a promotion to
 # the docs-website Worker. The first deploy creates each Worker on its account's workers.dev.
 # Needs the repository secret CLOUDFLARE_API_TOKEN (Workers Scripts → Edit) and the variable
-# CLOUDFLARE_ACCOUNT_ID; skipped until that variable is set. Optional variables DOCS_STAGING_URL and
-# DOCS_PRODUCTION_URL name a custom domain to smoke-test; without them the workers.dev URL is used.
+# CLOUDFLARE_ACCOUNT_ID; skipped until that variable is set. The smoke test calls the custom domain
+# in wrangler.jsonc, or workers.dev without one; the optional variables DOCS_STAGING_URL and
+# DOCS_PRODUCTION_URL override that. Behind Cloudflare Access, set the secrets
+# DOCS_ACCESS_CLIENT_ID and DOCS_ACCESS_CLIENT_SECRET to a service token.
 # check.yml has already tested the commit; production takes only what promote.sh sends.
 name: docs
 on:
@@ -55,9 +57,10 @@ jobs:
         run: |
           if [ "$GITHUB_REF_NAME" = production ]; then bun run deploy --tag "$TAG" --message "$TAG"
           else bun run deploy:staging --tag "staging-${GITHUB_SHA::7}"; fi
-          # targets holds the workers.dev URL and any routes; a route pattern has a *.
-          url=${GIVEN:-$(jq -r 'select(.type == "deploy") | .targets[]? | select(startswith("https://") and (contains("*") | not))' "$WRANGLER_OUTPUT_FILE_PATH" | head -1)}
-          test -n "$url" || { echo "::error::The deploy named no URL. Turn on workers.dev for the Worker, or set DOCS_STAGING_URL or DOCS_PRODUCTION_URL."; exit 1; }
+          # targets holds the workers.dev URL and any routes: a route pattern has a *, and a custom
+          # domain reads "example.com (custom domain)".
+          url=${GIVEN:-$(jq -r 'select(.type == "deploy") | .targets[]? | select(contains("*") | not) | if startswith("https://") then . elif endswith(" (custom domain)") then "https://" + rtrimstr(" (custom domain)") else empty end'| .targets[]? | select(startswith("https://") and (contains("*") | not))' "$WRANGLER_OUTPUT_FILE_PATH" | head -1)}
+          test -n "$url" || { echo "::error::The deploy named no URL. Turn on workers.dev for the Worker, give it a custom domain, or set DOCS_STAGING_URL or DOCS_PRODUCTION_URL."; exit 1; }
           echo "url=${url%/}" >> "$GITHUB_OUTPUT"
       - name: Smoke test, rolling back production on failure
         working-directory: apps/docs-website
@@ -65,8 +68,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           URL: ${{ steps.deploy.outputs.url }}
+          ACCESS_ID: ${{ secrets.DOCS_ACCESS_CLIENT_ID }}
+          ACCESS_SECRET: ${{ secrets.DOCS_ACCESS_CLIENT_SECRET }}
         run: |
           # A new workers.dev name can take a few seconds to answer.
-          if curl -sS --fail-with-body --retry 6 --retry-delay 5 --retry-all-errors --max-time 15 "$URL/api/health"; then exit 0; fi
+          # -L with no redirects allowed fails on a redirect: a login wall must not pass as healthy.
+          if curl -sS --fail-with-body -L --max-redirs 0 -H "CF-Access-Client-Id: $ACCESS_ID" -H "CF-Access-Client-Secret: $ACCESS_SECRET" --retry 6 --retry-delay 5 --retry-all-errors --max-time 15 "$URL/api/health"; then exit 0; fi
           if [ "$GITHUB_REF_NAME" = production ]; then bun run wrangler rollback --message "smoke test failed" -y; fi
           exit 1

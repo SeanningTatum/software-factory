@@ -40,4 +40,4 @@ JSON logs stamped with the request id and user, redaction, error reports to the 
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
-- 2026-11-27 — Created from create-software-factory 0.1.0.
+- 2026-11-27 — Created from create-tanstack-cf-saas 0.1.0.

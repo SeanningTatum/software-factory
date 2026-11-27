@@ -11,14 +11,14 @@ import { SiteFooter } from "#/features/core/ui/components/site-footer.tsx";
 import { SiteHeader } from "#/features/core/ui/components/site-header.tsx";
 import appCss from "../styles.css?url";
 
-export const APP_NAME = "Software Factory for Cloudflare Workers";
+export const APP_NAME = "Software Factory";
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: APP_NAME },
+      { title: `${APP_NAME} for Cloudflare Workers` },
       {
         name: "description",
         content:
