@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import * as p from "@clack/prompts";
-import { loadManifests, withRequirements } from "@software-factory/blocks";
+import { loadManifests, withRequirements } from "@seanningtatum/software-factory-blocks";
 import type { CreatePlan } from "./create.machine.ts";
 import { templateDir } from "./paths.ts";
 import { createProjects } from "./posthog.ts";

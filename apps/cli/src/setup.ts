@@ -15,7 +15,7 @@ import {
   resourceName,
   setBindingField,
   WRANGLER_FILE,
-} from "@software-factory/blocks";
+} from "@seanningtatum/software-factory-blocks";
 import { applyEdits, modify, parse } from "jsonc-parser";
 import { capture } from "./run.ts";
 

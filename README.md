@@ -285,7 +285,7 @@ bun run try --features db,auth,uploads --yes
 bun run try ../my-app --features db,auth
 ```
 
-Why a script: a new project depends on the `@software-factory/*` packages. `bun run try` packs them
+Why a script: a new project depends on the `@seanningtatum/software-factory-*` packages. `bun run try` packs them
 from this repo and points the new project at those files, so the project runs your changes and not
 the versions on npm. A project made this way is for trying things, not for shipping.
 

@@ -26,7 +26,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
     "@changesets/cli": "^3.0.3",
-    "@software-factory/biome-config": "workspace:*",
+    "@seanningtatum/software-factory-biome-config": "workspace:*",
     "husky": "^9.1.7",
     "turbo": "^2.11.13",
     "typescript": "^7.0.2"

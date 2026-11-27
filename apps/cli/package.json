@@ -28,12 +28,12 @@
   },
   "devDependencies": {
     "@clack/prompts": "^1.9.0",
-    "@software-factory/blocks": "workspace:*",
-    "@software-factory/tsconfig": "workspace:*",
+    "@seanningtatum/software-factory-blocks": "workspace:*",
+    "@seanningtatum/software-factory-tsconfig": "workspace:*",
     "@types/bun": "latest",
     "citty": "^0.2.2",
     "picocolors": "^1.1.1",
     "xstate": "5.33.4",
-    "@software-factory/lint": "workspace:*"
+    "@seanningtatum/software-factory-lint": "workspace:*"
   }
 }

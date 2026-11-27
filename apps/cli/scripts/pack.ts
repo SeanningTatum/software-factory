@@ -7,10 +7,10 @@ import { basename, join } from "node:path";
 export const repo = join(import.meta.dirname, "../../..");
 
 const localPackages: Record<string, string> = {
-  "@software-factory/biome-config": "packages/biome-config",
-  "@software-factory/blocks": "packages/blocks",
-  "@software-factory/lint": "packages/lint",
-  "@software-factory/tsconfig": "packages/tsconfig",
+  "@seanningtatum/software-factory-biome-config": "packages/biome-config",
+  "@seanningtatum/software-factory-blocks": "packages/blocks",
+  "@seanningtatum/software-factory-lint": "packages/lint",
+  "@seanningtatum/software-factory-tsconfig": "packages/tsconfig",
   // Projects run `setup` from their own copy of the CLI. Build it before packing: it ships dist/.
   "create-software-factory": "apps/cli",
 };

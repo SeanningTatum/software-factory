@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { checkMachine } from "@software-factory/lint/machines";
+import { checkMachine } from "@seanningtatum/software-factory-lint/machines";
 import { createActor, fromPromise, waitFor } from "xstate";
 import { type CreatePlan, createMachine } from "./create.machine.ts";
 

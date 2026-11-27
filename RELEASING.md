@@ -1,7 +1,7 @@
 # Releasing
 
 A release publishes five packages to npm: `create-software-factory` and the four under
-`@software-factory/` (`biome-config`, `tsconfig`, `lint`, `blocks`). The template ships inside the
+`@seanningtatum/software-factory-` (`biome-config`, `tsconfig`, `lint`, `blocks`). The template ships inside the
 CLI. Code moves `staging` → `production`; only `production` publishes. A release adds no commit:
 `production` moves to the commit `staging` is on, so both branches share one head and every tag of
 a release sits on it.
@@ -31,7 +31,8 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
 
 ## Set up once
 
-- **npm scope.** Create the free npm organization `software-factory`.
+- **npm scope.** None to create: the packages publish under `@seanningtatum`, the owner's own scope, and the
+  CLI as `create-software-factory`. A release from another npm account needs its own scope.
 - **`NPM_TOKEN`.** On npmjs.com make a granular access token: read and write, all packages, bypass
   two-factor. Then run `gh secret set NPM_TOKEN` and paste it at the prompt. It expires in at most
   90 days; renew it the same way.

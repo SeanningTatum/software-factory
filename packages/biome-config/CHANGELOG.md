@@ -1,4 +1,4 @@
-# @software-factory/biome-config
+# @seanningtatum/software-factory-biome-config
 
 ## 0.2.0
 

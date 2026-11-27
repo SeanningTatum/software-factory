@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadManifests, timelinePath } from "@software-factory/blocks";
+import { loadManifests, timelinePath } from "@seanningtatum/software-factory-blocks";
 import { freshHistory } from "./timeline.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../template");

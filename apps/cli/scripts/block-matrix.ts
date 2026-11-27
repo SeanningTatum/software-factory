@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve, sep } from "node:path";
-import { addBlock, check, removeBlock } from "@software-factory/blocks";
+import { addBlock, check, removeBlock } from "@seanningtatum/software-factory-blocks";
 import { hasTables, scaffold } from "../src/scaffold.ts";
 import { linkLocal, packAll } from "./pack.ts";
 

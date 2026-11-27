@@ -23,7 +23,7 @@ import {
   readProject,
   resourceName,
   WRANGLER_FILE,
-} from "@software-factory/blocks";
+} from "@seanningtatum/software-factory-blocks";
 import { parse } from "jsonc-parser";
 import type { Cli } from "../src/github.ts";
 import { capture, projectWrangler } from "../src/run.ts";

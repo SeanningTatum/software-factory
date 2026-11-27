@@ -98,7 +98,7 @@ Rules for a good item:
 
 - **Area:** Repo
 - **Size:** S
-- **Needs you:** Claim the `@software-factory` scope, and decide between an npm token and trusted publishing
+- **Needs you:** Decide between an npm token and trusted publishing
 
 **Why:** A project made by the CLI cannot install until the four packages are published. `bun run try` works round it with local files.
 
@@ -122,7 +122,7 @@ Rules for a good item:
 **Done when:**
 
 - [ ] `packages/lint` parses with `oxc-parser` (already in the tree through knip) and no longer depends on `@typescript/typescript6`.
-- [ ] `bun run --filter @software-factory/lint test` and `test:matrix` pass.
+- [ ] `bun run --filter @seanningtatum/software-factory-lint test` and `test:matrix` pass.
 
 **Where:** `packages/lint/src/files.ts`, `lint.ts`, `rules/ast-rules.ts`, `rules/shared-lib.ts`, `rules/types.ts`.
 

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { byCodeUnit } from "@software-factory/lint";
+import { byCodeUnit } from "@seanningtatum/software-factory-lint";
 import { loadManifests } from "./manifest.ts";
 import { boundaryProblems, ownerOf } from "./sync.ts";
 

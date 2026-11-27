@@ -1,4 +1,4 @@
-# @software-factory/lint
+# @seanningtatum/software-factory-lint
 
 ## 0.3.0
 

@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { type EnvName, loadManifests, WRANGLER_FILE } from "@software-factory/blocks";
+import { type EnvName, loadManifests, WRANGLER_FILE } from "@seanningtatum/software-factory-blocks";
 import pc from "picocolors";
 import { createActor, fromPromise, toPromise } from "xstate";
 import {

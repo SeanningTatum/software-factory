@@ -1,5 +1,5 @@
 {
-  "name": "@software-factory/tsconfig",
+  "name": "@seanningtatum/software-factory-tsconfig",
   "version": "0.1.0",
   "description": "Shared TypeScript presets for software-factory projects",
   "license": "MIT",

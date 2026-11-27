@@ -19,7 +19,7 @@ import {
   sync,
   WRANGLER_FILE,
   writeProject,
-} from "@software-factory/blocks";
+} from "@seanningtatum/software-factory-blocks";
 import { applyEdits, modify, parse } from "jsonc-parser";
 import { installHarness } from "./harness.ts";
 import { GENERATED_SECRETS, SECRET_BYTES, withVars } from "./setup.ts";
