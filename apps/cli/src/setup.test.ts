@@ -36,7 +36,19 @@ const project = (features: Array<string>) => {
 };
 
 /** A wrangler stand-in that records every call, including what went to stdin. */
-const fakeWrangler = (existing: { d1?: boolean; secrets?: Array<string> } = {}) => {
+interface Existing {
+  readonly d1?: boolean;
+  readonly secrets?: Array<string>;
+  /** What `secret list` prints to stderr when it fails; unset, it lists `secrets`. */
+  readonly listFails?: string;
+}
+
+const listSecrets = ({ secrets = [], listFails }: Existing) =>
+  listFails === undefined
+    ? { ok: true, stdout: JSON.stringify(secrets.map((name) => ({ name }))), stderr: "" }
+    : { ok: false, stdout: "", stderr: listFails };
+
+const fakeWrangler = (existing: Existing = {}) => {
   const calls: Array<{ args: ReadonlyArray<string>; input?: string }> = [];
   const wrangler: Wrangler = (args, input) => {
     calls.push({ args, input });
@@ -57,12 +69,7 @@ const fakeWrangler = (existing: { d1?: boolean; secrets?: Array<string> } = {}) 
         stderr: "",
       };
     if (a === "kv") return { ok: true, stdout: `"id": "${"a".repeat(32)}"`, stderr: "" };
-    if (a === "secret" && b === "list")
-      return {
-        ok: true,
-        stdout: JSON.stringify((existing.secrets ?? []).map((name) => ({ name }))),
-        stderr: "",
-      };
+    if (a === "secret" && b === "list") return listSecrets(existing);
     return { ok: true, stdout: "", stderr: "" };
   };
   return { wrangler, calls };
@@ -171,6 +178,29 @@ describe("provision on a second run", () => {
     const { wrangler, calls } = fakeWrangler({ secrets: ["BETTER_AUTH_SECRET"] });
     await provision(dir, wrangler, options);
     expect(calls.filter((c) => c.args[0] === "secret" && c.args[1] === "put")).toEqual([]);
+  });
+
+  test("stops, and puts nothing, when wrangler can't list the secrets", async () => {
+    const dir = project(["auth"]);
+    const { wrangler, calls } = fakeWrangler({
+      listFails: "A request to the Cloudflare API failed. Internal server error [code: 10013]",
+    });
+    await expect(provision(dir, wrangler, { ...options, envs: ["production"] })).rejects.toThrow(
+      "Listing the secrets of production failed",
+    );
+    expect(calls.filter((c) => c.args[0] === "secret" && c.args[1] === "put")).toEqual([]);
+  });
+
+  test.each([
+    'Worker "app" not found.\n\nIf this is a new Worker, run `wrangler deploy` first to create it.',
+    "This Worker does not exist on your account. [code: 10007]",
+  ])("generates BETTER_AUTH_SECRET when the Worker doesn't exist yet: %s", async (said) => {
+    const dir = project(["auth"]);
+    const { wrangler, calls } = fakeWrangler({ listFails: said });
+    await provision(dir, wrangler, { ...options, envs: ["production"] });
+    expect(calls.filter((c) => c.args[1] === "put").map((c) => c.args.join(" "))).toEqual([
+      "secret put BETTER_AUTH_SECRET",
+    ]);
   });
 
   test("still replaces a set secret when a value is given on purpose", async () => {

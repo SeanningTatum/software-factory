@@ -45,12 +45,32 @@ const envFlag = (env: EnvName) => (env === "production" ? [] : ["--env", env]);
 
 const badEnv = (env: string) => `--env must be ${envNames.join(" or ")}, not "${env}".`;
 
-/** Names of the secrets set in `env`; undefined when wrangler can't list them (no Worker yet). */
+const listSecrets = (wrangler: Wrangler, env: EnvName) =>
+  wrangler(["secret", "list", "--format", "json", ...envFlag(env)]);
+const namesIn = (stdout: string): ReadonlySet<string> =>
+  new Set((JSON.parse(stdout) as Array<{ name: string }>).map((s) => s.name));
+
+/** Names of the secrets set in `env`; undefined when wrangler can't list them. */
 const secretNames = (wrangler: Wrangler, env: EnvName): ReadonlySet<string> | undefined => {
-  const listed = wrangler(["secret", "list", "--format", "json", ...envFlag(env)]);
-  return listed.ok
-    ? new Set((JSON.parse(listed.stdout) as Array<{ name: string }>).map((s) => s.name))
-    : undefined;
+  const listed = listSecrets(wrangler, env);
+  return listed.ok ? namesIn(listed.stdout) : undefined;
+};
+
+/** What wrangler says when the Worker isn't deployed yet: newer versions in words, older by code. */
+const NO_WORKER = /Worker "[^"]+"(?: \(env: [^)]+\))? not found|\[code: 100(?:07|90)\]/;
+
+/**
+ * Names of the secrets set in `env`, for deciding what to put. Only a Worker that doesn't exist yet
+ * has none; any other failure throws, because taking a set BETTER_AUTH_SECRET for missing would
+ * replace it and sign every user out.
+ */
+const secretsToKeep = (wrangler: Wrangler, env: EnvName): ReadonlySet<string> => {
+  const listed = listSecrets(wrangler, env);
+  if (listed.ok) return namesIn(listed.stdout);
+  if (NO_WORKER.test(listed.stdout + listed.stderr)) return new Set();
+  throw new SetupError(
+    `Listing the secrets of ${env} failed, so setup can't tell which are set. No secret of ${env} was uploaded; run it again:\n${(listed.stderr || listed.stdout).trim()}`,
+  );
 };
 
 const wranglerText = (root: string) => readFileSync(join(root, WRANGLER_FILE), "utf8");
@@ -275,7 +295,7 @@ const putSecrets = async (
   wrangler: Wrangler,
   options: ProvisionOptions,
 ) => {
-  const existing = secretNames(wrangler, env) ?? new Set<string>();
+  const existing = secretsToKeep(wrangler, env);
   for (const [key] of manifests.flatMap((m) => Object.entries(m.secrets ?? {}))) {
     const isSet = existing.has(key);
     // A secret already set is only replaced by a value given on purpose; never regenerated.
