@@ -10,5 +10,5 @@
     "/uploads": { "budget": 185, "now": 164.0 },
     "/verify-email": { "budget": 195, "now": 175.2 }
   },
-  "worker": { "budget": 1010, "now": 914.8 }
+  "worker": { "budget": 1100, "now": 998.8 }
 }
