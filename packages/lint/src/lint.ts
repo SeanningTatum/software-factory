@@ -7,6 +7,7 @@ import { matchesAny } from "./glob.ts";
 import {
   externalCallSpan,
   fileSize,
+  noInlineHandler,
   noNestedYield,
   noProcessEnv,
   noRunEffect,
@@ -26,6 +27,7 @@ export const rules: ReadonlyArray<Rule> = [
   noProcessEnv,
   externalCallSpan,
   noNestedYield,
+  noInlineHandler,
   fileSize,
   testMap,
   sharedLib,
@@ -35,7 +37,13 @@ export const rules: ReadonlyArray<Rule> = [
 export const projectRules: ReadonlyArray<ProjectRule> = [featureLayout, rulesFile];
 
 /** Rules that tests may break: they throw from mocks and run effects directly. */
-const SOURCE_ONLY = new Set(["no-throw", "no-try-catch", "no-run-effect", "external-call-span"]);
+const SOURCE_ONLY = new Set([
+  "no-throw",
+  "no-try-catch",
+  "no-run-effect",
+  "external-call-span",
+  "no-inline-handler",
+]);
 const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
 const fileFindings = (

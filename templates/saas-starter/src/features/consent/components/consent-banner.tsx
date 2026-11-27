@@ -26,6 +26,8 @@ export function ConsentProvider({ input, children }: { input: ConsentInput; chil
     { input },
   );
   const value = { granted: snapshot.matches("granted"), reopen: () => send({ type: "REOPEN" }) };
+  const decline = () => send({ type: "DECLINE" });
+  const accept = () => send({ type: "ACCEPT" });
   return (
     <ConsentContext.Provider value={value}>
       {children}
@@ -40,10 +42,10 @@ export function ConsentProvider({ input, children }: { input: ConsentInput; chil
             tracking across sites.
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => send({ type: "DECLINE" })}>
+            <Button variant="outline" size="sm" onClick={decline}>
               No thanks
             </Button>
-            <Button size="sm" onClick={() => send({ type: "ACCEPT" })}>
+            <Button size="sm" onClick={accept}>
               Allow
             </Button>
           </div>

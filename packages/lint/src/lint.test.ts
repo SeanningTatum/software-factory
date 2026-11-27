@@ -184,6 +184,22 @@ describe("lint", () => {
     ]);
   });
 
+  test("reports an inline function passed to a JSX prop, but not a named one or one in a test", () => {
+    const body = [
+      "export const A = ({ go }: { go: () => void }) => (",
+      "  <div onClick={go} title={String(go)}>",
+      "    <button onClick={() => go()} />",
+      "    <form onSubmit={(function (e) { e.preventDefault(); })} />",
+      "  </div>",
+      ");",
+    ].join("\n");
+    const root = project({ "src/core/a.tsx": body, "src/core/a.test.tsx": body });
+    expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/a.tsx:no-inline-handler:3",
+      "src/core/a.tsx:no-inline-handler:4",
+    ]);
+  });
+
   test("requires the tests the test map lists", () => {
     const root = project({
       "src/app/thing.ts": "export const x = 1;",

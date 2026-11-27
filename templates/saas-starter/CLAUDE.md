@@ -72,7 +72,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
 - Every flow a user can see, and every lifecycle, is an XState machine in a `*.machine.ts` file with a
   unit test. Machines that drive UI sit in a feature's `components/` and also need
-  `e2e/<name>.paths.spec.ts` in that feature.
+  `e2e/<name>.paths.spec.ts` in that feature. Name event handlers (rule `no-inline-handler`).
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
   `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
   personal data in event properties.

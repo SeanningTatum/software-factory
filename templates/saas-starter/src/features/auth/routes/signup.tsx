@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import { runEffect } from "#/app/run-effect.ts";
 import { turnstileKeys } from "#/features/auth/api/captcha.ts";
+import type { Credentials } from "#/features/auth/components/credentials.machine.ts";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
 import {
@@ -31,9 +32,18 @@ export const Route = createFileRoute("/signup")({
   component: SignUp,
 });
 
+const signUp = async ({ email, password, name, captcha }: Credentials) => {
+  const { error } = await authClient.signUp.email(
+    { email, password, name: name ?? "" },
+    captcha ? { headers: { "x-captcha-response": captcha } } : undefined,
+  );
+  if (error) return Promise.reject(new Error(error.message ?? "Sign-up failed"));
+};
+
 function SignUp() {
   const router = useRouter();
   const siteKey = Route.useLoaderData();
+  const done = () => void router.invalidate().then(() => router.navigate({ to: "/dashboard" }));
   return (
     <main className="mx-auto flex max-w-sm flex-col px-4 py-16">
       <Card>
@@ -50,16 +60,8 @@ function SignUp() {
           <CredentialsForm
             mode="sign-up"
             siteKey={siteKey ?? undefined}
-            submit={async ({ email, password, name, captcha }) => {
-              const { error } = await authClient.signUp.email(
-                { email, password, name: name ?? "" },
-                captcha ? { headers: { "x-captcha-response": captcha } } : undefined,
-              );
-              if (error) return Promise.reject(new Error(error.message ?? "Sign-up failed"));
-            }}
-            onDone={() =>
-              void router.invalidate().then(() => router.navigate({ to: "/dashboard" }))
-            }
+            submit={signUp}
+            onDone={done}
           />
         </CardContent>
       </Card>
