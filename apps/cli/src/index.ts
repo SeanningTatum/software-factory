@@ -2,7 +2,8 @@
 import { defineCommand, runMain } from "citty";
 import pc from "picocolors";
 import { legacyArgs } from "./args.ts";
-import { add, create, github, harness, remove, setup } from "./commands.ts";
+import { add, github, harness, remove, setup } from "./commands.ts";
+import { create } from "./create.ts";
 import { VERSION } from "./version.ts";
 
 /** Runs a command and prints what went wrong as one line, without a stack: these are user errors. */
