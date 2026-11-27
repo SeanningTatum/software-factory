@@ -5,12 +5,12 @@
  *
  *   bun scripts/block-matrix.ts [outDir] [--only required,auth]
  *
- * outDir must sit inside $RUNNER_TEMP in CI, or the system temp folder elsewhere.
+ * outDir is a folder name, made inside $RUNNER_TEMP in CI or the system temp folder elsewhere.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve, sep } from "node:path";
+import { basename, join, resolve, sep } from "node:path";
 import { addBlock, check, removeBlock } from "@tanstack-cf-saas/blocks";
 import { hasTables, scaffold } from "../src/scaffold.ts";
 import { linkLocal, packAll } from "./pack.ts";
@@ -19,9 +19,11 @@ const template = join(import.meta.dirname, "../template");
 /** The Claude workflows ship with every project, so the gates must pass with them in place. */
 const harness = join(import.meta.dirname, "../harness");
 const tempRoot = resolve(process.env.RUNNER_TEMP ?? tmpdir());
-const outDir = resolve(
+const outDir = join(
   tempRoot,
-  process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "cf-saas-matrix",
+  basename(
+    process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "cf-saas-matrix",
+  ),
 );
 const onlyIndex = process.argv.indexOf("--only");
 const only = onlyIndex > 0 ? (process.argv[onlyIndex + 1] ?? "").split(",") : undefined;
