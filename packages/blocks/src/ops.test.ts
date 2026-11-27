@@ -66,6 +66,14 @@ describe("removeBlock", () => {
   });
 });
 
+describe("removeBlock on an auto feature", () => {
+  test("refuses, and names what to remove instead", () => {
+    expect(() => removeBlock(project(), "auth-kv", { force: true })).toThrow(
+      /"auth-kv" is on because .* are; remove one of those instead/,
+    );
+  });
+});
+
 describe("removeBlock safety", () => {
   test("refuses a files entry outside the project and deletes nothing", () => {
     for (const bad of ["../outside", "", "/", "a/../..", ".git", "node_modules/x"]) {

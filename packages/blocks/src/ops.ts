@@ -71,6 +71,10 @@ export const removeBlock = (root: string, name: string, { force = false } = {}) 
   const manifest = manifests.get(name);
   if (!manifest) throw new BlockError(`"${name}" is not an enabled feature`);
   if (manifest.required) throw new BlockError(`"${name}" is required; it can't be removed`);
+  if (manifest.auto)
+    throw new BlockError(
+      `"${name}" is on because ${manifest.requires.join(" and ")} are; remove one of those instead`,
+    );
   const dependents = dependentsOf(manifests, [...manifests.keys()], name);
   const blocking = dependents.filter((d) => !manifests.get(d)?.auto);
   if (blocking.length) {
