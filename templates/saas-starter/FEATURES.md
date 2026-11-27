@@ -14,6 +14,7 @@ only. Shared pure helpers sit in `src/features/core/lib/`.
 - **observability** (required): JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, an optional alert webhook, and /api/browser-report. Requires: nothing. [TIMELINE.md](src/features/core/observability/TIMELINE.md)
 - **ui** (required): shadcn/ui components, the cn helper, useHydrated, and the site header and footer. Requires: nothing. [TIMELINE.md](src/features/core/ui/TIMELINE.md)
 - **db** (optional): Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real-SQL tests. Requires: nothing. [TIMELINE.md](src/features/core/db/TIMELINE.md)
+- **email** (optional): Transactional email through Cloudflare Email Service, as an Effect Email service over the send_email binding. With auth, adds password reset, email verification and sign-in by code. Requires: nothing. [TIMELINE.md](src/features/core/email/TIMELINE.md)
 - **kv** (optional): A Workers KV namespace behind a typed, Schema-checked KeyValue service with a read-through cache helper. Requires: nothing. [TIMELINE.md](src/features/core/kv/TIMELINE.md)
 
 ## Features

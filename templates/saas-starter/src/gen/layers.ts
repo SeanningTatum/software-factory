@@ -4,9 +4,10 @@ import { layer as analytics } from "../features/core/analytics/layer.ts";
 import { layer as db } from "../features/core/db/layer.ts";
 import { layer as auth } from "../features/auth/layer.ts";
 import { layer as billing } from "../features/billing/layer.ts";
+import { layer as email } from "../features/core/email/layer.ts";
 import { layer as kv } from "../features/core/kv/layer.ts";
 import { layer as uploads } from "../features/uploads/layer.ts";
 import { layer as workflows } from "../features/workflows/layer.ts";
 
 /** Every enabled feature's services, each provided with the features before it. */
-export const FeaturesLayer = workflows.pipe(Layer.provideMerge(uploads.pipe(Layer.provideMerge(kv.pipe(Layer.provideMerge(billing.pipe(Layer.provideMerge(auth.pipe(Layer.provideMerge(db.pipe(Layer.provideMerge(analytics))))))))))));
+export const FeaturesLayer = workflows.pipe(Layer.provideMerge(uploads.pipe(Layer.provideMerge(kv.pipe(Layer.provideMerge(email.pipe(Layer.provideMerge(billing.pipe(Layer.provideMerge(auth.pipe(Layer.provideMerge(db.pipe(Layer.provideMerge(analytics))))))))))))));

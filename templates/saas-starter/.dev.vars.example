@@ -37,3 +37,7 @@ STRIPE_PRICE_PRO=
 STRIPE_SECRET_KEY=
 # Signing secret of the webhook pointing at /api/auth/stripe/webhook (required). See https://dashboard.stripe.com/webhooks
 STRIPE_WEBHOOK_SECRET=
+
+# --- Email ---
+# Sender address on a domain onboarded to Cloudflare Email Service, e.g. hello@example.com (required). See https://developers.cloudflare.com/email-service/get-started/send-emails/
+EMAIL_FROM=hello@example.com
