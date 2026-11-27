@@ -8,6 +8,7 @@ import {
 } from "jsonc-parser";
 import type { Manifests } from "./graph.ts";
 import type { Binding, EnvName } from "./manifest.ts";
+import { byCodeUnit } from "./order.ts";
 
 export const WRANGLER_FILE = "wrangler.jsonc";
 export const PLACEHOLDER_D1_ID = "00000000-0000-0000-0000-000000000000";
@@ -235,7 +236,10 @@ export const patchWrangler = (text: string, patch: WranglerPatch): WranglerResul
   }
   return {
     text: out,
-    managed: { bindings: [...managedBindings].sort(), vars: [...vars.keys()].sort() },
+    managed: {
+      bindings: [...managedBindings].sort(byCodeUnit),
+      vars: [...vars.keys()].sort(byCodeUnit),
+    },
   };
 };
 

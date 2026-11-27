@@ -42,7 +42,7 @@ const project = (files: Record<string, string>) => {
 const messages = (root: string) =>
   boundaryProblems(root)
     .map((p) => `${p.file}: ${p.message}`)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 
 describe("ownerOf", () => {
   test("names the feature or core module, the app, gen, core/lib, or no one", () => {
@@ -65,7 +65,13 @@ describe("loadManifests", () => {
     const features = loadManifests(project({}));
     expect(features.get("db")?.dir).toBe("src/features/core/db");
     expect(features.get("auth")?.dir).toBe("src/features/auth");
-    expect([...features.keys()].sort()).toEqual(["auth", "consent", "db", "kv", "ui"]);
+    expect([...features.keys()].sort((a, b) => a.localeCompare(b))).toEqual([
+      "auth",
+      "consent",
+      "db",
+      "kv",
+      "ui",
+    ]);
   });
 
   test("refuses a name the generated code cannot use", () => {

@@ -1,12 +1,13 @@
 import { enabledOrder } from "./generate.ts";
 import { CORE_DIR, FEATURES_DIR, type Feature, type Features, isCoreModule } from "./manifest.ts";
+import { byCodeUnit } from "./order.ts";
 import { timelinePath } from "./timeline.ts";
 
 export const FEATURES_INDEX = "FEATURES.md";
 
 const line = (m: Feature) => {
   const kind = m.required ? "required" : "optional";
-  const requires = m.requires.length ? [...m.requires].sort().join(", ") : "nothing";
+  const requires = m.requires.length ? [...m.requires].sort(byCodeUnit).join(", ") : "nothing";
   return `- **${m.name}** (${kind}): ${m.description} Requires: ${requires}. [TIMELINE.md](${timelinePath(m)})`;
 };
 

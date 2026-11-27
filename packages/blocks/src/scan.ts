@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROUTES_DIR } from "./generate.ts";
+import { byCodeUnit } from "./order.ts";
 
 /** What a feature's source declares, read from the text alone: nothing is imported or run. */
 export interface FeatureScan {
@@ -24,7 +25,7 @@ const files = (dir: string, prefix = ""): ReadonlyArray<string> =>
           const path = `${prefix}${entry.name}`;
           return entry.isDirectory() ? files(join(dir, entry.name), `${path}/`) : [path];
         })
-        .sort()
+        .sort(byCodeUnit)
     : [];
 
 const SOURCE = /\.tsx?$/;
@@ -33,7 +34,7 @@ const SERVICE = /export\s+class\s+(\w+)\s+extends\s+Context\.(?:Service|Tag)\b/g
 const ERROR = /export\s+class\s+(\w+)\s+extends\s+(?:Schema|Data)\.TaggedError\b/g;
 const EVENT = /Schema\.TaggedStruct\(\s*["'`]([^"'`]+)["'`]/g;
 
-const unique = (items: Iterable<string>) => [...new Set(items)].sort();
+const unique = (items: Iterable<string>) => [...new Set(items)].sort(byCodeUnit);
 const captures = (text: string, re: RegExp) => [...text.matchAll(re)].flatMap((m) => m[1] ?? []);
 
 /**

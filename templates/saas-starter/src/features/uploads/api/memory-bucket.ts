@@ -26,7 +26,8 @@ export const memoryBucket = () => {
     list: async ({ prefix, limit, cursor }) => {
       const keys = [...store.keys()]
         .filter((key) => key.startsWith(prefix) && (!cursor || key > cursor))
-        .sort();
+        // R2 lists keys in byte order, the same order the cursor check uses.
+        .sort((a, b) => Number(a > b) - Number(a < b));
       const page = keys.slice(0, limit);
       return {
         truncated: keys.length > limit,

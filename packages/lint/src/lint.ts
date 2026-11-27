@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "@typescript/typescript6";
 import { type LintConfig, loadConfig } from "./config.ts";
-import { walk } from "./files.ts";
+import { byCodeUnit, walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";
 import {
   externalCallSpan,
@@ -96,7 +96,7 @@ export const lint = (
   const message = `no file matches "include" (${config.include.join(", ")})`;
   const findings = [
     ...(targets.length ? [] : [{ rule: "no-files", file: "cf-saas-lint.json", line: 1, message }]),
-    ...targets.sort().flatMap((file) => fileFindings(root, file, config, allFiles)),
+    ...targets.sort(byCodeUnit).flatMap((file) => fileFindings(root, file, config, allFiles)),
     ...projectFindings(root, config, allFiles),
   ];
   return findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);

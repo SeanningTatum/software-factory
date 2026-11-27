@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "@typescript/typescript6";
+import { byCodeUnit } from "../files.ts";
 import { matchesAny } from "../glob.ts";
 import type { ProjectRule, Rule } from "./types.ts";
 
@@ -102,7 +103,7 @@ export const noDuplicateComment: ProjectRule = {
     const first = new Map<string, string>();
     const files = [...allFiles]
       .filter((f) => matchesAny(f, config.include) && !matchesAny(f, config.exclude))
-      .sort();
+      .sort(byCodeUnit);
     return files.flatMap((file) => {
       const text = readFileSync(join(root, file), "utf8");
       const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);

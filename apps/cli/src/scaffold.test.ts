@@ -82,7 +82,9 @@ describe("scaffold", () => {
     );
     expect(withHooks.devDependencies.husky).toBe(root.devDependencies.husky);
     expect(Object.keys(withHooks.devDependencies)).toEqual(
-      Object.keys(without.devDependencies).concat("husky").sort(),
+      Object.keys(without.devDependencies)
+        .concat("husky")
+        .sort((a, b) => a.localeCompare(b)),
     );
   });
 

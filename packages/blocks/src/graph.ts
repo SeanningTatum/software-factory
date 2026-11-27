@@ -1,4 +1,5 @@
 import type { BlockManifest } from "./manifest.ts";
+import { byCodeUnit } from "./order.ts";
 
 export type Manifests = ReadonlyMap<string, BlockManifest>;
 
@@ -45,7 +46,7 @@ export const topoSort = (
     done.add(name);
     order.push(name);
   };
-  for (const name of [...names].sort()) visit(name);
+  for (const name of [...names].sort(byCodeUnit)) visit(name);
   return order;
 };
 

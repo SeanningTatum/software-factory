@@ -71,6 +71,7 @@
       },
       "suspicious": {
         "noConsole": "error",
+        "useArraySortCompare": "error",
         "noExplicitAny": "error"
       }
     }

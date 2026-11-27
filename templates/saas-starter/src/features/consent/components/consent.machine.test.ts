@@ -46,6 +46,11 @@ describe("consent machine", () => {
         reached.add(String(path.state.value));
       }
     }
-    expect([...reached].sort()).toEqual(["asking", "blocked", "denied", "granted"]);
+    expect([...reached].sort((a, b) => a.localeCompare(b))).toEqual([
+      "asking",
+      "blocked",
+      "denied",
+      "granted",
+    ]);
   });
 });
