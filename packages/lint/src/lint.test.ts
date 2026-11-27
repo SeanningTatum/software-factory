@@ -213,6 +213,13 @@ describe("lint", () => {
       '/// <reference types="vite/client" />',
       "// A 5 MB file plus form overhead; the upload route cuts the exact limit itself.",
       "/** Runs `go()` once; see `retry` for the rest. */",
+      "",
+      "// Uses `a = b`",
+      "",
+      "// note: x = 1",
+      "",
+      "// e.g. foo(bar)",
+      "",
       "// biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is not everywhere.",
       "export const x = 1; // shortcut: one try only, retry once users see failures",
     ].join("\n");

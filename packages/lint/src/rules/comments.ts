@@ -53,6 +53,8 @@ const commentsOf = (source: ts.SourceFile, merge: boolean): ReadonlyArray<Commen
 const DIRECTIVE = /^\s*(\/\s*<|biome-ignore|@ts-|eslint-)/;
 const MARKER = /\b(TODO|FIXME|XXX|HACK)\b/;
 const DIVIDER = /([-=*#~_])\1{3,}/;
+/** Prose that parses as code: it quotes code in backticks, or opens with `note:` or `e.g.`. */
+const PROSE = /`|^\s*(e\.g\.|i\.e\.|[A-Za-z]+:\s)/;
 const CODE_HINT = /[;{}=]|\)\s*$|^\s*(import|export|const|let|return|await|if|for)\b/m;
 
 const parses = (code: string) =>
@@ -72,7 +74,8 @@ const lineProblem = (text: string): string | undefined => {
   return undefined;
 };
 
-const isCode = (text: string) => !DIRECTIVE.test(text) && CODE_HINT.test(text) && parses(text);
+const isCode = (text: string) =>
+  !DIRECTIVE.test(text) && !PROSE.test(text) && CODE_HINT.test(text) && parses(text);
 
 export const noUselessComment: Rule = {
   id: "no-useless-comment",
