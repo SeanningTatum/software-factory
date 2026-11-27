@@ -2,7 +2,7 @@ import ts from "@typescript/typescript6";
 import { placeOf } from "../place.ts";
 import type { Rule } from "./types.ts";
 
-const lineOf = (source: ts.SourceFile, node: ts.Node) =>
+export const lineOf = (source: ts.SourceFile, node: ts.Node) =>
   source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
 
 const visit = (node: ts.Node, fn: (n: ts.Node) => void) => {
@@ -10,7 +10,7 @@ const visit = (node: ts.Node, fn: (n: ts.Node) => void) => {
   ts.forEachChild(node, (child) => visit(child, fn));
 };
 
-const collect = (source: ts.SourceFile, match: (n: ts.Node) => string | undefined) => {
+export const collect = (source: ts.SourceFile, match: (n: ts.Node) => string | undefined) => {
   const out: Array<{ line: number; message: string }> = [];
   visit(source, (n) => {
     const message = match(n);
@@ -266,12 +266,12 @@ export const errorPlacement: Rule = {
   description:
     "Error classes live in their feature's errors.ts (src/app/errors.ts for the kernel), beside their status.",
   check: ({ file, source, config }) => {
-    if (file.endsWith("/errors.ts")) return [];
     const place = placeOf(config.featureLayout, file);
     const home =
       place && place.kind !== "loose" && place.kind !== "lib"
         ? `${config.featureLayout.dir}/${place.folder}/errors.ts`
         : "src/app/errors.ts";
+    if (file === home) return [];
     return collect(source, (n) =>
       isClass(n) && extendsError(n as ts.ClassLikeDeclaration)
         ? `move ${(n as ts.ClassLikeDeclaration).name?.text ?? "this error"} to ${home}`

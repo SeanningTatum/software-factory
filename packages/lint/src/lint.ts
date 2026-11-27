@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "@typescript/typescript6";
 import { type LintConfig, loadConfig } from "./config.ts";
-import { byCodeUnit, walk } from "./files.ts";
+import { byCodeUnit, TEST_FILE, walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";
 import { noRepeatedApiPath } from "./rules/api-paths.ts";
 import {
@@ -68,7 +68,6 @@ const SOURCE_ONLY = new Set([
   "error-placement",
   "derived-machine-types",
 ]);
-const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
 const fileFindings = (
   root: string,

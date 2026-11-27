@@ -1,7 +1,7 @@
 import ts from "@typescript/typescript6";
+import { TEST_FILE } from "../files.ts";
+import { collect } from "./ast-rules.ts";
 import type { Rule } from "./types.ts";
-
-const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
 const isLiteral = (e: ts.Expression): boolean => {
   if (
@@ -77,23 +77,25 @@ const matcherOf = (expectCall: ts.CallExpression): ts.CallExpression | undefined
   return ts.isCallExpression(cur.parent) && cur.parent.expression === cur ? cur.parent : undefined;
 };
 
-const expectsIn = (body: ts.Node) => {
+const callsIn = (body: ts.Node) => {
   const out: Array<ts.CallExpression> = [];
   const visit = (n: ts.Node) => {
-    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "expect")
-      out.push(n);
+    if (ts.isCallExpression(n)) out.push(n);
     ts.forEachChild(n, visit);
   };
   visit(body);
   return out;
 };
 
+const isExpect = (n: ts.CallExpression) =>
+  ts.isIdentifier(n.expression) && n.expression.text === "expect";
+
 const TEST_CALL = /^(it|test)$/;
 
 export const noRestatingTest: Rule = {
   id: "no-restating-test",
   description:
-    "A test runs code. One that only checks constants against literals restates the source and passes after any wrong edit that keeps the shape.",
+    "A test runs code. One that calls nothing and only checks constants against literals restates the source.",
   check: ({ file, source }) => {
     if (!TEST_FILE.test(file)) return [];
     const isConstant = constantIn(source);
@@ -107,22 +109,18 @@ export const noRestatingTest: Rule = {
         matcher.arguments.every(isLiteral)
       );
     };
-    const out: Array<{ line: number; message: string }> = [];
-    const visit = (n: ts.Node) => {
-      const callee = ts.isCallExpression(n) ? n.expression : undefined;
-      const body = ts.isCallExpression(n) ? n.arguments[1] : undefined;
-      if (callee && ts.isIdentifier(callee) && TEST_CALL.test(callee.text) && body) {
-        const expects = expectsIn(body);
-        if (expects.length && expects.every(restates))
-          out.push({
-            line: source.getLineAndCharacterOfPosition(n.getStart(source)).line + 1,
-            message:
-              "this test only checks constants against literals; test the code that uses them, or list the file in testExempt",
-          });
-      }
-      ts.forEachChild(n, visit);
-    };
-    visit(source);
-    return out;
+    return collect(source, (n) => {
+      if (!ts.isCallExpression(n) || !ts.isIdentifier(n.expression)) return undefined;
+      const body = n.arguments[1];
+      if (!TEST_CALL.test(n.expression.text) || !body) return undefined;
+      const calls = callsIn(body);
+      const expects = calls.filter(isExpect);
+      const asserting = new Set(expects.flatMap((e) => [e, matcherOf(e)]));
+      // A test that calls the code under test checks its effects, mocks included.
+      if (calls.some((c) => !asserting.has(c)) || !expects.length) return undefined;
+      return expects.every(restates)
+        ? "this test only checks constants against literals; test the code that uses them, or list the file in testExempt"
+        : undefined;
+    });
   },
 };

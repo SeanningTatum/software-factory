@@ -233,6 +233,7 @@ describe("lint", () => {
     const root = project({
       "src/features/uploads/api/uploads.ts": `${tagged}\nexport class Uploads extends Context.Service<Uploads, {}>()("Uploads") {}`,
       "src/features/uploads/errors.ts": tagged,
+      "src/features/uploads/api/errors.ts": tagged,
       "src/features/core/kv/api/kv.ts":
         'export class KvError extends Data.TaggedError("KvError") {}',
       "src/app/edge.ts": "export class PublicError extends Error {}",
@@ -241,6 +242,7 @@ describe("lint", () => {
     expect(found.map((f) => `${f.file}:${f.line}:${f.message}`)).toEqual([
       "src/app/edge.ts:1:move PublicError to src/app/errors.ts",
       "src/features/core/kv/api/kv.ts:1:move KvError to src/features/core/kv/errors.ts",
+      "src/features/uploads/api/errors.ts:1:move Boom to src/features/uploads/errors.ts",
       "src/features/uploads/api/uploads.ts:1:move Boom to src/features/uploads/errors.ts",
     ]);
   });
@@ -282,6 +284,7 @@ describe("lint", () => {
       'test("restates too", () => expect(A).not.toBe("b"));',
       'it("relates two constants", () => expect(A).toBeLessThanOrEqual(B));',
       'it("runs code", () => { expect(A).toBe("a"); expect(f(1)).toBe(2); });',
+      'it("checks a mock", async () => { await f(1); expect(A).toHaveBeenCalledWith(429); });',
     ].join("\n");
     const root = project({ "src/core/c.test.ts": body, "src/core/c.ts": body });
     const found = lint(root).filter((f) => f.rule === "no-restating-test");

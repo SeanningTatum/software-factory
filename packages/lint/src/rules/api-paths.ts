@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "@typescript/typescript6";
-import { byCodeUnit } from "../files.ts";
+import { byCodeUnit, TEST_FILE } from "../files.ts";
 import { matchesAny } from "../glob.ts";
+import { lineOf } from "./ast-rules.ts";
 import type { ProjectRule } from "./types.ts";
 
 const API_PATH = /^\/api\/[\w\-./$]+$/;
-const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
 /** `createFileRoute("/api/x")` declares the route; the router needs the literal there. */
 const declaresRoute = (n: ts.Node) =>
@@ -17,10 +17,8 @@ const declaresRoute = (n: ts.Node) =>
 const pathsIn = (source: ts.SourceFile) => {
   const out: Array<{ path: string; line: number }> = [];
   const visit = (n: ts.Node) => {
-    if (ts.isStringLiteralLike(n) && API_PATH.test(n.text) && !declaresRoute(n)) {
-      const line = source.getLineAndCharacterOfPosition(n.getStart(source)).line + 1;
-      out.push({ path: n.text, line });
-    }
+    if (ts.isStringLiteralLike(n) && API_PATH.test(n.text) && !declaresRoute(n))
+      out.push({ path: n.text, line: lineOf(source, n) });
     ts.forEachChild(n, visit);
   };
   visit(source);
