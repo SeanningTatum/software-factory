@@ -1,4 +1,5 @@
 import type { AnyStateMachine, AnyStateNode } from "xstate";
+import { byCodeUnit } from "./files.ts";
 import { GENERATED_END, MACHINES_END, MACHINES_START, withBlock } from "./timeline-doc.ts";
 
 /**
@@ -191,7 +192,7 @@ export interface MachineDoc {
 export const machinesBlock = (docs: ReadonlyArray<MachineDoc>): string => {
   if (!docs.length) return "";
   const sorted = [...docs].sort(
-    (a, b) => a.source.localeCompare(b.source) || a.machine.id.localeCompare(b.machine.id),
+    (a, b) => byCodeUnit(a.source, b.source) || byCodeUnit(a.machine.id, b.machine.id),
   );
   const sections = sorted.map(
     ({ source, machine }) =>

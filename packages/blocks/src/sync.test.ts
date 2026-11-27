@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { byCodeUnit } from "@tanstack-cf-saas/lint";
 import { loadManifests } from "./manifest.ts";
-import { byCodeUnit } from "./order.ts";
 import { boundaryProblems, ownerOf } from "./sync.ts";
 
 const manifest = (name: string, extra: Record<string, unknown> = {}) =>

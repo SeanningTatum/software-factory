@@ -117,5 +117,5 @@ export const lint = (
     ...targets.sort(byCodeUnit).flatMap((file) => fileFindings(root, file, config, allFiles)),
     ...projectFindings(root, config, allFiles),
   ];
-  return findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  return findings.sort((a, b) => byCodeUnit(a.file, b.file) || a.line - b.line);
 };

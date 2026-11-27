@@ -1,5 +1,5 @@
+import { byCodeUnit } from "@tanstack-cf-saas/lint";
 import type { BlockManifest } from "./manifest.ts";
-import { byCodeUnit } from "./order.ts";
 
 export type Manifests = ReadonlyMap<string, BlockManifest>;
 

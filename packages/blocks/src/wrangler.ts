@@ -1,3 +1,4 @@
+import { byCodeUnit } from "@tanstack-cf-saas/lint";
 import {
   applyEdits,
   type FormattingOptions,
@@ -8,7 +9,6 @@ import {
 } from "jsonc-parser";
 import type { Manifests } from "./graph.ts";
 import type { Binding, EnvName } from "./manifest.ts";
-import { byCodeUnit } from "./order.ts";
 
 export const WRANGLER_FILE = "wrangler.jsonc";
 export const PLACEHOLDER_D1_ID = "00000000-0000-0000-0000-000000000000";
