@@ -1,8 +1,10 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Effect } from "effect";
+import { CloudflareEnv } from "#/app/env.ts";
 import { runEffect } from "#/app/run-effect.ts";
 import { Auth } from "./auth-service.ts";
+import { turnstileKeys } from "./captcha.ts";
 
 const getUser = createServerFn({ method: "GET" }).handler(({ context }) =>
   runEffect(
@@ -12,6 +14,18 @@ const getUser = createServerFn({ method: "GET" }).handler(({ context }) =>
       return (yield* auth.currentUser) ?? null;
     }),
     "auth.guard",
+  ),
+);
+
+/** Turnstile's public site key, or null when Turnstile isn't set up. */
+export const getSiteKey = createServerFn({ method: "GET" }).handler(({ context }) =>
+  runEffect(
+    context,
+    Effect.gen(function* () {
+      const env = yield* CloudflareEnv;
+      return turnstileKeys(env)?.siteKey ?? null;
+    }),
+    "auth.siteKey",
   ),
 );
 

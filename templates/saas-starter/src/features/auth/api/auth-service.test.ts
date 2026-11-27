@@ -1,67 +1,18 @@
 import { eq } from "drizzle-orm";
-import { Effect, ErrorReporter, Layer } from "effect";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { type AppEnv, CloudflareEnv } from "#/app/env.ts";
+import { Effect, Layer } from "effect";
+import { beforeAll, describe, expect, it } from "vitest";
+import { CloudflareEnv } from "#/app/env.ts";
 import { CurrentRequest, requestInfoFrom } from "#/app/request.ts";
-import type { Captured } from "#/features/core/analytics/api/adapter.ts";
 import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb, testDatabaseLayer } from "#/features/core/db/api/test-database.ts";
-import { featureAuthPlugins } from "#/gen/auth-plugins.ts";
 import { account, auditLog, authSchema, user } from "../schema.ts";
 import type { AuthPluginFactory } from "./auth.ts";
 import { Auth } from "./auth-service.ts";
 import { AuthRateLimiter, LIMITED_PATHS } from "./rate-limit.ts";
+import { APP, env, handled, overAccountLimit, post } from "./test-auth.ts";
 
-const APP = "http://localhost:3000";
-const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as AppEnv;
-
-const request = async (
-  db: Db,
-  incoming: Request,
-  allow = true,
-  plugins = featureAuthPlugins as ReadonlyArray<AuthPluginFactory>,
-  appEnv = env,
-  keys?: Array<string>,
-) => {
-  const sent: Array<Captured> = [];
-  const reported: Array<string> = [];
-  const info = requestInfoFrom(incoming);
-  const base = Layer.mergeAll(
-    CloudflareEnv.layer(appEnv),
-    CurrentRequest.layer(info),
-    testDatabaseLayer(db),
-    ErrorReporter.layer([ErrorReporter.make(({ error }) => void reported.push(error.message))]),
-  );
-  const analytics = Analytics.layerWith(() => ({
-    name: "test",
-    send: (batch) => Effect.sync(() => void sent.push(...batch)),
-  }));
-  const limiter = Layer.succeed(AuthRateLimiter)(
-    AuthRateLimiter.fromLimiter({
-      limit: async ({ key }) => {
-        keys?.push(key);
-        return { success: allow };
-      },
-    }),
-  );
-  const layer = Auth.layerWith(plugins).pipe(
-    Layer.provideMerge(Layer.mergeAll(analytics, limiter)),
-    Layer.provideMerge(base),
-  );
-  const response = await Effect.gen(function* () {
-    const auth = yield* Auth;
-    return yield* auth.handle(incoming);
-  }).pipe(Effect.provide(layer), Effect.runPromise);
-  return { response, events: sent.map((c) => c.event._tag), sent, info, reported };
-};
-
-const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
-  new Request(`${APP}${path}`, {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: { "content-type": "application/json", origin: APP, ...headers },
-  });
+const request = (...args: Parameters<typeof handled>) => Effect.runPromise(handled(...args));
 
 describe("Auth", () => {
   let db: Db;
@@ -83,65 +34,6 @@ describe("Auth", () => {
     expect(signIn.response.status).toBe(200);
     expect(signIn.events).toEqual(["sign_in_succeeded"]);
     expect(signIn.response.headers.get("set-cookie")).toContain("better-auth.session_token");
-  });
-
-  describe("with Turnstile keys", () => {
-    const guarded = {
-      ...env,
-      TURNSTILE_SITE_KEY: "site",
-      TURNSTILE_SECRET_KEY: "secret",
-    } as unknown as AppEnv;
-    const credentials = { email: "bot@example.com", password: "correct horse battery", name: "B" };
-    const siteverify = (success: boolean) =>
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ success }));
-    afterEach(() => vi.restoreAllMocks());
-
-    it("refuses a sign-up with no token, before it reaches Cloudflare or the database", async () => {
-      const fetched = siteverify(true);
-      const { response, events } = await request(
-        db,
-        post("/api/auth/sign-up/email", credentials),
-        true,
-        undefined,
-        guarded,
-      );
-      expect(response.status).toBe(400);
-      expect(events).toEqual([]);
-      expect(fetched).not.toHaveBeenCalled();
-    });
-
-    it("refuses a token Cloudflare rejects", async () => {
-      siteverify(false);
-      const { response } = await request(
-        db,
-        post("/api/auth/sign-up/email", credentials, { "x-captcha-response": "bad" }),
-        true,
-        undefined,
-        guarded,
-      );
-      expect(response.status).toBe(403);
-    });
-
-    it("signs up with a token Cloudflare accepts, and leaves sign-in alone", async () => {
-      const fetched = siteverify(true);
-      const signUp = await request(
-        db,
-        post("/api/auth/sign-up/email", credentials, { "x-captcha-response": "good" }),
-        true,
-        undefined,
-        guarded,
-      );
-      expect(signUp.response.status).toBe(200);
-      expect(String(fetched.mock.calls[0]?.[0])).toContain("/turnstile/v0/siteverify");
-      const signIn = await request(
-        db,
-        post("/api/auth/sign-in/email", credentials),
-        true,
-        undefined,
-        guarded,
-      );
-      expect(signIn.response.status).toBe(200);
-    });
   });
 
   it("reads the session from the cookie and tags the request with the user", async () => {
@@ -295,11 +187,11 @@ describe("Auth", () => {
     expect(keys).toEqual(["2001:db8:1:2::/64:/api/auth/sign-in/email", "acct:ada@example.com"]);
   });
 
-  it("answers 429 when only the account is over its limit", async () => {
+  it("answers 429 when only the account is over its limit and Turnstile is off", async () => {
     const { response } = await request(
       db,
       post("/api/auth/sign-in/email", { email: "ada@example.com", password: "whatever123" }),
-      false,
+      overAccountLimit,
     );
     expect(response.status).toBe(429);
   });

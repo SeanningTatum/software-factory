@@ -13,7 +13,7 @@ import { featureAuthPlugins, featureAuthTables } from "#/gen/auth-plugins.ts";
 import { authEvents, SIGN_OUT } from "../lib/auth-events.ts";
 import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
-import { captchaPlugin } from "./captcha.ts";
+import { captchaPlugin, signInCaptcha, turnstileKeys } from "./captcha.ts";
 import { AuthRateLimiter, accountKey, LIMITED_PATHS, limitKey, SIGN_IN } from "./rate-limit.ts";
 
 const IDENTIFIES = new Set(["sign_up_completed", "sign_in_succeeded"]);
@@ -88,7 +88,8 @@ export class Auth extends Context.Service<
           } else if (level === "warn") warnings.push([message, {}]);
         };
         const plugins = [captchaPlugin, ...factories].flatMap((factory) => factory(deps));
-        const instance = makeAuth(config, database.db, plugins, log, tables);
+        const db = database.db;
+        const instance = makeAuth(config, db, plugins, log, tables);
 
         const audit = Effect.fn("Auth.audit")(function* (event: AnalyticsEvent, actorId?: string) {
           const at = DateTime.toDateUtc(yield* DateTime.now);
@@ -228,34 +229,49 @@ export class Auth extends Context.Service<
                 )
             : Effect.void;
 
-        const refuseIfLimited = Effect.fn("Auth.refuseIfLimited")(function* (
-          incoming: Request,
-          path: string,
-        ) {
-          const keys = [limitKey(incoming.headers, path)];
-          if (path === SIGN_IN) {
-            const email = yield* emailOf(incoming);
-            if (email) keys.push(accountKey(email));
-          }
-          const limited = yield* Effect.result(
-            Effect.forEach(keys, (key) => limiter.check(key), { discard: true }),
-          );
-          if (limited._tag === "Success") return undefined;
-          yield* Effect.forEach(
+        const tooMany = (path: string, retryAfterSeconds: number) =>
+          Effect.forEach(
             authEvents("POST", path, 429, null),
             ({ event }) => analytics.capture(event),
             { discard: true },
+          ).pipe(
+            Effect.as(
+              Response.json(
+                { message: "Too many attempts. Try again in a minute." },
+                { status: 429, headers: { "retry-after": String(retryAfterSeconds) } },
+              ),
+            ),
           );
-          return Response.json(
-            { message: "Too many attempts. Try again in a minute." },
-            { status: 429, headers: { "retry-after": String(limited.failure.retryAfterSeconds) } },
-          );
+
+        /**
+         * A refusal, "challenge" to serve the request only with a Turnstile token, or undefined.
+         * Anyone can spend an account's sign-in limit with wrong passwords, so past it the owner is
+         * asked to prove they're a person rather than refused, whenever Turnstile is set up.
+         */
+        const admit = Effect.fn("Auth.admit")(function* (incoming: Request, path: string) {
+          const byAddress = yield* Effect.result(limiter.check(limitKey(incoming.headers, path)));
+          if (byAddress._tag === "Failure")
+            return yield* tooMany(path, byAddress.failure.retryAfterSeconds);
+          const email = path === SIGN_IN ? yield* emailOf(incoming) : undefined;
+          if (!email) return undefined;
+          const byAccount = yield* Effect.result(limiter.check(accountKey(email)));
+          if (byAccount._tag === "Success") return undefined;
+          if (turnstileKeys(env)) return "challenge" as const;
+          return yield* tooMany(path, byAccount.failure.retryAfterSeconds);
         });
 
-        const serve = Effect.fn("Auth.serve")(function* (incoming: Request, path: string) {
+        const challenging = () =>
+          makeAuth(config, db, [...plugins, ...signInCaptcha(env)], log, tables);
+
+        const serve = Effect.fn("Auth.serve")(function* (
+          incoming: Request,
+          path: string,
+          challenge: boolean,
+        ) {
           const signUpEmail =
             incoming.method === "POST" && path === SIGN_UP ? yield* emailOf(incoming) : undefined;
-          const response = yield* call("handler", () => instance.handler(incoming)).pipe(
+          const auth = challenge ? challenging() : instance;
+          const response = yield* call("handler", () => auth.handler(incoming)).pipe(
             Effect.tapError(() => dropHalfSignUp(signUpEmail)),
           );
           if (response.status >= SERVER_ERROR) yield* dropHalfSignUp(signUpEmail);
@@ -264,12 +280,13 @@ export class Auth extends Context.Service<
 
         const handle = Effect.fn("Auth.handle")(function* (incoming: Request) {
           const path = new URL(incoming.url).pathname;
-          if (incoming.method === "POST" && LIMITED_PATHS.includes(path)) {
-            const refused = yield* refuseIfLimited(incoming, path);
-            if (refused) return refused;
-          }
+          const admission =
+            incoming.method === "POST" && LIMITED_PATHS.includes(path)
+              ? yield* admit(incoming, path)
+              : undefined;
+          if (admission instanceof Response) return admission;
           if (path === SIGN_OUT) yield* Effect.result(currentUser);
-          const response = yield* serve(incoming, path);
+          const response = yield* serve(incoming, path, admission === "challenge");
           return yield* afterResponse(incoming.method, path, response);
         });
 
