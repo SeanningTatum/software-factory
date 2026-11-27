@@ -440,8 +440,7 @@ export const setupEnvs = (
 
 /**
  * What the settings typed during `create` give one environment. They were typed for local use, so
- * they are test data: staging gets them, production never does. The PostHog key is the exception:
- * a project key (phc_…) is public and no test value, so both environments get it.
+ * they are test data: staging gets them, production never does.
  */
 export const typedSettings = (
   blanks: ReadonlyArray<{ readonly key: string; readonly secret: boolean }>,

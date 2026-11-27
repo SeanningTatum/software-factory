@@ -217,10 +217,6 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
   return values;
 };
 
-/**
- * Asks for a PostHog project key and its cloud. The key (phc_…) is public, safe in a browser, so
- * unlike the other keys typed here it is no test value: production gets it too.
- */
 const askPosthog = async (): Promise<Record<string, string>> => {
   const key = cancelled(
     await p.text({
@@ -385,9 +381,8 @@ export const create = async (args: CreateArgs) => {
   p.outro(closingLine(cloudflare, pm));
 };
 
-/** The steps a person takes by hand, such as making a PostHog project, from each feature's manifest. */
 const printSetupSteps = (root: string, cloudflare: ReadonlyArray<Item> | undefined) => {
-  // The Cloudflare table already lists them; without it they would go unsaid.
+  // The Cloudflare table already lists these steps.
   if (cloudflare) return;
   for (const step of [...loadManifests(root).values()].flatMap((m) => m.setup ?? []))
     p.log.info(`${step.description}${step.help ? pc.dim(` (${step.help})`) : ""}`);

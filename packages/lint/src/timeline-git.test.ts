@@ -10,10 +10,7 @@ const write = (root: string, path: string, text: string) => {
   writeFileSync(join(root, path), text);
 };
 
-/**
- * Runs git for the test's setup and fails loudly when git does. On Windows something can hold
- * .git/index.lock for a moment, so a failed call gets two more tries first.
- */
+// Windows can hold .git/index.lock for a moment; retry before failing.
 const git = (root: string, ...args: Array<string>) => {
   for (let attempt = 1; ; attempt++) {
     const out = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {

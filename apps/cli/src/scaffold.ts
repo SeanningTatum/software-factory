@@ -203,7 +203,6 @@ const writeDevVars = (dir: string, values: Readonly<Record<string, string>>) => 
   };
   writeFileSync(
     join(dir, ".dev.vars"),
-    // A given value replaces the example's default too, such as an EU POSTHOG_HOST.
     readFileSync(example, "utf8").replace(/^([A-Z0-9_]+)=[^\r\n]*$/gm, (line, key: string) => {
       const value = filled[key];
       // One line per value: a newline would start a new variable.
@@ -212,10 +211,6 @@ const writeDevVars = (dir: string, values: Readonly<Record<string, string>>) => 
   );
 };
 
-/**
- * A PostHog key given during `create` switches staging and production to PostHog, on the host
- * given with it. `dev` stays on console: .dev.vars keeps its own ANALYTICS_PROVIDER.
- */
 const usePosthog = (dir: string, values: Readonly<Record<string, string>>) => {
   const { POSTHOG_KEY, POSTHOG_HOST } = values;
   if (!POSTHOG_KEY) return;
