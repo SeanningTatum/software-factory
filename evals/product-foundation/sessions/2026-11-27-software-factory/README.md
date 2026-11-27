@@ -1,11 +1,12 @@
 # Session: software-factory, 2026-11-27
 
 The first real run of `/foundation`: the owner of this repo, answering for this repo. It wrote
-`docs/product/FOUNDATION.md`. Each `round-N.json` holds one run of `product-foundation`: its `args`
-as sent, its `output` as returned, and what the run cost.
+`docs/product/FOUNDATION.md`. Each `round-N.json` holds one run of `product-foundation`: what the
+run cost, its `output` as returned, and the part of its `args` that was new. The rest of each run's
+`args` is in the earlier files: `answers` is round 1's, `previous` is the round before's
+`output.markdown`, and `feedback` adds to the rounds before.
 
-It is a record, not a golden case. No output passes `check.js` (see below), and a case needs a
-planted flaw, which a real session does not have.
+It is a record, not a golden case: a case needs a planted flaw, which a real session does not have.
 
 ## What it took
 
@@ -29,8 +30,12 @@ The session that ran the command, from `/foundation` to the written file, made 3
 
 ## What `check.js` says
 
-Every round fails one check and passes the rest: the document is over the 550-word limit, and
-grows each round. In round 3 the Open section alone is 192 words.
+At the time, every round failed one check and passed the rest: the limit was 550 words for the
+whole document, and the Words column above counts it that way. The Open section grows with every gap
+the drafter must list, 192 words by round 3, so the drafter could not hold the total down.
+
+The limit is now 700 words before Open, in the prompt and in the check. By that count the rounds
+are 405, 495 and 586 words, and all three pass. No run has been made since the prompt changed.
 
 ## What went wrong, or could be better
 
