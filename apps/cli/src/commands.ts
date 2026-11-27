@@ -31,7 +31,7 @@ import {
   packageManagers,
   runCommand,
 } from "./pm.ts";
-import { createProject } from "./posthog.ts";
+import { createProjects } from "./posthog.ts";
 import { capture, gitIdentity, hasWrangler, projectWrangler, run } from "./run.ts";
 import {
   type BlankSetting,
@@ -222,37 +222,22 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
 const PROJECT_KEY = /^phc_\S+$/;
 const PROJECT_OR_PERSONAL_KEY = /^ph[cx]_\S+$/;
 
-const askPosthogKey = async (message: string, accepts = PROJECT_KEY) =>
+const askPosthogKey = async (message: string, personal = false) =>
   cancelled(
     await p.text({
       message,
       defaultValue: "",
       validate: (v) =>
-        !v || accepts.test(v.trim())
+        !v || (personal ? PROJECT_OR_PERSONAL_KEY : PROJECT_KEY).test(v.trim())
           ? undefined
-          : "A project API key starts with phc_ (PostHog → Project settings)",
+          : `A project API key starts with phc_ (PostHog → Project settings)${personal ? ", a personal API key with phx_" : ""}`,
     }),
   ).trim();
-
-/** Creates `<name>-staging` and `<name>`, stopping at the first PostHog refuses. */
-const createPosthogProjects = async (host: string, personalKey: string, name: string) => {
-  const keys: Array<string> = [];
-  for (const project of [`${name}-staging`, name]) {
-    try {
-      keys.push(await createProject(fetch, host, personalKey, project));
-      p.log.step(`PostHog project ${project}: created`);
-    } catch (error) {
-      p.log.warn((error as Error).message);
-      break;
-    }
-  }
-  return keys;
-};
 
 const askPosthog = async (name: string): Promise<Record<string, string>> => {
   const first = await askPosthogKey(
     "PostHog for staging, which dev reports to as well: its project key (phc_…), or a personal API key (phx_…, scope project:write) to create both projects (leave empty to skip)",
-    PROJECT_OR_PERSONAL_KEY,
+    true,
   );
   if (!first) return {};
   const host = cancelled(
@@ -264,15 +249,15 @@ const askPosthog = async (name: string): Promise<Record<string, string>> => {
       ],
     }),
   );
-  const [made, madeProduction] = first.startsWith("phx_")
-    ? await createPosthogProjects(host, first, name)
-    : [first];
+  const made = first.startsWith("phx_")
+    ? await createProjects(fetch, host, first, name, p.log)
+    : { staging: first };
   const staging =
-    made ??
+    made.staging ??
     (await askPosthogKey("PostHog project API key for staging (phc_…; leave empty to skip)"));
   if (!staging) return {};
   const production =
-    madeProduction ??
+    made.production ??
     (await askPosthogKey(
       "PostHog project API key for production, from a project of its own (leave empty to use staging's)",
     ));

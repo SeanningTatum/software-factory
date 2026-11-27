@@ -27,3 +27,31 @@ export const createProject = async (
     `PostHog did not create ${name} (${response.status}${typeof body.detail === "string" ? `: ${body.detail}` : ""})`,
   );
 };
+
+export interface Projects {
+  readonly staging?: string;
+  readonly production?: string;
+}
+
+export const createProjects = async (
+  fetcher: Fetch,
+  ingestHost: string,
+  personalKey: string,
+  name: string,
+  log: { step: (line: string) => void; warn: (line: string) => void },
+): Promise<Projects> => {
+  const made: { staging?: string; production?: string } = {};
+  for (const [env, project] of [
+    ["staging", `${name}-staging`],
+    ["production", name],
+  ] as const) {
+    try {
+      made[env] = await createProject(fetcher, ingestHost, personalKey, project);
+      log.step(`PostHog project ${project}: created`);
+    } catch (error) {
+      log.warn((error as Error).message);
+      return made;
+    }
+  }
+  return made;
+};

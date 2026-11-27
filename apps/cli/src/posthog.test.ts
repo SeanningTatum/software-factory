@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createProject, type Fetch, PosthogError } from "./posthog.ts";
+import { createProject, createProjects, type Fetch, PosthogError } from "./posthog.ts";
 
 const answering = (status: number, body: unknown) => {
   const calls: Array<{ url: string; init: RequestInit }> = [];
@@ -42,5 +42,43 @@ describe("createProject", () => {
     await expect(
       createProject(fetcher, "https://us.i.posthog.com", "phx_secret", "acme"),
     ).rejects.toThrow("PostHog did not create acme (200)");
+  });
+});
+
+describe("createProjects", () => {
+  const log = { step: () => {}, warn: () => {} };
+  const refusing =
+    (refused: string): Fetch =>
+    async (_url, init) => {
+      const { name } = JSON.parse(String(init.body)) as { name: string };
+      return name === refused
+        ? new Response(JSON.stringify({ detail: "plan limit" }), { status: 402 })
+        : new Response(JSON.stringify({ api_token: `phc_${name}` }), { status: 201 });
+    };
+
+  test("makes staging's project, then production's, each under its own name", async () => {
+    const made = await createProjects(
+      refusing(""),
+      "https://us.i.posthog.com",
+      "phx_k",
+      "acme",
+      log,
+    );
+    expect(made).toEqual({ staging: "phc_acme-staging", production: "phc_acme" });
+  });
+
+  test("stops at a refusal, and never puts production's key in staging", async () => {
+    const asked: Array<string> = [];
+    const fetcher: Fetch = async (url, init) => {
+      asked.push(JSON.parse(String(init.body)).name);
+      return refusing("acme-staging")(url, init);
+    };
+    expect(await createProjects(fetcher, "https://us.i.posthog.com", "phx_k", "acme", log)).toEqual(
+      {},
+    );
+    expect(asked).toEqual(["acme-staging"]);
+    expect(
+      await createProjects(refusing("acme"), "https://us.i.posthog.com", "phx_k", "acme", log),
+    ).toEqual({ staging: "phc_acme-staging" });
   });
 });
