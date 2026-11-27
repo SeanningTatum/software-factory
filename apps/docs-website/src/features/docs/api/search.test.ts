@@ -16,7 +16,9 @@ const run = (allow: boolean) =>
 describe("searchDocs", () => {
   it("answers with hits under the limit", async () => {
     const exit = await run(true);
-    expect(exit._tag).toBe("Success");
+    if (exit._tag !== "Success") throw new Error("search failed");
+    const hits = (await exit.value.json()) as { url: string }[];
+    expect(hits.some((hit) => hit.url.startsWith("/docs/features"))).toBe(true);
   });
 
   it("refuses an address over the limit", async () =>

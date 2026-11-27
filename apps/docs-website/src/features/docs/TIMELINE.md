@@ -31,6 +31,8 @@ The documentation pages: MDX from content/docs, rendered with Fumadocs, with a s
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-27 — Two docs e2e tests: the theme button stays inside the window, and `/docs` passes the accessibility check in dark mode.
+- 2026-11-27 — The search limiter got random namespace ids like the other limiters, and the search test now checks the hits.
 - 2026-11-27 — Pages load lazily, one chunk each. The theme provider moved to the root route and the app's colours follow its `dark` class, so the sidebar's theme button works on every page.
 
 - 2026-11-27 — `/api/search` now runs through `runResponse` with a rate limit, so a search failure is logged with its cause.

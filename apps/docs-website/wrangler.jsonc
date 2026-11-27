@@ -55,7 +55,7 @@
         },
         {
           "name": "SEARCH_LIMITER",
-          "namespace_id": "2005",
+          "namespace_id": "406036743",
           "simple": {
             "limit": 60,
             "period": 60
@@ -89,7 +89,7 @@
     },
     {
       "name": "SEARCH_LIMITER",
-      "namespace_id": "1005",
+      "namespace_id": "1907262038",
       "simple": {
         "limit": 60,
         "period": 60
