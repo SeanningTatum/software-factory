@@ -1,5 +1,21 @@
 # @tanstack-cf-saas/blocks
 
+## 0.1.1
+
+### Patch Changes
+
+- d0f460a: The template gives Better Auth the `subscription` table, so a checkout or a Stripe webhook can store a plan; before, every subscription write failed. `cf-saas-blocks sync` writes `featureAuthTables` into `src/gen/auth-plugins.ts`: the tables of every feature that adds auth plugins, for Better Auth's database adapter.
+- 03f7e2c: Deletes `featureDir`, which nothing called. The 0.1.0 changelog lists it as added, but the package entry never exported it, so no import breaks.
+- 9dbd52b: Biome's `useArraySortCompare` is on: every `sort()` names its order. `blocks` and `lint` sort by code unit, as before, so generated files do not change.
+- Updated dependencies [9dbd52b]
+- Updated dependencies [eb3d778]
+- Updated dependencies [03f7e2c]
+- Updated dependencies [1048754]
+- Updated dependencies [eb3d778]
+- Updated dependencies [eb3d778]
+- Updated dependencies [9dbd52b]
+  - @tanstack-cf-saas/lint@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

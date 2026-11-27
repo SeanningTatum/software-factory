@@ -1,6 +1,6 @@
 {
   "name": "@tanstack-cf-saas/biome-config",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared Biome rules for tanstack-cf-saas projects",
   "license": "MIT",
   "type": "module",
