@@ -20,7 +20,7 @@ import {
   oneComponentPerFile,
   serverFnPlacement,
 } from "./rules/ast-rules.ts";
-import { noDuplicateComment, noUselessComment } from "./rules/comments.ts";
+import { noComment, noDuplicateComment, noUselessComment } from "./rules/comments.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
 import { rulesFile } from "./rules/rules-file.ts";
 import { sharedLib } from "./rules/shared-lib.ts";
@@ -42,6 +42,7 @@ export const rules: ReadonlyArray<Rule> = [
   serverFnPlacement,
   derivedMachineTypes,
   noUselessComment,
+  noComment,
   fileSize,
   testMap,
   sharedLib,

@@ -77,10 +77,10 @@ describe("lint", () => {
   });
 
   test("counts lines, not the final newline", () => {
-    const at = "// a line\n".repeat(defaults.maxLines);
+    const at = "void 0;\n".repeat(defaults.maxLines);
     const rulesOf = (text: string) => lint(project({ "src/big.test.ts": text })).map((f) => f.rule);
     expect(rulesOf(at)).toEqual([]);
-    expect(rulesOf(`${at}// one more`)).toEqual(["file-size"]);
+    expect(rulesOf(`${at}void 0;`)).toEqual(["file-size"]);
   });
 
   describe("CLAUDE.md is true", () => {
@@ -331,7 +331,8 @@ describe("lint", () => {
       "export const x = 1; // shortcut: one try only, retry once users see failures",
     ].join("\n");
     const root = project({ "src/core/c.ts": body });
-    expect(lint(root).map((f) => `${f.rule}:${f.line}`)).toEqual([
+    const found = lint(root).filter((f) => f.rule === "no-useless-comment");
+    expect(found.map((f) => `${f.rule}:${f.line}`)).toEqual([
       "no-useless-comment:1",
       "no-useless-comment:6",
       "no-useless-comment:7",
@@ -340,11 +341,42 @@ describe("lint", () => {
   });
 
   test("reports a comment said again in another place, but not a short one", () => {
+    const allow = "// cf-saas-lint allow comments\n";
     const said = "/** The part of a KV binding the service uses. */\nexport const a = 1;\n";
     const short = "// As above.\nexport const b = 1;\n";
-    const root = project({ "src/core/a.ts": said + short, "src/core/b.ts": short + said });
+    const root = project({
+      "src/core/a.ts": allow + said + short,
+      "src/core/b.ts": allow + short + said,
+    });
     expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
-      "src/core/b.ts:no-duplicate-comment:3",
+      "src/core/b.ts:no-duplicate-comment:4",
+    ]);
+  });
+
+  test("reports every comment unless the file opens by allowing them, and an allow line with none", () => {
+    const allow = "// cf-saas-lint allow comments\n";
+    const code = "export const a = 1;\n/** Why. */\nexport const b = 2; // shortcut: one try\n";
+    const directives =
+      '/// <reference types="vite/client" />\n// biome-ignore lint/x: because\nexport const c = 1;\n';
+    const root = project({
+      "src/core/bare.ts": code,
+      "src/core/allowed.ts": allow + code,
+      "src/core/late.ts": `export const z = 0;\n${allow}${code}`,
+      "src/core/tools.ts": directives,
+      "src/core/stale.ts": `${allow}export const s = 1;\n`,
+      "src/core/hidden.tsx":
+        'export const f = () => {\n  g();\n  // before a brace\n};\nexport const V = () => <a href="http://x.dev">{/* in JSX */}http://y.dev</a>;\n',
+    });
+    const found = lint(root).filter((f) => f.rule === "no-comment");
+    expect(found.map((f) => `${f.file}:${f.line}`)).toEqual([
+      "src/core/bare.ts:2",
+      "src/core/bare.ts:3",
+      "src/core/hidden.tsx:3",
+      "src/core/hidden.tsx:5",
+      "src/core/late.ts:2",
+      "src/core/late.ts:4",
+      "src/core/late.ts:5",
+      "src/core/stale.ts:1",
     ]);
   });
 
