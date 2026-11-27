@@ -18,7 +18,8 @@
       "!**/drizzle/meta",
       "!templates",
       "!apps/cli/template",
-      "!apps/cli/harness"
+      "!apps/cli/harness",
+      "!evals/**/*.json"
     ]
   }
 }
