@@ -44,9 +44,10 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
   then run `gh secret set CLOUDFLARE_API_TOKEN` and paste it, and
   `gh variable set CLOUDFLARE_ACCOUNT_ID --body <account id>`. Until that variable is set the job
   is skipped. On a custom domain, set `DOCS_STAGING_URL` or `DOCS_PRODUCTION_URL` to it so the smoke
-  test checks the domain; without them it checks `workers.dev`. Staging is on
-  `staging.createsoftwarefactory.dev`, named in `apps/docs-website/wrangler.jsonc`, so
-  `DOCS_STAGING_URL` must hold `https://staging.createsoftwarefactory.dev`.
+  test checks the domain; without them it checks `workers.dev`. Both domains are named in
+  `apps/docs-website/wrangler.jsonc`, so both variables must be set: `DOCS_STAGING_URL` to
+  `https://staging.createsoftwarefactory.dev` and `DOCS_PRODUCTION_URL` to
+  `https://createsoftwarefactory.dev`.
 - **Branch rules.** Applied from `.github/rulesets/`. After you edit one, find its id with
   `gh api 'repos/{owner}/{repo}/rulesets'` and send it:
   `gh api --method PUT 'repos/{owner}/{repo}/rulesets/<id>' --input .github/rulesets/<file>`.
