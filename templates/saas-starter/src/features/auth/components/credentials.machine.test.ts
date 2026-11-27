@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createActor, fromPromise, waitFor } from "xstate";
-import { ChallengeRequired, credentialsMachine } from "./credentials.machine.ts";
+import { ChallengeRequired } from "../errors.ts";
+import { credentialsMachine } from "./credentials.machine.ts";
 
 const credentials = { email: "a@b.dev", password: "correct horse battery" };
 
