@@ -1,5 +1,11 @@
 # create-tanstack-cf-saas
 
+## 0.2.1
+
+### Patch Changes
+
+- e0e4954: Publish under a new version: npm never takes 0.2.0 again after its unpublish.
+
 ## 0.2.0
 
 ### Minor Changes
