@@ -113,9 +113,8 @@ export const addBlock = (
 ): ReadonlyArray<string> => {
   const available = loadManifests(templateRoot);
   const enabled = loadManifests(root);
-  const wanted = withRequirements(available, [name, ...enabled.keys()]).filter(
-    (n) => !enabled.has(n),
-  );
+  const known = [...enabled.keys()].filter((n) => available.has(n));
+  const wanted = withRequirements(available, [name, ...known]).filter((n) => !enabled.has(n));
   const added = wanted.map((n) => {
     const manifest = available.get(n);
     if (!manifest) throw new BlockError(`Unknown feature "${n}"`);
