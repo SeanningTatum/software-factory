@@ -1,5 +1,5 @@
 {
-  "extends": "@tanstack-cf-saas/tsconfig/node.json",
+  "extends": "@software-factory/tsconfig/node.json",
   "compilerOptions": { "types": ["bun"], "allowImportingTsExtensions": true },
   "include": ["src"]
 }

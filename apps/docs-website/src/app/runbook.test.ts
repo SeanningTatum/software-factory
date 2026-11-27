@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -169,7 +169,7 @@ describe.skipIf(noGithub)("branch rules", () => {
     );
     expect(workflow("deploy").match(/\*'APP_URL \(not this origin\)'\*\)/g)).toHaveLength(2);
     expect(read("docs/branches.md")).toMatch(
-      /## Move to your own domain\n[\s\S]*create-tanstack-cf-saas setup --env production --var APP_URL=/,
+      /## Move to your own domain\n[\s\S]*create-software-factory setup --env production --var APP_URL=/,
     );
   });
 

@@ -1,11 +1,11 @@
 {
-  "name": "create-tanstack-cf-saas",
+  "name": "create-software-factory",
   "version": "0.3.0",
   "description": "Create a TanStack Start SaaS on Cloudflare Workers from features: database, auth, billing, KV, Workflows, uploads.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "create-tanstack-cf-saas": "./dist/index.js"
+    "create-software-factory": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -28,12 +28,12 @@
   },
   "devDependencies": {
     "@clack/prompts": "^1.9.0",
-    "@tanstack-cf-saas/blocks": "workspace:*",
-    "@tanstack-cf-saas/tsconfig": "workspace:*",
+    "@software-factory/blocks": "workspace:*",
+    "@software-factory/tsconfig": "workspace:*",
     "@types/bun": "latest",
     "citty": "^0.2.2",
     "picocolors": "^1.1.1",
     "xstate": "5.33.4",
-    "@tanstack-cf-saas/lint": "workspace:*"
+    "@software-factory/lint": "workspace:*"
   }
 }

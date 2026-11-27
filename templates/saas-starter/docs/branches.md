@@ -46,7 +46,7 @@ order:
 
 ```bash
 bun run setup                         # D1, KV, R2, migrations, secrets and a first deploy, for both environments
-bunx create-tanstack-cf-saas github   # repository, branches, rules, deploy settings
+bunx create-software-factory github   # repository, branches, rules, deploy settings
 ```
 
 The last one gives GitHub Actions what `deploy.yml` reads:
@@ -72,7 +72,7 @@ needs a domain. Once the domain is on Cloudflare, add it to `wrangler.jsonc` as 
 deploys first, so without that line it takes the domain. Then run one command:
 
 ```bash
-bunx create-tanstack-cf-saas setup --env production --var APP_URL=https://example.com
+bunx create-software-factory setup --env production --var APP_URL=https://example.com
 ```
 
 It writes the URL as production's `APP_URL` and sets `PRODUCTION_URL` on GitHub. When your
@@ -216,7 +216,7 @@ older versions stop serving.
 ## The rules, and why each is there
 
 The rules are files: `.github/rulesets/staging.json` and `production.json`. Apply them with
-`bunx create-tanstack-cf-saas github`, and run it again after you change one. GitHub can also
+`bunx create-software-factory github`, and run it again after you change one. GitHub can also
 import them by hand (Settings → Rules → Rulesets → Import).
 
 | Rule                                 | On                      | Why                                                                                              |
@@ -268,7 +268,7 @@ merge is a push) or close and reopen it, and the full checks run.
 - **Never merge a pull request into `production`.** It adds a commit `staging` lacks, which
   `deploy.yml` will not deploy, and the release push then fails as "non-fast-forward". To mend it,
   turn off "Restrict deletions" in the `production` ruleset, delete the branch, and run
-  `bunx create-tanstack-cf-saas github`: it makes the branch again from `staging` and puts the
+  `bunx create-software-factory github`: it makes the branch again from `staging` and puts the
   rule back.
 - **A hotfix goes through `staging` too.** There is no side door into `production`. Merge the fix
   into `staging`, then release.

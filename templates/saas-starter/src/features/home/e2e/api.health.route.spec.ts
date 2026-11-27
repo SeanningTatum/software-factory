@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 

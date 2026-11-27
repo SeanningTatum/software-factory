@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { featureNav } from "#/gen/nav.ts";
 
 export interface NavItem {

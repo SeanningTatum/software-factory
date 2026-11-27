@@ -18,5 +18,5 @@ out=$(ENV_NAME=$env GIVEN=$url bun -e '
 ')
 [ "${out%% *}" = same ] && exit 0
 app=${out#* }
-echo "::error::$var is ${url:-empty}, but $env's APP_URL in wrangler.jsonc is ${app:-empty}. /api/health answers 503 until they match. To move to ${url:-the new URL}: bunx create-tanstack-cf-saas setup --env $env --var APP_URL=${url:-https://...}, then merge wrangler.jsonc into staging. To stay on ${app:-its APP_URL}: bunx create-tanstack-cf-saas github."
+echo "::error::$var is ${url:-empty}, but $env's APP_URL in wrangler.jsonc is ${app:-empty}. /api/health answers 503 until they match. To move to ${url:-the new URL}: bunx create-software-factory setup --env $env --var APP_URL=${url:-https://...}, then merge wrangler.jsonc into staging. To stay on ${app:-its APP_URL}: bunx create-software-factory github."
 exit 1

@@ -15,7 +15,7 @@ import {
   resourceName,
   setBindingField,
   WRANGLER_FILE,
-} from "@tanstack-cf-saas/blocks";
+} from "@software-factory/blocks";
 import { applyEdits, modify, parse } from "jsonc-parser";
 
 /** Runs wrangler. `input` goes to stdin, which is how secrets travel: never as arguments. */

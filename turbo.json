@@ -6,11 +6,11 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "template/**"]
     },
-    "create-tanstack-cf-saas#build": { "dependsOn": ["^build"], "cache": false },
+    "create-software-factory#build": { "dependsOn": ["^build"], "cache": false },
     "typecheck": { "dependsOn": ["^build"] },
     "lint": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"], "outputs": [] },
-    "create-tanstack-cf-saas#test": { "dependsOn": ["^build", "build"], "cache": false },
+    "create-software-factory#test": { "dependsOn": ["^build", "build"], "cache": false },
     "dev": { "cache": false, "persistent": true }
   }
 }

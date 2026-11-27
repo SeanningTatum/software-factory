@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import type { RateLimited } from "#/app/errors.ts";

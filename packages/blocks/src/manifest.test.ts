@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { loadManifests } from "./manifest.ts";
 
 const project = (features: Record<string, Record<string, unknown>>) => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-manifest-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-manifest-"));
   for (const [name, extra] of Object.entries(features)) {
     mkdirSync(join(root, "src/features", name), { recursive: true });
     const manifest = { name, title: name, description: name, requires: [], ...extra };

@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadManifests } from "@tanstack-cf-saas/blocks";
+import { loadManifests } from "@software-factory/blocks";
 import { parse } from "jsonc-parser";
 import { add, remove } from "./commands.ts";
 import {
@@ -111,8 +111,8 @@ describe("scaffold", () => {
       expect([path, existsSync(join(without.dir, path))]).toEqual([path, false]);
     expect(without.readme).not.toMatch(/\.github|branches\.md|github:(start|end)/);
     // The `github` command applies rulesets, and this project has none.
-    expect(kept.readme).toContain("bunx create-tanstack-cf-saas github ");
-    expect(without.readme).not.toContain("create-tanstack-cf-saas github");
+    expect(kept.readme).toContain("bunx create-software-factory github ");
+    expect(without.readme).not.toContain("create-software-factory github");
     // Nothing left in the project points at a file that is gone.
     expect(readFileSync(join(without.dir, "docs/runbook.md"), "utf8")).not.toContain("branches.md");
   });
@@ -275,7 +275,7 @@ describe("scaffold", () => {
     const history = kv.slice(kv.indexOf("## History"));
     expect(history.match(/^- \d{4}/gm)).toEqual(["- 2030"]);
     expect(history).toMatch(
-      /^- 2030-01-02 — Created from create-tanstack-cf-saas \d+\.\d+\.\d+\.$/m,
+      /^- 2030-01-02 — Created from create-software-factory \d+\.\d+\.\d+\.$/m,
     );
     expect(history).not.toContain("src/blocks");
     expect(kv.slice(kv.indexOf("## Decisions"), kv.indexOf("## History"))).toContain("Why:");
@@ -348,7 +348,7 @@ describe("scaffold", () => {
       add("kv");
       expect(git("status", "--porcelain")).toBe("");
       expect(git("log", "-1", "--format=%s")).toMatch(
-        /^feat\(scaffold\): add kv with create-tanstack-cf-saas /,
+        /^feat\(scaffold\): add kv with create-software-factory /,
       );
 
       // With the owner's work in the tree, the commit would hold more than scaffolding.

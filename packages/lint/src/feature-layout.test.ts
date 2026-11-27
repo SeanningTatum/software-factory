@@ -6,7 +6,7 @@ import { defaults } from "./config.ts";
 import { lint } from "./lint.ts";
 
 const project = (files: Record<string, string>) => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-layout-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-layout-"));
   for (const [path, text] of Object.entries(files)) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), text);
@@ -78,7 +78,7 @@ describe("feature-layout", () => {
     const root = project({ "src/features/db/api/database.ts": "" });
     expect(layout(root)).toEqual([
       "src/features/db/feature.json: missing; every feature has feature.json and TIMELINE.md.",
-      "src/features/db/TIMELINE.md: missing; every feature has feature.json and TIMELINE.md. `cf-saas-blocks sync` writes a fresh one.",
+      "src/features/db/TIMELINE.md: missing; every feature has feature.json and TIMELINE.md. `software-factory-blocks sync` writes a fresh one.",
     ]);
   });
 

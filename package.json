@@ -1,5 +1,5 @@
 {
-  "name": "tanstack-cf-saas-starter",
+  "name": "software-factory",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.4.4",
@@ -20,13 +20,13 @@
     "teardown": "bun apps/cli/scripts/teardown.ts",
     "prepare": "husky",
     "changeset": "changeset",
-    "release": "turbo run build --filter=./packages/* --filter=create-tanstack-cf-saas && changeset publish",
+    "release": "turbo run build --filter=./packages/* --filter=create-software-factory && changeset publish",
     "promote": "sh scripts/promote.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
     "@changesets/cli": "^3.0.3",
-    "@tanstack-cf-saas/biome-config": "workspace:*",
+    "@software-factory/biome-config": "workspace:*",
     "husky": "^9.1.7",
     "turbo": "^2.11.13",
     "typescript": "^7.0.2"

@@ -1,7 +1,7 @@
 # Releasing
 
-A release publishes five packages to npm: `create-tanstack-cf-saas` and the four under
-`@tanstack-cf-saas/` (`biome-config`, `tsconfig`, `lint`, `blocks`). The template ships inside the
+A release publishes five packages to npm: `create-software-factory` and the four under
+`@software-factory/` (`biome-config`, `tsconfig`, `lint`, `blocks`). The template ships inside the
 CLI. Code moves `staging` → `production`; only `production` publishes. A release adds no commit:
 `production` moves to the commit `staging` is on, so both branches share one head and every tag of
 a release sits on it.
@@ -23,7 +23,7 @@ to the template alone needs a changeset for the CLI, which carries it.
 | 1    | Merge the "Version Packages" pull request into `staging`.   | Versions are bumped, changelogs written, changesets spent.      |
 | 2    | Wait for `check.yml` and `blocks.yml` to pass on `staging`. | `production` takes only a commit the checks passed on.          |
 | 3    | `bun run promote`, or Actions → promote → Run workflow.     | Tags `staging`'s tip, moves `production` to it; that publishes. |
-| 4    | `npm view create-tanstack-cf-saas version`                  | Shows the version you just shipped.                             |
+| 4    | `npm view create-software-factory version`                  | Shows the version you just shipped.                             |
 
 The tag is `v<the CLI's version>`, as in `v0.1.0`; `release.yml` publishes to npm and makes the
 GitHub releases. Nothing merges into `production`: no pull request, no merge commit, never a
@@ -31,7 +31,7 @@ force-push. `/release` has Claude do all four and ask before the merge and befor
 
 ## Set up once
 
-- **npm scope.** Create the free npm organization `tanstack-cf-saas`.
+- **npm scope.** Create the free npm organization `software-factory`.
 - **`NPM_TOKEN`.** On npmjs.com make a granular access token: read and write, all packages, bypass
   two-factor. Then run `gh secret set NPM_TOKEN` and paste it at the prompt. It expires in at most
   90 days; renew it the same way.

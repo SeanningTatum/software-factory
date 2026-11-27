@@ -1,7 +1,7 @@
 {
-  "name": "@tanstack-cf-saas/tsconfig",
+  "name": "@software-factory/tsconfig",
   "version": "0.1.0",
-  "description": "Shared TypeScript presets for tanstack-cf-saas projects",
+  "description": "Shared TypeScript presets for software-factory projects",
   "license": "MIT",
   "files": [
     "*.json"

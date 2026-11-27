@@ -7,12 +7,12 @@ import { basename, join } from "node:path";
 export const repo = join(import.meta.dirname, "../../..");
 
 const localPackages: Record<string, string> = {
-  "@tanstack-cf-saas/biome-config": "packages/biome-config",
-  "@tanstack-cf-saas/blocks": "packages/blocks",
-  "@tanstack-cf-saas/lint": "packages/lint",
-  "@tanstack-cf-saas/tsconfig": "packages/tsconfig",
+  "@software-factory/biome-config": "packages/biome-config",
+  "@software-factory/blocks": "packages/blocks",
+  "@software-factory/lint": "packages/lint",
+  "@software-factory/tsconfig": "packages/tsconfig",
   // Projects run `setup` from their own copy of the CLI. Build it before packing: it ships dist/.
-  "create-tanstack-cf-saas": "apps/cli",
+  "create-software-factory": "apps/cli",
 };
 
 /**
@@ -24,7 +24,7 @@ export const packAll = (into: string, as = into): Record<string, string> => {
   mkdirSync(into, { recursive: true });
   // Each run packs into a fresh temp folder: bun takes no argument from the caller (S8705), and
   // runs at the same time never share a tarball.
-  const staging = mkdtempSync(join(tmpdir(), "cf-saas-pack-"));
+  const staging = mkdtempSync(join(tmpdir(), "software-factory-pack-"));
   const specs = Object.fromEntries(
     Object.entries(localPackages).map(([name, rel]) => {
       const result = spawnSync(

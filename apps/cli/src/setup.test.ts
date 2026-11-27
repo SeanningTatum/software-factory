@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { prune } from "@tanstack-cf-saas/blocks";
+import { prune } from "@software-factory/blocks";
 import { parse } from "jsonc-parser";
 import {
   accountId,

@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "staging",
   "updateInternalDependencies": "patch",
-  "ignore": ["@tanstack-cf-saas/saas-starter", "docs-website"]
+  "ignore": ["@software-factory/saas-starter", "docs-website"]
 }

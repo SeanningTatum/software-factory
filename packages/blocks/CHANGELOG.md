@@ -1,4 +1,4 @@
-# @tanstack-cf-saas/blocks
+# @software-factory/blocks
 
 ## 0.2.0
 

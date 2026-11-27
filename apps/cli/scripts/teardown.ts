@@ -4,7 +4,7 @@
  * buckets and Workflows, and its GitHub repository. For testing the CLI; it is not shipped. It lists what it will delete and asks for
  * the project's name first.
  *
- *   bun run teardown                      the default try folder, ../cf-saas-try
+ *   bun run teardown                      the default try folder, ../software-factory-try
  *   bun run teardown ../my-app            another project
  *   bun run teardown ../my-app --keep     leave the folder
  *   bun run teardown ../my-app --yes      ask nothing
@@ -23,7 +23,7 @@ import {
   readProject,
   resourceName,
   WRANGLER_FILE,
-} from "@tanstack-cf-saas/blocks";
+} from "@software-factory/blocks";
 import { parse } from "jsonc-parser";
 import type { Cli } from "../src/github.ts";
 import { capture, projectWrangler } from "../src/run.ts";
@@ -174,10 +174,10 @@ const main = async () => {
   const dirArg = argv.find((arg) => !arg.startsWith("-"));
   const root = resolve(
     process.env.INIT_CWD ?? process.cwd(),
-    dirArg ?? join(repo, "../cf-saas-try"),
+    dirArg ?? join(repo, "../software-factory-try"),
   );
-  if (!existsSync(join(root, "cf-saas.json")))
-    throw new Error(`${root} is not a project made by the CLI (no cf-saas.json).`);
+  if (!existsSync(join(root, "software-factory.json")))
+    throw new Error(`${root} is not a project made by the CLI (no software-factory.json).`);
   const keep = argv.includes("--keep");
   const steps = teardownPlan(root, ownRepository(root, capture("git", root)));
 

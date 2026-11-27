@@ -1,4 +1,4 @@
-# tanstack-cf-saas-starter
+# software-factory
 
 [![check](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml/badge.svg?branch=staging)](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
@@ -14,8 +14,8 @@ database, sign-in, billing, file uploads, background jobs) and hands you a worki
 to deploy to Cloudflare Workers.
 
 ```bash
-npm install -g create-tanstack-cf-saas
-create-tanstack-cf-saas my-saas
+npm install -g create-software-factory
+create-software-factory my-saas
 ```
 
 ## Why use it
@@ -41,19 +41,19 @@ You need [Node](https://nodejs.org) 20.19 or newer, [Bun](https://bun.sh) 1.4 or
 Install the CLI once, with the tool you already use:
 
 ```bash
-npm install -g create-tanstack-cf-saas
-bun add -g create-tanstack-cf-saas
-pnpm add -g create-tanstack-cf-saas
+npm install -g create-software-factory
+bun add -g create-software-factory
+pnpm add -g create-software-factory
 ```
 
-Then run `create-tanstack-cf-saas` in any folder. To update it, run the same install command again.
+Then run `create-software-factory` in any folder. To update it, run the same install command again.
 
 Or run it once without installing:
 
 ```bash
-npm create tanstack-cf-saas@latest
-bun create tanstack-cf-saas
-pnpm create tanstack-cf-saas
+npm create software-factory@latest
+bun create software-factory
+pnpm create software-factory
 ```
 
 Run through `npm create`, `pnpm create` or `bun create`, the wizard installs the project's packages
@@ -64,7 +64,7 @@ with that same tool. Run from a global install, it uses Bun; pass `--pm npm`, `-
 
 The wizard asks for these as it goes, and every one can be left empty. Gather them first and one
 run deploys both environments, with staging working end to end. The Cloudflare token is set later
-with `create-tanstack-cf-saas github` or `gh secret set CLOUDFLARE_API_TOKEN`; the rest with
+with `create-software-factory github` or `gh secret set CLOUDFLARE_API_TOKEN`; the rest with
 `bun run setup`.
 
 | What                                                                       | Needed for                        | Where to get it                                                                                                                                                                                                                                                                                                                                          |
@@ -89,7 +89,7 @@ Run it with no arguments and it asks five things. Every one has a default, so En
 way down.
 
 ```
-┌   create-tanstack-cf-saas
+┌   create-software-factory
 │
 ◇  Where should the project go?
 │  my-saas
@@ -134,7 +134,7 @@ local database, and makes the first commit.
 │  only to a commit of staging, and deploys it once tagged.
 │  ○ Yes, private (rules on a private repository need a paid GitHub plan)
 │  ○ Yes, public
-│  ● Not now (run `create-tanstack-cf-saas github` later)
+│  ● Not now (run `create-software-factory github` later)
 │
 ◇  Next ────────────────────╮
 │                           │
@@ -163,7 +163,7 @@ the console everywhere.
 ### Skip the questions
 
 ```bash
-create-tanstack-cf-saas my-saas --features db,auth,uploads --yes
+create-software-factory my-saas --features db,auth,uploads --yes
 ```
 
 | Flag                        | What it does                                             |
@@ -176,7 +176,7 @@ create-tanstack-cf-saas my-saas --features db,auth,uploads --yes
 | `--no-github`               | Leave out `.github/`: CI, deploys and the branch rules.  |
 | `--no-install`, `--no-git`  | Don't install packages, or don't make a git repository.  |
 
-`create-tanstack-cf-saas --help` lists every command.
+`create-software-factory --help` lists every command.
 
 ## The building blocks
 
@@ -203,11 +203,11 @@ alone there is no password reset; the wizard says so, and `add email` brings it 
 Run these inside the project. It keeps its own copy of the CLI, so they need no global install:
 
 ```bash
-bunx create-tanstack-cf-saas add billing      # add a feature and what it needs
-bunx create-tanstack-cf-saas remove uploads   # remove a feature and everything it owns
+bunx create-software-factory add billing      # add a feature and what it needs
+bunx create-software-factory remove uploads   # remove a feature and everything it owns
 bun run setup                                 # create the Cloudflare side and deploy
 bun run setup --check                         # list what is still missing
-bunx create-tanstack-cf-saas github           # the repository, branch rules, deploy settings, setup issues
+bunx create-software-factory github           # the repository, branch rules, deploy settings, setup issues
 ```
 
 The project's own `README.md` covers the rest: migrations, deploys and the two-branch release flow.
@@ -219,7 +219,7 @@ This is a monorepo: the template, the CLI that builds projects from it, and the 
 | Path                      | What it is                                                                       |
 | ------------------------- | -------------------------------------------------------------------------------- |
 | `templates/saas-starter/` | The template, with every feature on. Start with its `FEATURES.md`.               |
-| `apps/cli/`               | `create-tanstack-cf-saas`                                                        |
+| `apps/cli/`               | `create-software-factory`                                                        |
 | `packages/`               | Shared lint rules, TypeScript presets, and the tool that wires features together |
 
 ```bash
@@ -255,7 +255,7 @@ bun run test:e2e     # Playwright; first run: bunx playwright install chromium
 After a change to the template, prove every feature combination still works:
 
 ```bash
-bun run --filter create-tanstack-cf-saas test:matrix
+bun run --filter create-software-factory test:matrix
 ```
 
 ### Try your copy of the CLI
@@ -265,7 +265,7 @@ bun run try
 ```
 
 This builds the CLI from this repo, runs the real wizard, and creates a project in
-`../cf-saas-try` with a first commit. Run it again and it replaces that folder. To skip the
+`../software-factory-try` with a first commit. Run it again and it replaces that folder. To skip the
 questions, or pick the folder:
 
 ```bash
@@ -273,7 +273,7 @@ bun run try --features db,auth,uploads --yes
 bun run try ../my-app --features db,auth
 ```
 
-Why a script: a new project depends on the `@tanstack-cf-saas/*` packages. `bun run try` packs them
+Why a script: a new project depends on the `@software-factory/*` packages. `bun run try` packs them
 from this repo and points the new project at those files, so the project runs your changes and not
 the versions on npm. A project made this way is for trying things, not for shipping.
 

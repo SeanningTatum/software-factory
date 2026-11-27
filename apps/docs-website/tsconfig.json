@@ -1,5 +1,5 @@
 {
-  "extends": "@tanstack-cf-saas/tsconfig/app.json",
+  "extends": "@software-factory/tsconfig/app.json",
   "compilerOptions": {
     "types": ["./worker-configuration.d.ts", "vite/client", "node"],
     "paths": { "#/*": ["./src/*"] }

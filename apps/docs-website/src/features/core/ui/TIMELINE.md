@@ -1,5 +1,5 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # UI (`ui`)
 
@@ -34,4 +34,4 @@ shadcn/ui components, the cn helper, useHydrated, and the site header and footer
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
 - 2026-11-27 — The site header sticks to the top, and `--fd-banner-height` in `src/styles.css` tells Fumadocs its height, so the docs sidebar ends at the bottom of the window.
-- 2026-11-27 — Created from create-tanstack-cf-saas 0.1.0.
+- 2026-11-27 — Created from create-software-factory 0.1.0.

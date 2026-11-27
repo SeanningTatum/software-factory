@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "root": true,
-  "extends": ["@tanstack-cf-saas/biome-config"],
+  "extends": ["@software-factory/biome-config"],
   "files": {
     "includes": [
       "**",
@@ -15,7 +15,7 @@
       "!.wrangler",
       "!dist",
       "!wrangler.jsonc",
-      "!cf-saas.json",
+      "!software-factory.json",
       "!harness.lock.json",
       "!.tanstack",
       "!.claude"

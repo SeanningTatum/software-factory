@@ -14,7 +14,7 @@ const manifest = (name: string, extra: Record<string, unknown> = {}) =>
  * Features: required `consent`, and `auth` which requires `db`.
  */
 const project = (files: Record<string, string>) => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-blocks-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-blocks-"));
   const all: Record<string, string> = {
     "src/features/core/ui/feature.json": manifest("ui", { required: true }),
     "src/features/core/ui/components/button.tsx": "export const Button = 1;\n",

@@ -17,10 +17,10 @@ const manifest = (name: string, extra: Record<string, unknown> = {}) =>
 
 /** Required core module `ui`, optional core module `db`, and feature `auth` which requires `db`. */
 const project = () => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-timeline-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-timeline-"));
   const files: Record<string, string> = {
     "package.json": JSON.stringify({ name: "app" }),
-    "cf-saas.json": JSON.stringify({
+    "software-factory.json": JSON.stringify({
       name: "app",
       template: "t",
       managed: { bindings: [], vars: [] },
@@ -56,7 +56,7 @@ describe("TIMELINE.md", () => {
     sync(root);
     const db = read(root, "src/features/core/db/TIMELINE.md");
     expect(db).toContain(
-      "# DB (`db`)\n\ndb.\n\n- Kind: core module, optional; `cf-saas-blocks remove db` takes it out",
+      "# DB (`db`)\n\ndb.\n\n- Kind: core module, optional; `software-factory-blocks remove db` takes it out",
     );
     expect(db).toContain("- Used by: [auth](../../auth/TIMELINE.md)\n");
     expect(db).toContain("- Bindings: `DB` (d1)\n");
@@ -65,7 +65,9 @@ describe("TIMELINE.md", () => {
     expect(db).toContain("- Services: `Database`\n");
     expect(db).toEndWith(`<!-- generated:end -->\n\n${TIMELINE_SKELETON}`);
     const auth = read(root, "src/features/auth/TIMELINE.md");
-    expect(auth).toContain("- Kind: feature, optional; `cf-saas-blocks remove auth` takes it out");
+    expect(auth).toContain(
+      "- Kind: feature, optional; `software-factory-blocks remove auth` takes it out",
+    );
     expect(auth).toContain("- Depends on: [db](../core/db/TIMELINE.md)\n");
     expect(auth).toContain("- Routes: `/login`\n");
     expect(auth).toContain("- Machines: `components/credentials.machine.ts`. Diagrams under");

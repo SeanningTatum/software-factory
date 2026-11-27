@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { ErrorReporter } from "effect";
 import { type AppEnv, setting } from "#/app/env.ts";
 import type { RequestInfo } from "#/app/request.ts";
@@ -50,7 +50,7 @@ export const sentryRequest = (
     method: "POST",
     headers: {
       "content-type": "application/x-sentry-envelope",
-      "x-sentry-auth": `Sentry sentry_version=7, sentry_key=${key}, sentry_client=tanstack-cf-saas/1`,
+      "x-sentry-auth": `Sentry sentry_version=7, sentry_key=${key}, sentry_client=software-factory/1`,
     },
     body,
   });

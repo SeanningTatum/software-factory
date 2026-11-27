@@ -1,4 +1,4 @@
-// Bindings and vars marked in cf-saas.json are managed by `bun run blocks:sync`.
+// Bindings and vars marked in software-factory.json are managed by `bun run blocks:sync`.
 // Everything else here is yours: it is kept when blocks are added or removed.
 {
   "$schema": "node_modules/wrangler/config-schema.json",

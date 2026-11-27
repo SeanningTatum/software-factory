@@ -113,7 +113,9 @@ export const lint = (
   // Run from the wrong folder, or with a stale "include", the rules would pass on nothing.
   const message = `no file matches "include" (${config.include.join(", ")})`;
   const findings = [
-    ...(targets.length ? [] : [{ rule: "no-files", file: "cf-saas-lint.json", line: 1, message }]),
+    ...(targets.length
+      ? []
+      : [{ rule: "no-files", file: "software-factory-lint.json", line: 1, message }]),
     ...targets.sort(byCodeUnit).flatMap((file) => fileFindings(root, file, config, allFiles)),
     ...projectFindings(root, config, allFiles),
   ];

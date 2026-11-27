@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # KV (`kv`)
 
 A Workers KV namespace behind a typed, Schema-checked KeyValue service with a read-through cache helper.
 
-- Kind: core module, optional; `cf-saas-blocks remove kv` takes it out
+- Kind: core module, optional; `software-factory-blocks remove kv` takes it out
 - Depends on: none
 - Used by: none
 - Bindings: `KV` (kv)

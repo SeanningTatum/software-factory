@@ -118,7 +118,8 @@ const missing = (layout: FeatureLayout, folder: string, has: ReadonlyArray<strin
   layout.required
     .filter((required) => !has.includes(required))
     .map((required): Found => {
-      const fix = required === "TIMELINE.md" ? " `cf-saas-blocks sync` writes a fresh one." : "";
+      const fix =
+        required === "TIMELINE.md" ? " `software-factory-blocks sync` writes a fresh one." : "";
       const message = `missing; every feature has ${layout.required.join(" and ")}.${fix}`;
       return { file: `${folder}/${required}`, line: 1, message };
     });

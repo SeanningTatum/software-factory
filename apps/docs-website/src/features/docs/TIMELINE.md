@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Docs (`docs`)
 
 The documentation pages: MDX from content/docs, rendered with Fumadocs, with a sidebar and search.
 
-- Kind: feature, optional; `cf-saas-blocks remove docs` takes it out
+- Kind: feature, optional; `software-factory-blocks remove docs` takes it out
 - Depends on: none
 - Used by: none
 - Bindings: `SEARCH_LIMITER` (ratelimit)

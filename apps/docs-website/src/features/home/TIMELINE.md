@@ -1,5 +1,5 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Home (`home`)
 
@@ -36,4 +36,4 @@ The home page and the /api/health check.
 - 2026-11-27 — The home page introduces the docs and links to /docs.
 
 - 2026-11-27 — The health spec expects `database` to be "up" with a `drizzle.config.ts` and absent without one, so a lost binding fails it.
-- 2026-11-27 — Created from create-tanstack-cf-saas 0.1.0.
+- 2026-11-27 — Created from create-software-factory 0.1.0.

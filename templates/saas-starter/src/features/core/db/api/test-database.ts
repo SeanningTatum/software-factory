@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { createClient } from "@libsql/client";
 // Loaded with the file, not inside the first test: it is large, and on a busy CI runner loading it
 // took longer than the 5 s a test gets.

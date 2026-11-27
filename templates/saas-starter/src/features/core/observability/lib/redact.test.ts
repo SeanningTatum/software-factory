@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { describe, expect, it } from "vitest";
 import { redact, redactText } from "./redact.ts";
 

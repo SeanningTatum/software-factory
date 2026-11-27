@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, normalize, posix, relative } from "node:path";
-import { importSpecifiers, TIMELINE_FILE, toSlash, walk } from "@tanstack-cf-saas/lint";
+import { importSpecifiers, TIMELINE_FILE, toSlash, walk } from "@software-factory/lint";
 import { FEATURES_INDEX, featuresIndex } from "./features-index.ts";
 import { devVarsExample, generateFiles } from "./generate.ts";
 import { withRequirements } from "./graph.ts";

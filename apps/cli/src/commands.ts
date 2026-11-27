@@ -9,7 +9,7 @@ import {
   removeBlock,
   WRANGLER_FILE,
   withRequirements,
-} from "@tanstack-cf-saas/blocks";
+} from "@software-factory/blocks";
 import pc from "picocolors";
 import { createActor, fromPromise, toPromise } from "xstate";
 import { type CreatePlan, createMachine } from "./create.machine.ts";
@@ -289,7 +289,7 @@ const askPosthog = async (name: string): Promise<Record<string, string>> => {
 
 type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
 
-const COMMIT_MESSAGE = `chore(scaffold): create project with create-tanstack-cf-saas ${VERSION}`;
+const COMMIT_MESSAGE = `chore(scaffold): create project with create-software-factory ${VERSION}`;
 const shellPath = (dir: string) => (/\s/.test(dir) ? JSON.stringify(dir) : dir);
 
 /** What is left to run by hand when `failed` broke, in order. */
@@ -313,7 +313,7 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
 };
 
 export const create = async (args: CreateArgs) => {
-  p.intro(pc.inverse(" create-tanstack-cf-saas "));
+  p.intro(pc.inverse(" create-software-factory "));
   const plan = await askPlan(args);
   const known = packageManagers.includes(args.pm as PackageManager);
   if (args.pm !== undefined && !known) {
@@ -570,7 +570,7 @@ const commitWrangler = async (dir: string) => {
   await run("git", [...gitIdentity(dir), ...commit, "--", WRANGLER_FILE], dir);
 };
 
-const GITHUB = "create-tanstack-cf-saas github";
+const GITHUB = "create-software-factory github";
 
 /** Offers to create the GitHub repository and its branch rules, so the first push is protected. */
 const offerGithub = async (plan: CreatePlan) => {
@@ -630,7 +630,7 @@ export const add = (...names: ReadonlyArray<string>) => {
   const added = features.flatMap((f) => addBlock(root, templateDir(), f));
   // A new limiter arrives with its manifest's id, the same in every project; see `create`.
   uniqueNamespaceIds(root, ids);
-  resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
+  resetHistory(root, added, `- ${today()} — Added with create-software-factory ${VERSION}.`);
   if (!added.length) {
     console.log(`Already on: ${features.join(", ")}.`);
     return;
@@ -649,7 +649,7 @@ export const add = (...names: ReadonlyArray<string>) => {
 };
 
 const commitScaffold = (root: string, git: Cli, added: ReadonlyArray<string>) => {
-  const message = `feat(scaffold): add ${added.join(", ")} with create-tanstack-cf-saas ${VERSION}`;
+  const message = `feat(scaffold): add ${added.join(", ")} with create-software-factory ${VERSION}`;
   for (const args of [
     ["add", "-A"],
     [...gitIdentity(root), "commit", "--quiet", "--no-verify", "-m", message],

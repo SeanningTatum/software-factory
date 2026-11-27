@@ -10,10 +10,10 @@ const manifest = (name: string, extra: Record<string, unknown> = {}) =>
   JSON.stringify({ name, title: name, description: name, requires: [], ...extra });
 
 const project = () => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-ops-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-ops-"));
   const files: Record<string, string> = {
     "package.json": JSON.stringify({ name: "app", dependencies: { "drizzle-orm": "1" } }),
-    "cf-saas.json": JSON.stringify({
+    "software-factory.json": JSON.stringify({
       name: "app",
       template: "t",
       managed: { bindings: [], vars: [] },

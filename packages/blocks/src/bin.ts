@@ -6,7 +6,7 @@ const force = args.includes("--force");
 const [command, arg] = args.filter((a) => a !== "--force");
 const root = process.cwd();
 
-const usage = `cf-saas-blocks <command>
+const usage = `software-factory-blocks <command>
 
   sync              regenerate src/gen, .dev.vars.example, wrangler.jsonc, FEATURES.md and the
                     generated block of each feature's TIMELINE.md from feature.json files
@@ -16,7 +16,7 @@ const usage = `cf-saas-blocks <command>
   remove <feature>  delete a feature or core module and everything it owns; refuses when its
                     files have uncommitted changes, unless --force
 
-Add features with: bunx create-tanstack-cf-saas add <feature>`;
+Add features with: bunx create-software-factory add <feature>`;
 
 const commands: Record<string, () => number | undefined> = {
   sync: () => {

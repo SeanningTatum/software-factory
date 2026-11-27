@@ -31,7 +31,7 @@ const untrue = (
       : undefined;
   }
   if (RULE.test(before)) {
-    return ruleIds.has(token) ? undefined : `rule \`${token}\` is not a cf-saas-lint rule`;
+    return ruleIds.has(token) ? undefined : `rule \`${token}\` is not a software-factory-lint rule`;
   }
   const top = token.split("/")[0] ?? "";
   return PATH.test(token) && existsSync(join(root, top)) && !existsSync(join(root, token))

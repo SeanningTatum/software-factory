@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join, posix } from "node:path";
 // The timeline gate in lint reads the same markers, so they are defined there once.
-import { GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@tanstack-cf-saas/lint";
+import { GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@software-factory/lint";
 import { contributions, GEN_DIR, ROUTES_DIR } from "./generate.ts";
 import { type BlockManifest, type Feature, type Features, isCoreModule } from "./manifest.ts";
 import { byCodeUnit } from "./order.ts";
@@ -78,7 +78,7 @@ export const timelineSection = (
     ? `${where}, required; it can't be removed`
     : manifest.auto
       ? `${where}, auto; on whenever ${manifest.requires.join(" and ")} are, and removed with either`
-      : `${where}, optional; \`cf-saas-blocks remove ${manifest.name}\` takes it out`;
+      : `${where}, optional; \`software-factory-blocks remove ${manifest.name}\` takes it out`;
   const machines = scan.machines.length
     ? `${code(scan.machines)}. Diagrams under Machines, from \`bun run machines:print\`.`
     : "none";
@@ -99,7 +99,7 @@ export const timelineSection = (
   ];
   return [
     GENERATED_START,
-    "<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->",
+    "<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->",
     "",
     `# ${manifest.title} (\`${manifest.name}\`)`,
     "",

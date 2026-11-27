@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import type { Subscription, SubscriptionOptions } from "@better-auth/stripe";
 import type { AuthContext } from "better-auth";
 import Stripe from "stripe";
