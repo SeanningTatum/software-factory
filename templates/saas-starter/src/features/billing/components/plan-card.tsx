@@ -12,6 +12,7 @@ import {
 import type { BillingState } from "../api/billing-service.ts";
 import { billingClient } from "../lib/billing-client.ts";
 import { type CheckoutAction, checkoutMachine } from "./checkout.machine.ts";
+import { PlanActions } from "./plan-actions.tsx";
 
 const redirect = async (action: CheckoutAction) => {
   const base = window.location.origin;
@@ -33,50 +34,6 @@ const summary = (state: BillingState) => {
   if (state.cancelAtPeriodEnd) return "Your subscription ends at the close of this period.";
   return state.entitled ? "Thanks for subscribing." : "Upgrade when you're ready.";
 };
-
-type Send = (event: { type: "START"; action: CheckoutAction }) => void;
-
-interface StartProps {
-  readonly action: CheckoutAction;
-  readonly label: string;
-  readonly busy: boolean;
-  readonly disabled: boolean;
-  readonly send: Send;
-}
-
-function StartButton({ action, label, busy, disabled, send }: StartProps) {
-  const start = () => send({ type: "START", action });
-  return (
-    <Button disabled={disabled} onClick={start}>
-      {busy ? "Opening Stripe…" : label}
-    </Button>
-  );
-}
-
-function Actions({ state, busy, send }: { state: BillingState; busy: boolean; send: Send }) {
-  const disabled = busy || !state.configured;
-  if (state.status) {
-    return (
-      <StartButton
-        action={{ kind: "manage" }}
-        label="Manage subscription"
-        busy={busy}
-        disabled={disabled}
-        send={send}
-      />
-    );
-  }
-  return state.plans.map((plan) => (
-    <StartButton
-      key={plan.name}
-      action={{ kind: "upgrade", plan: plan.name }}
-      label={`Upgrade to ${plan.label}`}
-      busy={busy}
-      disabled={disabled}
-      send={send}
-    />
-  ));
-}
 
 export function PlanCard({ state }: { state: BillingState }) {
   const [snapshot, send] = useMachine(
@@ -115,7 +72,7 @@ export function PlanCard({ state }: { state: BillingState }) {
             </Button>
           </>
         ) : (
-          <Actions state={state} busy={busy} send={send} />
+          <PlanActions state={state} busy={busy} send={send} />
         )}
       </CardFooter>
     </Card>
