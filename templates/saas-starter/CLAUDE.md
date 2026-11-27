@@ -57,8 +57,8 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 ## Code
 
 - Effect for everything on the server. Services are `Context.Service` classes with a static `layer`.
-  Errors are `Schema.TaggedError` classes in the error channel, each listed in its feature's
-  `errors.ts` with a status and a safe message. Validation is Effect Schema; zod is banned.
+  Errors are `Schema.TaggedError` classes, declared in their feature's `errors.ts` with a status and
+  a safe message (rule `error-placement`). Validation is Effect Schema; zod is banned.
 - No `throw`, `try/catch`, `process.env` or `Effect.run*` outside the edges listed in
   `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
   `runResponse` from `src/app/run-effect.ts`.
@@ -71,8 +71,8 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - With `auth`, sign-ins, sign-outs and plan changes pass through `Auth.handle` into analytics and
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
 - Every flow a user can see, and every lifecycle, is an XState machine in a `*.machine.ts` file with a
-  unit test. Machines that drive UI sit in a feature's `components/` and also need
-  `e2e/<name>.paths.spec.ts` in that feature. Name event handlers (rule `no-inline-handler`).
+  unit test; UI machines sit in `components/` with `e2e/<name>.paths.spec.ts`. A `.tsx` holds one
+  component, no class, no inline handler (`one-component-per-file`, `class-placement`, `no-inline-handler`).
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
   `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
   personal data in event properties.

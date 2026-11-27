@@ -200,6 +200,51 @@ describe("lint", () => {
     ]);
   });
 
+  test("reports a second component in a .tsx file, not helpers, wrapped consts or a test", () => {
+    const body = [
+      "const label = (n: number) => String(n);",
+      "export function List() { return <ul />; }",
+      "export const Item = memo(() => <li />);",
+      "const Empty = () => null;",
+      'export const Route = createFileRoute("/")({ component: List });',
+    ].join("\n");
+    const root = project({ "src/core/list.tsx": body, "src/core/list.test.tsx": body });
+    expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/list.tsx:one-component-per-file:3",
+    ]);
+  });
+
+  test("reports classes in React files or inside functions, not at the top of a .ts module", () => {
+    const root = project({
+      "src/core/a.tsx": "export class Store {}\nexport const A = () => <div />;",
+      "src/features/x/components/b.machine.ts": "export class Ctx {}",
+      "src/core/c.ts": "export class Top {}\nexport const make = () => class Inner {};",
+    });
+    const found = lint(root).filter((f) => f.rule === "class-placement");
+    expect(found.map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/a.tsx:class-placement:1",
+      "src/core/c.ts:class-placement:2",
+      "src/features/x/components/b.machine.ts:class-placement:1",
+    ]);
+  });
+
+  test("sends error classes to their feature's errors.ts and leaves other classes alone", () => {
+    const tagged = 'export class Boom extends Schema.TaggedError<Boom>()("Boom", {}) {}';
+    const root = project({
+      "src/features/uploads/api/uploads.ts": `${tagged}\nexport class Uploads extends Context.Service<Uploads, {}>()("Uploads") {}`,
+      "src/features/uploads/errors.ts": tagged,
+      "src/features/core/kv/api/kv.ts":
+        'export class KvError extends Data.TaggedError("KvError") {}',
+      "src/app/edge.ts": "export class PublicError extends Error {}",
+    });
+    const found = lint(root).filter((f) => f.rule === "error-placement");
+    expect(found.map((f) => `${f.file}:${f.line}:${f.message}`)).toEqual([
+      "src/app/edge.ts:1:move PublicError to src/app/errors.ts",
+      "src/features/core/kv/api/kv.ts:1:move KvError to src/features/core/kv/errors.ts",
+      "src/features/uploads/api/uploads.ts:1:move Boom to src/features/uploads/errors.ts",
+    ]);
+  });
+
   test("reports commented-out code, TODOs, dividers and empty comments, not prose or directives", () => {
     const body = [
       "// const old = compute();",

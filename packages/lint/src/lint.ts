@@ -5,6 +5,8 @@ import { type LintConfig, loadConfig } from "./config.ts";
 import { byCodeUnit, walk } from "./files.ts";
 import { matchesAny } from "./glob.ts";
 import {
+  classPlacement,
+  errorPlacement,
   externalCallSpan,
   fileSize,
   noInlineHandler,
@@ -13,6 +15,7 @@ import {
   noRunEffect,
   noThrow,
   noTryCatch,
+  oneComponentPerFile,
 } from "./rules/ast-rules.ts";
 import { noDuplicateComment, noUselessComment } from "./rules/comments.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
@@ -29,6 +32,9 @@ export const rules: ReadonlyArray<Rule> = [
   externalCallSpan,
   noNestedYield,
   noInlineHandler,
+  oneComponentPerFile,
+  classPlacement,
+  errorPlacement,
   noUselessComment,
   fileSize,
   testMap,
@@ -49,6 +55,9 @@ const SOURCE_ONLY = new Set([
   "no-run-effect",
   "external-call-span",
   "no-inline-handler",
+  "one-component-per-file",
+  "class-placement",
+  "error-placement",
 ]);
 const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
