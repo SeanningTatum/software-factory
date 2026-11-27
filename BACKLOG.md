@@ -32,17 +32,17 @@ Rules for a good item:
 
 ## At a glance
 
-| Id   | Title                                             | Area              | Size | Needs you             |
-| ---- | ------------------------------------------------- | ----------------- | ---- | --------------------- |
-| B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision            |
-| B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
-| B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision            |
-| B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
-| B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
-| B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
-| B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
-| B-24 | A live project moves to its own domain in one run | Deployment        | M    | A custom domain       |
-| B-25 | The kernel's body cap knows no feature's path     | Features          | S    | no                    |
+| Id   | Title                                             | Area              | Size | Needs you           |
+| ---- | ------------------------------------------------- | ----------------- | ---- | ------------------- |
+| B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision          |
+| B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys    |
+| B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision          |
+| B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope |
+| B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                  |
+| B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision          |
+| B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                  |
+| B-24 | A live project moves to its own domain in one run | Deployment        | M    | A custom domain     |
+| B-25 | The kernel's body cap knows no feature's path     | Features          | S    | no                  |
 
 ## Now
 

@@ -98,6 +98,17 @@ const featureOptions = () =>
       hint: m.requires.length ? `needs ${m.requires.join(", ")}` : m.description,
     }));
 
+/** Says what the choice pulled in, and what a half-chosen auto feature would have added. */
+const explainFeatures = (
+  manifests: ReturnType<typeof loadManifests>,
+  chosen: ReadonlyArray<string>,
+  features: ReadonlyArray<string>,
+) => {
+  const added = features.filter((f) => !chosen.includes(f));
+  if (added.length) p.log.info(`Also adding ${added.join(", ")}, which ${chosen.join(", ")} need.`);
+  for (const note of missedAuto(manifests, features)) p.log.warn(note);
+};
+
 const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
   const dirArg =
     args.dir ??
@@ -153,9 +164,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         .join(", ")}`,
     );
   const features = withRequirements(manifests, chosen).filter((f) => !manifests.get(f)?.required);
-  const added = features.filter((f) => !chosen.includes(f));
-  if (added.length) p.log.info(`Also adding ${added.join(", ")}, which ${chosen.join(", ")} need.`);
-  for (const note of missedAuto(manifests, features)) p.log.warn(note);
+  explainFeatures(manifests, chosen, features);
   const claude =
     args.yes || !args.claude
       ? args.claude
