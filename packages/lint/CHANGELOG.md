@@ -1,5 +1,19 @@
 # @seanningtatum/software-factory-lint
 
+## 0.4.0
+
+### Minor Changes
+
+- a1fdbf2: Renamed from `create-tanstack-cf-saas` and `@tanstack-cf-saas/*`: the CLI is `create-software-factory` and
+  the packages are `@seanningtatum/software-factory-*`. The bins are now
+  `software-factory-blocks` and `software-factory-lint`, and a project's config files are
+  `software-factory.json` and `software-factory-lint.json`. A project made with the old names must
+  rename those two files and its dependencies by hand.
+
+### Patch Changes
+
+- ef09dc6: `add` works in a project that has features of its own; it threw `Unknown feature` for any name the template lacks. `setup --var` refuses a key a feature declares as a secret, because a var is written to the committed `wrangler.jsonc`. A personal PostHog key is masked as it is typed. A refused commit of `wrangler.jsonc` at the end of the wizard's Cloudflare step is now a warning, so `create` still says what it made. Edits to a `wrangler.jsonc` that opens with a `/** */` comment keep the file's indent. Generated files and lint output sort by code unit, so they no longer change with the machine's locale. `@seanningtatum/software-factory-lint` exports `byCodeUnit`.
+
 ## 0.3.0
 
 ### Minor Changes

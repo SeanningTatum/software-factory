@@ -1,6 +1,6 @@
 {
   "name": "create-software-factory",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A software factory for Cloudflare Workers: compose a TanStack Start SaaS from blocks (database, auth, billing, KV, Workflows, uploads).",
   "license": "MIT",
   "type": "module",
