@@ -98,6 +98,12 @@ describe.skipIf(noGithub)("branch rules", () => {
     );
     expect(deploy).not.toMatch(/\b(always|failure|cancelled)\(\)/);
   });
+
+  it("keeps the production job's write token from the packages it installs", () => {
+    expect(workflow("deploy")).toMatch(
+      / {2}production:\n[\s\S]*contents: write[\s\S]*persist-credentials: false[\s\S]*bun install/,
+    );
+  });
 });
 
 describe("gradual rollout", () => {

@@ -81,6 +81,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # brings the tags and origin/staging
+          persist-credentials: false # the job's token can write; the packages it installs must not find it
       # The ruleset lets any commit that passed its checks fast-forward production. Deploy only a
       # promotion: a commit that is on staging and carries a version tag.
       - name: On staging, with a version tag
