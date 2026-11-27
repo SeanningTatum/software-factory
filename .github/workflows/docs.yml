@@ -74,5 +74,6 @@ jobs:
           # A new workers.dev name can take a few seconds to answer.
           # -L with no redirects allowed fails on a redirect: a login wall must not pass as healthy.
           if curl -sS --fail-with-body -L --max-redirs 0 -H "CF-Access-Client-Id: $ACCESS_ID" -H "CF-Access-Client-Secret: $ACCESS_SECRET" --retry 6 --retry-delay 5 --retry-all-errors --max-time 15 "$URL/api/health"; then exit 0; fi
+          echo "::error::The health check failed. If curl reports a redirect, Cloudflare Access sent it to the login page: DOCS_ACCESS_CLIENT_ID and DOCS_ACCESS_CLIENT_SECRET are missing, expired or not allowed by a Service Auth policy."
           if [ "$GITHUB_REF_NAME" = production ]; then bun run wrangler rollback --message "smoke test failed" -y; fi
           exit 1
