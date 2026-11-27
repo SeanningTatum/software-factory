@@ -64,21 +64,22 @@ rule is there.
 src/
   app/                   the kernel: runtime, request, env, errors, middleware
   features/
-    core/<name>/         a core module: db, kv, observability, analytics, ui
+    core/<name>/         a core module: db, kv, email, observability, analytics, ui
     core/lib/            shared pure helpers, such as outsideCall and binding
-    <name>/              a feature: consent, home, auth, billing, uploads, workflows, and yours
+    <name>/              a feature: consent, home, auth, auth-email, billing, uploads, workflows, and yours
   gen/                   made by `bun run blocks:sync`; never edit
   routes/__root.tsx      the only route outside a feature
 ```
 
 Core holds shared modules of one kind: components only (`ui`), or services and helpers only (`db`,
-`kv`, `observability`, `analytics`). A module with both, or with a page, is a feature and lives
+`kv`, `email`, `observability`, `analytics`). A module with both, or with a page, is a feature and lives
 beside `auth` and `billing`; put your own product features there too. `core/lib/` holds pure
 helpers that two or more features use.
 
 Each feature or module lives in its own folder and nothing else. `observability`, `analytics`,
-`ui`, `consent` and `home` are required and always on. `db`, `kv`, `auth`, `billing`, `uploads`
-and `workflows` are optional and come and go, wherever they live. A feature's `routes/` folder is
+`ui`, `consent` and `home` are required and always on. `db`, `kv`, `email`, `auth`, `billing`,
+`uploads` and `workflows` are optional and come and go, wherever they live; `auth-email` is on
+whenever `auth` and `email` both are. A feature's `routes/` folder is
 served from the URL root, so
 `src/features/auth/routes/login.tsx` is `/login`. What features share (the runtime's layers, the
 error map, the event catalog, the nav, the route tree, wrangler bindings, `.dev.vars.example`) is

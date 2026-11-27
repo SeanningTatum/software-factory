@@ -37,11 +37,16 @@ const combos: Record<string, ReadonlyArray<string>> = {
   kv: ["kv"],
   workflows: ["workflows"],
   uploads: ["uploads"],
-  all: ["db", "auth", "billing", "kv", "workflows", "uploads"],
+  email: ["email"],
+  "auth-email": ["auth", "email"],
+  all: ["db", "auth", "billing", "kv", "workflows", "uploads", "email"],
 };
 
-/** Optional features, dependents before what they require, so each can be removed in turn. */
-const REMOVAL_ORDER = ["uploads", "billing", "workflows", "kv", "auth", "db"];
+/**
+ * Optional features, dependents before what they require, so each can be removed in turn.
+ * `auth-email` is auto: it leaves with `email` and comes back when `email` joins `auth`.
+ */
+const REMOVAL_ORDER = ["uploads", "billing", "workflows", "kv", "email", "auth", "db"];
 
 /** Fast, install-free: after every add or remove, `cf-saas-blocks check` must find nothing. */
 const walkFeatures = (name: string, kind: "remove" | "add", failures: Array<string>) => {

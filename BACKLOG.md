@@ -38,7 +38,6 @@ Rules for a good item:
 | B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys      |
 | B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision            |
 | B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope   |
-| B-19 | Users can verify their email and reset a password | Features          | L    | Pick an email service |
 | B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                    |
 | B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision            |
 | B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                    |
@@ -111,21 +110,6 @@ Rules for a good item:
 **Where:** `.github/workflows/release.yml`, `.changeset/`.
 
 ## Later
-
-### B-19 · Users can verify their email and reset a password
-
-- **Area:** Features
-- **Size:** L
-- **Needs you:** Pick an email service and supply its key
-
-**Why:** A user who forgets their password is locked out for good.
-
-**Done when:**
-
-- [ ] A new `email` module sends through the chosen service.
-- [ ] Reset and verification work end to end in a browser spec.
-
-**Where:** a new module under `templates/saas-starter/src/features/core/`, and `src/features/auth/`.
 
 ### B-20 · cf-saas-lint parses without a second TypeScript
 

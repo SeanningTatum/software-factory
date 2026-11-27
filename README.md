@@ -94,6 +94,7 @@ way down.
 │  ◻ KV
 │  ◼ Auth (needs db)
 │  ◻ Billing
+│  ◻ Email (Transactional email through Cloudflare Email Service…)
 │  ◻ R2 uploads
 │  ◻ Workflows
 │  ↑/↓ to navigate • Space: select • Enter: confirm
@@ -180,10 +181,14 @@ analytics, and logging with error reports. You choose the rest:
 | `auth`      | Email and password sign-in with Better Auth, sessions, and rate limits.    | `db`   |
 | `billing`   | Stripe subscriptions: checkout, the customer portal and webhooks.          | `auth` |
 | `uploads`   | Per-user file uploads to R2, checked for size and type, with a rate limit. | `auth` |
+| `email`     | Transactional email through Cloudflare Email Service, with no API key.     |        |
 | `kv`        | A Workers KV store behind a typed service, with a read-through cache.      |        |
 | `workflows` | A durable onboarding flow on Cloudflare Workflows.                         |        |
 
-Ask for `billing` and you get `auth` and `db` with it.
+Ask for `billing` and you get `auth` and `db` with it. Choose `auth` and `email` together and auth
+also verifies each new address with a mailed code, resets passwords by code and offers sign-in by
+code (the `auth-email` feature, which you never pick: it is on whenever both are). With `auth`
+alone there is no password reset; the wizard says so, and `add email` brings it later.
 
 ## After the project exists
 

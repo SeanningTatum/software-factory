@@ -39,6 +39,7 @@ import {
   blankSettings,
   hasTables,
   isEmptyDir,
+  missedAuto,
   nameFromDir,
   namespaceIds,
   parseFeatures,
@@ -90,7 +91,7 @@ export interface CreateArgs {
 
 const featureOptions = () =>
   [...loadManifests(templateDir()).values()]
-    .filter((m) => !m.required)
+    .filter((m) => !m.required && !m.auto)
     .map((m) => ({
       value: m.name,
       label: m.title,
@@ -154,6 +155,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
   const features = withRequirements(manifests, chosen).filter((f) => !manifests.get(f)?.required);
   const added = features.filter((f) => !chosen.includes(f));
   if (added.length) p.log.info(`Also adding ${added.join(", ")}, which ${chosen.join(", ")} need.`);
+  for (const note of missedAuto(manifests, features)) p.log.warn(note);
   const claude =
     args.yes || !args.claude
       ? args.claude

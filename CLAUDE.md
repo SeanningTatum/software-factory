@@ -19,14 +19,16 @@ that builds projects from it.
 
 - **Core holds shared modules of one kind: components only, or services and helpers only. A module
   with both, or with a page, is a feature.** Core modules live in `src/features/core/<name>/` (`db`,
-  `kv`, `observability`, `analytics`, `ui`), shared pure helpers in `src/features/core/lib/`, and
+  `kv`, `email`, `observability`, `analytics`, `ui`), shared pure helpers in `src/features/core/lib/`, and
   features in `src/features/<name>/` (`consent`, `home`, `auth`, `billing`, `uploads`,
   `workflows`, and the user's own).
 - **A feature or module owns one folder and nothing else**, plus the paths its `feature.json` lists
   in `files`. Names are unique across both levels; tools find the folder from the name. The kernel
   is `src/app/`. Shared wiring is generated into `src/gen/` by `cf-saas-blocks sync`; never
   hand-edit it. Required ones (`"required": true`: `observability`, `analytics`, `ui`, `consent`,
-  `home`) can't be removed; `db`, `kv`, `auth`, `billing`, `workflows` and `uploads` can.
+  `home`) can't be removed; `db`, `kv`, `email`, `auth`, `billing`, `workflows` and `uploads` can.
+  An `"auto": true` one (`auth-email`) is never chosen: it is on exactly when everything it
+  requires is, and leaves with any of them.
 - **Read `FEATURES.md` and the feature's `TIMELINE.md` first, and add no lines to it.** The template
   is boilerplate: only a project made from it keeps a timeline, and the CLI starts each one's
   History afresh. Here History stays empty, and a Decisions line that a change makes untrue is

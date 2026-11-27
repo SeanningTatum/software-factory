@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import {
+  type BlockManifest,
   envNames,
   loadManifests,
   prune,
@@ -83,6 +84,23 @@ export interface ScaffoldResult {
 }
 
 /** Old block names, still accepted. */
+/**
+ * One line per `auto` feature the choice half covers, such as auth without email: what is left
+ * out, and what to add to get it.
+ */
+export const missedAuto = (
+  manifests: ReadonlyMap<string, BlockManifest>,
+  features: ReadonlyArray<string>,
+): ReadonlyArray<string> =>
+  [...manifests.values()]
+    .filter((m) => m.auto && !features.includes(m.name))
+    .filter((m) => m.requires.some((r) => features.includes(r)))
+    .map((m) => {
+      const have = m.requires.filter((r) => features.includes(r)).join(", ");
+      const missing = m.requires.filter((r) => !features.includes(r)).join(", ");
+      return `${have} without ${missing} leaves out "${m.title}": ${m.description} Choose ${missing} too, or run \`add ${missing}\` later.`;
+    });
+
 export const FEATURE_ALIASES: Readonly<Record<string, string>> = { d1: "db", r2: "uploads" };
 
 /** Splits a comma-separated list and maps old block names to feature names. */
