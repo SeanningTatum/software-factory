@@ -9,6 +9,7 @@
       "src/app/run-effect.ts",
       "src/app/middleware.ts",
       "src/features/*/workflows.ts",
+      "src/features/auth-email/auth-plugins.ts",
       "src/features/core/*/workflows.ts"
     ],
     "no-try-catch": [],

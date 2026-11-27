@@ -25,6 +25,7 @@ own features go here too.
 - **consent** (required): The cookie consent banner and its state machine, the cookie settings button, and the analytics tracker that waits for consent. Honours Do Not Track and Global Privacy Control. Requires: nothing. [TIMELINE.md](src/features/consent/TIMELINE.md)
 - **home** (required): The home page and the /api/health check. Requires: nothing. [TIMELINE.md](src/features/home/TIMELINE.md)
 - **auth** (optional): Better Auth with email and password, sessions in D1, rate-limited sign-in and sign-up. Requires: db. [TIMELINE.md](src/features/auth/TIMELINE.md)
+- **auth-email** (auto): What auth does with email, through Better Auth's emailOTP plugin: a code to verify the address at sign-up, to reset a password, and to sign in without one. Requires: auth, email. [TIMELINE.md](src/features/auth-email/TIMELINE.md)
 - **billing** (optional): Stripe subscriptions through Better Auth's Stripe plugin: checkout, customer portal and webhooks. Requires: auth. [TIMELINE.md](src/features/billing/TIMELINE.md)
 - **uploads** (optional): Per-user file uploads to R2 with size, type and magic-byte checks, a rate limit and an upload state machine. Requires: auth. [TIMELINE.md](src/features/uploads/TIMELINE.md)
 - **workflows** (optional): A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a state machine sets. Requires: nothing. [TIMELINE.md](src/features/workflows/TIMELINE.md)

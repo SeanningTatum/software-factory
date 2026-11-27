@@ -5,4 +5,4 @@ export type SecretName = "POSTHOG_KEY" | "SENTRY_DSN" | "ALERT_WEBHOOK_URL" | "B
 export type FeatureSecrets = Partial<Record<SecretName, string>>;
 
 /** Settings a deploy needs before it can serve traffic. `setup --check` reads the same list. */
-export const requiredSettings = ["APP_URL","BETTER_AUTH_SECRET","STRIPE_PRICE_PRO","STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET","EMAIL_FROM"] as const;
+export const requiredSettings = ["APP_URL","BETTER_AUTH_SECRET","EMAIL_FROM","STRIPE_PRICE_PRO","STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET"] as const;
