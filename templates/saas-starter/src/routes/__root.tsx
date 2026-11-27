@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { APP_NAME } from "#/app/constants.ts";
 import { getShell } from "#/app/shell.ts";
 import { ConsentProvider } from "#/features/consent/components/consent-banner.tsx";
 import { CookieSettingsButton } from "#/features/consent/components/cookie-settings.tsx";
@@ -8,8 +9,6 @@ import { AnalyticsTracker } from "#/features/consent/components/tracker.tsx";
 import { SiteFooter } from "#/features/core/ui/components/site-footer.tsx";
 import { SiteHeader } from "#/features/core/ui/components/site-header.tsx";
 import appCss from "../styles.css?url";
-
-export const APP_NAME = "SaaS Starter";
 
 export const Route = createRootRoute({
   head: () => ({

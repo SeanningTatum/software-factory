@@ -50,7 +50,7 @@ describe("scaffold", () => {
     expect(wrangler).toContain('"name": "acme-app"');
     expect(wrangler).toContain("acme-app-db-staging");
     expect(wrangler).not.toContain("UPLOAD_LIMITER");
-    expect(readFileSync(join(dir, "src/routes/__root.tsx"), "utf8")).toContain(
+    expect(readFileSync(join(dir, "src/app/constants.ts"), "utf8")).toContain(
       'APP_NAME = "Acme App"',
     );
     expect(readFileSync(join(dir, ".dev.vars"), "utf8")).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);

@@ -165,7 +165,7 @@ const rename = (dir: string, name: string) => {
   });
   edit(join(dir, "wrangler.jsonc"), (text) => applyEdits(text, modify(text, ["name"], name, {})));
   writeProject(dir, { ...readProject(dir), name });
-  edit(join(dir, "src/routes/__root.tsx"), (text) =>
+  edit(join(dir, "src/app/constants.ts"), (text) =>
     text.replace(
       'export const APP_NAME = "SaaS Starter";',
       `export const APP_NAME = ${JSON.stringify(titleCase(name))};`,
