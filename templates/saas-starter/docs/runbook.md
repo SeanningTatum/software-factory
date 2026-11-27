@@ -74,9 +74,15 @@ run `bunx wrangler tail --search <request id>` while it happens again.
    keeps running. Read the error in the GitHub Actions log, or in your terminal after a deploy by
    hand.
 2. Fix the migration in a new commit. Never edit one that has already run anywhere.
-3. If a migration ran and damaged data, restore D1 to a minute before it:
-   `bunx wrangler d1 time-travel restore DB --timestamp=<unix seconds>`. Roll back the code first
+3. If a migration ran and damaged data, restore D1 to the second before it:
+   `bunx wrangler d1 time-travel restore DB --timestamp=<unix seconds>`. The summary of each
+   production `deploy` run gives that command with the second filled in. Roll back the code first
    if it needs the new shape.
+
+D1 is its own backup: Time Travel keeps every minute of the last 7 days on the Free plan and 30 on
+Workers Paid, with nothing to switch on. For a copy that outlives that, run
+`bunx wrangler d1 export DB --remote --output backup.sql` and keep the file somewhere private: it
+holds every user's row.
 
 ## A Stripe outage (`billing`)
 

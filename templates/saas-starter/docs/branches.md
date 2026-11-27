@@ -135,6 +135,9 @@ sequenceDiagram
 | `/api/health`                                    | `version`: the id and tag of the version that answered  |
 | PostHog, with `ANALYTICS_PROVIDER=posthog`       | `app_version` on every event: the tag, such as `v1.2.0` |
 
+Staging's events carry `staging-` and the commit, such as `staging-1a2b3c4`; a deploy by hand has
+no tag and sends the version's id.
+
 In PostHog, break any chart down by `app_version` to compare the two versions: errors, sign-ups,
 web vitals. To mark each step on the same timeline, give GitHub the project key:
 
@@ -150,8 +153,14 @@ and `percent`. Without the secret, nothing is sent.
 
 Cloudflare picks a version for each request on its own. Without help, a page from the new
 version asks the old one for a script it never had, and the page breaks. One rule on your domain
-pins each visitor to one version. In the Cloudflare dashboard, on the domain: Rules → Transform
-Rules → Modify Request Header → Create rule.
+pins each visitor to one version.
+
+`deploy.yml` makes that rule before a gradual rollout starts, if its token may. Give
+`CLOUDFLARE_API_TOKEN` two more permissions on the domain: Zone → Zone → Read and Zone → Transform
+Rules → Edit. The rule covers your app's host only and leaves the domain's other rules alone.
+
+Or make it by hand. In the Cloudflare dashboard, on the domain: Rules → Transform Rules → Modify
+Request Header → Create rule.
 
 | Field       | Value                            |
 | ----------- | -------------------------------- |
@@ -161,13 +170,24 @@ Rules → Modify Request Header → Create rule.
 | Value       | `ip.src`                         |
 
 Visitors behind one address then share a version, and one who changes network may switch once.
-That rule cannot run on `workers.dev`, so `deploy.yml` refuses a gradual rollout there. It cannot
-see the rule on a custom domain: make it before your first gradual rollout.
+That rule cannot run on `workers.dev`, so `deploy.yml` refuses a gradual rollout there. On a
+custom domain it also tests the outcome, whoever made the rule: once the new version has its
+share, it calls `/api/health` a hundred times, and backs out if two versions answer. Start at 5%
+or more, where that check can tell.
+
+To move production to a domain, add it to `wrangler.jsonc` as a route
+(`"routes": [{ "pattern": "example.com", "custom_domain": true }]`) and set production's `APP_URL`
+to it. In the same change, give `env.staging` its own `"routes": []`: an environment inherits the
+top-level routes, and staging deploys first, so without that line it takes the domain. Merge
+that, run `bunx create-tanstack-cf-saas github` so `PRODUCTION_URL` follows `APP_URL`,
+then release it `full`. While the two differ, `/api/health` answers 503 and the smoke test rolls
+the release back.
 
 ### What a gradual rollout cannot carry
 
-- **A change to routes, cron triggers or Durable Object classes.** Those apply to the whole Worker
-  at once. Ship that release `full`.
+- **A change to routes, cron triggers, Workflows or Durable Object classes.** Those belong to the
+  whole Worker, not to one version, and Wrangler applies them only in a full deploy. Ship that
+  release `full`.
 - **A migration that the old version cannot live with.** Both versions read one database, for as
   long as the rollout runs. Keep migrations additive, as for any deploy.
 - **A second rollout.** Two versions can share production, not three. Finish or back out first.
