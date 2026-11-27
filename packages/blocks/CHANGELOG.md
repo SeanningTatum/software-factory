@@ -1,4 +1,4 @@
-# @software-factory/blocks
+# @seanningtatum/software-factory-blocks
 
 ## 0.2.0
 

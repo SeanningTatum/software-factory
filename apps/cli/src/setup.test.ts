@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { prune } from "@software-factory/blocks";
+import { prune } from "@seanningtatum/software-factory-blocks";
 import { parse } from "jsonc-parser";
 import {
   accountId,

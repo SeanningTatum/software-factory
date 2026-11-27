@@ -8,7 +8,7 @@ import {
   readProject,
   removeBlock,
   WRANGLER_FILE,
-} from "@software-factory/blocks";
+} from "@seanningtatum/software-factory-blocks";
 import pc from "picocolors";
 import {
   type Cli,

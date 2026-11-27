@@ -1,5 +1,5 @@
 {
-  "extends": "@software-factory/tsconfig/node.json",
+  "extends": "@seanningtatum/software-factory-tsconfig/node.json",
   "compilerOptions": { "types": ["bun"], "allowImportingTsExtensions": true },
   "include": ["src"]
 }

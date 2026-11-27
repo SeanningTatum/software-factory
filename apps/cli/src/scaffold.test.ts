@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadManifests } from "@software-factory/blocks";
+import { loadManifests } from "@seanningtatum/software-factory-blocks";
 import { parse } from "jsonc-parser";
 import { add, remove } from "./commands.ts";
 import {

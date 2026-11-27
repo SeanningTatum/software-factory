@@ -1,7 +1,12 @@
 import { existsSync } from "node:fs";
 import { join, posix } from "node:path";
 // The timeline gate in lint reads the same markers, so they are defined there once.
-import { byCodeUnit, GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@software-factory/lint";
+import {
+  byCodeUnit,
+  GENERATED_END,
+  GENERATED_START,
+  TIMELINE_FILE,
+} from "@seanningtatum/software-factory-lint";
 import { contributions, GEN_DIR, ROUTES_DIR } from "./generate.ts";
 import { type BlockManifest, type Feature, type Features, isCoreModule } from "./manifest.ts";
 import type { FeatureScan } from "./scan.ts";

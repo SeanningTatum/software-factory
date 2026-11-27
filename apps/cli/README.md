@@ -63,4 +63,4 @@ analytics, and logging with error reports. You choose the rest:
 | `harness check \| sync` | Show local edits to `.claude/`, or update it from this CLI's copy. |
 
 `create-software-factory --help` lists every flag. The wizard, step by step, is in the
-[repository's README](https://github.com/SeanningTatum/tanstack-cf-saas-starter#readme).
+[repository's README](https://github.com/SeanningTatum/software-factory#readme).

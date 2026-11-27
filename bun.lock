@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "2.6.8",
         "@changesets/cli": "^3.0.3",
-        "@software-factory/biome-config": "workspace:*",
+        "@seanningtatum/software-factory-biome-config": "workspace:*",
         "husky": "^9.1.7",
         "turbo": "^2.11.13",
         "typescript": "^7.0.2",
@@ -24,9 +24,9 @@
       },
       "devDependencies": {
         "@clack/prompts": "^1.9.0",
-        "@software-factory/blocks": "workspace:*",
-        "@software-factory/lint": "workspace:*",
-        "@software-factory/tsconfig": "workspace:*",
+        "@seanningtatum/software-factory-blocks": "workspace:*",
+        "@seanningtatum/software-factory-lint": "workspace:*",
+        "@seanningtatum/software-factory-tsconfig": "workspace:*",
         "@types/bun": "latest",
         "citty": "^0.2.2",
         "picocolors": "^1.1.1",
@@ -57,10 +57,10 @@
         "@biomejs/biome": "2.6.8",
         "@cloudflare/vite-plugin": "^1.70.1",
         "@playwright/test": "^1.65.1",
-        "@software-factory/biome-config": "workspace:*",
-        "@software-factory/blocks": "workspace:*",
-        "@software-factory/lint": "workspace:*",
-        "@software-factory/tsconfig": "workspace:*",
+        "@seanningtatum/software-factory-biome-config": "workspace:*",
+        "@seanningtatum/software-factory-blocks": "workspace:*",
+        "@seanningtatum/software-factory-lint": "workspace:*",
+        "@seanningtatum/software-factory-tsconfig": "workspace:*",
         "@tailwindcss/vite": "^4.3.5",
         "@tanstack/router-cli": "^1.168.0",
         "@tanstack/virtual-file-routes": "^1.162.0",
@@ -80,30 +80,30 @@
       },
     },
     "packages/biome-config": {
-      "name": "@software-factory/biome-config",
+      "name": "@seanningtatum/software-factory-biome-config",
       "version": "0.2.0",
       "peerDependencies": {
         "@biomejs/biome": "^2.6.0",
       },
     },
     "packages/blocks": {
-      "name": "@software-factory/blocks",
+      "name": "@seanningtatum/software-factory-blocks",
       "version": "0.2.0",
       "bin": {
         "software-factory-blocks": "./dist/bin.js",
       },
       "dependencies": {
-        "@software-factory/lint": "^0.3.0",
+        "@seanningtatum/software-factory-lint": "^0.3.0",
         "effect": "^4.1.5",
         "jsonc-parser": "^3.3.1",
       },
       "devDependencies": {
-        "@software-factory/tsconfig": "workspace:*",
+        "@seanningtatum/software-factory-tsconfig": "workspace:*",
         "@types/bun": "latest",
       },
     },
     "packages/lint": {
-      "name": "@software-factory/lint",
+      "name": "@seanningtatum/software-factory-lint",
       "version": "0.3.0",
       "bin": {
         "software-factory-lint": "./dist/bin.js",
@@ -112,7 +112,7 @@
         "@typescript/typescript6": "^6.0.2",
       },
       "devDependencies": {
-        "@software-factory/tsconfig": "workspace:*",
+        "@seanningtatum/software-factory-tsconfig": "workspace:*",
         "@types/bun": "latest",
         "xstate": "5.33.4",
       },
@@ -121,11 +121,11 @@
       },
     },
     "packages/tsconfig": {
-      "name": "@software-factory/tsconfig",
+      "name": "@seanningtatum/software-factory-tsconfig",
       "version": "0.1.0",
     },
     "templates/saas-starter": {
-      "name": "@software-factory/saas-starter",
+      "name": "@seanningtatum/software-factory-saas-starter",
       "version": "0.0.0",
       "dependencies": {
         "@better-auth/stripe": "^1.7.27",
@@ -152,10 +152,10 @@
         "@cloudflare/vite-plugin": "^1.70.1",
         "@libsql/client": "^0.18.0",
         "@playwright/test": "^1.65.1",
-        "@software-factory/biome-config": "workspace:*",
-        "@software-factory/blocks": "workspace:*",
-        "@software-factory/lint": "workspace:*",
-        "@software-factory/tsconfig": "workspace:*",
+        "@seanningtatum/software-factory-biome-config": "workspace:*",
+        "@seanningtatum/software-factory-blocks": "workspace:*",
+        "@seanningtatum/software-factory-lint": "workspace:*",
+        "@seanningtatum/software-factory-tsconfig": "workspace:*",
         "@tailwindcss/vite": "^4.3.5",
         "@tanstack/router-cli": "^1.168.0",
         "@tanstack/virtual-file-routes": "^1.162.0",
@@ -671,6 +671,16 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.1.1", "", {}, "sha512-glFIJDvLNDtJhT9qrMFWLPbvS+skxgt4L0K8Ei2YtnhPysAJnsI7nyxSJxKj4ADeKX0OLjC4ntRkwpLOoS3rwA=="],
 
+    "@seanningtatum/software-factory-biome-config": ["@seanningtatum/software-factory-biome-config@workspace:packages/biome-config"],
+
+    "@seanningtatum/software-factory-blocks": ["@seanningtatum/software-factory-blocks@workspace:packages/blocks"],
+
+    "@seanningtatum/software-factory-lint": ["@seanningtatum/software-factory-lint@workspace:packages/lint"],
+
+    "@seanningtatum/software-factory-saas-starter": ["@seanningtatum/software-factory-saas-starter@workspace:templates/saas-starter"],
+
+    "@seanningtatum/software-factory-tsconfig": ["@seanningtatum/software-factory-tsconfig@workspace:packages/tsconfig"],
+
     "@selderee/plugin-htmlparser2": ["@selderee/plugin-htmlparser2@0.12.0", "", { "dependencies": { "domelementtype": "~2.3.0", "domhandler": "~5.0.3" }, "peerDependencies": { "selderee": "~0.12.0" } }, "sha512-oELmoyA6ML9jDRMV3kgcMQFKxUfBU0yFVn6yTctVaLT5ygXnxH52I3TZEgV9EhXJC68/uFvE5Daj1/25c0Xa/A=="],
 
     "@shikijs/core": ["@shikijs/core@4.6.0", "", { "dependencies": { "@shikijs/primitive": "4.6.0", "@shikijs/types": "4.6.0", "@shikijs/vscode-textmate": "^10.1.0", "@types/hast": "^3.0.5", "hast-util-to-html": "^9.0.6" } }, "sha512-bfd4OKgvoyXYiYmMRuleA656P4V7M/Du9lcTl38Ngm6KszMj7bq4J1IGZwSYR4c95Tv5UQALtYNWUwaI9UT3xw=="],
@@ -690,16 +700,6 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.1.0", "", {}, "sha512-cVBuhDQjBZaNMTwBquYfPydrUP+E3hE6oYGasx8h6ZrODIM7/r+gxLDXdd66oszbrggZHEntdE6j+5gYIVyMWQ=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@7.2.0", "", {}, "sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw=="],
-
-    "@software-factory/biome-config": ["@software-factory/biome-config@workspace:packages/biome-config"],
-
-    "@software-factory/blocks": ["@software-factory/blocks@workspace:packages/blocks"],
-
-    "@software-factory/lint": ["@software-factory/lint@workspace:packages/lint"],
-
-    "@software-factory/saas-starter": ["@software-factory/saas-starter@workspace:templates/saas-starter"],
-
-    "@software-factory/tsconfig": ["@software-factory/tsconfig@workspace:packages/tsconfig"],
 
     "@speed-highlight/core": ["@speed-highlight/core@1.2.24", "", {}, "sha512-qeW2e1l78afw8VhRPfPQ1Gjj+KU5XFQ/OFV5ti6eTa9bruO7mJyZtA4vw0ofqmA3tKCkROE9xLk3VZoeRc98nw=="],
 

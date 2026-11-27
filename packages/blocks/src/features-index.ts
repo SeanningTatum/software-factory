@@ -1,4 +1,4 @@
-import { byCodeUnit } from "@software-factory/lint";
+import { byCodeUnit } from "@seanningtatum/software-factory-lint";
 import { enabledOrder } from "./generate.ts";
 import { CORE_DIR, FEATURES_DIR, type Feature, type Features, isCoreModule } from "./manifest.ts";
 import { timelinePath } from "./timeline.ts";

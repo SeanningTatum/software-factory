@@ -35,7 +35,7 @@ that builds projects from it.
   History afresh. Here History stays empty, and a Decisions line that a change makes untrue is
   fixed or deleted. This overrides the template's own `CLAUDE.md` and `FEATURES.md`, which tell the
   projects made from it to add a line with every change.
-- **The template never depends on this repo's layout.** It imports `@software-factory/*` packages by
+- **The template never depends on this repo's layout.** It imports `@seanningtatum/software-factory-*` packages by
   name; the CLI's bundle step swaps `workspace:*` for published versions.
 - **A change to the template is proven by the feature matrix**, not only by the template's own
   tests: `bun run --filter create-software-factory test:matrix`. It scaffolds the required features
@@ -109,8 +109,8 @@ promote button: `templates/saas-starter/docs/branches.md` draws that flow. `crea
 adds `.github/`; `--no-github` leaves it out.
 
 `bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
-pull request; on `production` it publishes `packages/*` and the CLI under the `@software-factory`
-npm scope (claim it before the first publish).
+pull request; on `production` it publishes `packages/*` under the
+owner's npm scope, `@seanningtatum`, and the CLI as `create-software-factory`.
 
 `RELEASING.md` has the steps: merge the version pull request, wait for the checks, `bun run
 promote`. Never merge into `production` or force-push it. `/release` has Claude follow it.

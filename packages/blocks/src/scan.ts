@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { byCodeUnit } from "@software-factory/lint";
+import { byCodeUnit } from "@seanningtatum/software-factory-lint";
 import { ROUTES_DIR } from "./generate.ts";
 
 /** What a feature's source declares, read from the text alone: nothing is imported or run. */

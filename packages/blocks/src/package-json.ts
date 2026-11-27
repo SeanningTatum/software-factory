@@ -1,4 +1,4 @@
-import { byCodeUnit } from "@software-factory/lint";
+import { byCodeUnit } from "@seanningtatum/software-factory-lint";
 import type { BlockManifest } from "./manifest.ts";
 
 export type PackageJson = {

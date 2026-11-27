@@ -1,6 +1,6 @@
 /**
  * Runs the real CLI from this repo, the way `bunx create-software-factory` will run once it is
- * published. New projects depend on the @software-factory packages, which are not on npm yet, so
+ * published. New projects depend on the @seanningtatum packages, which are not on npm yet, so
  * this copies the bundled template, packs them into the copy's `.packs/`, points the copy at them
  * by relative path, and hands the copy to the CLI through SOFTWARE_FACTORY_TEMPLATE_DIR (an internal
  * variable, not listed in --help). The project carries the tarballs, so a clone of it installs
