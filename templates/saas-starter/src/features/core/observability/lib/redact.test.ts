@@ -20,6 +20,11 @@ describe("redactText", () => {
     expect(a).toBe(b);
     expect(a).not.toContain("example.com");
   });
+
+  it("returns at once from a long line with no address in it", () => {
+    const line = `${"a.".repeat(100_000)} ${"b".repeat(100_000)}`;
+    expect(redactText(line)).toBe(line);
+  });
 });
 
 describe("redact", () => {

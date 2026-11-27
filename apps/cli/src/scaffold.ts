@@ -110,9 +110,9 @@ export const validateName = (name: string): string | undefined =>
 export const nameFromDir = (dir: string) =>
   basename(resolve(dir))
     .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
     .slice(0, MAX_NAME)
-    .replace(/^-+|-+$/g, "") || "my-saas";
+    .replace(/^-|-$/g, "") || "my-saas";
 
 export const titleCase = (name: string) =>
   name

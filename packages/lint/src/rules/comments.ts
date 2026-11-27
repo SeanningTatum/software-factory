@@ -56,7 +56,7 @@ const MARKER = /\b(TODO|FIXME|XXX|HACK)\b/;
 const DIVIDER = /([-=*#~_])\1{3,}/;
 /** Prose that parses as code: it quotes code in backticks, or opens with `note:` or `e.g.`. */
 const PROSE = /`|^\s*(e\.g\.|i\.e\.|[A-Za-z]+:\s)/;
-const CODE_HINT = /[;{}=]|\)\s*$|^\s*(import|export|const|let|return|await|if|for)\b/m;
+const CODE_HINT = /[;{}=]|\)[ \t]*$|^\s*(import|export|const|let|return|await|if|for)\b/m;
 
 const parses = (code: string) =>
   ts.transpileModule(code, {

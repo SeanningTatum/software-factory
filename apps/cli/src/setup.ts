@@ -460,10 +460,11 @@ export const typedSettings = (
 /** The deployed URL of `env`, once APP_URL holds one; undefined while it is blank or local. */
 export const appUrl = (root: string, env: EnvName): string | undefined => {
   const value = varsFor(wranglerText(root), env).APP_URL;
+  if (isBlank(value) || isLocalOnly("APP_URL", value)) return undefined;
   // The smoke test appends /api/health, so no trailing slash.
-  return isBlank(value) || isLocalOnly("APP_URL", value)
-    ? undefined
-    : String(value).replace(/\/+$/, "");
+  let url = String(value);
+  while (url.endsWith("/")) url = url.slice(0, -1);
+  return url;
 };
 
 /** The Cloudflare account wrangler is logged in to, when there is exactly one to choose. */

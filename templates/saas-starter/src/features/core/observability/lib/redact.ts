@@ -1,9 +1,10 @@
-const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+// Bounded parts keep a long line without an "@" from taking quadratic time.
+const EMAIL = /[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9-]{1,63}\.){1,8}[A-Za-z]{2,24}/g;
 const BEARER = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi;
 const JWT = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
 const SECRET_PAIR =
   /\b(password|passwd|secret|token|api[_-]?key|authorization|cookie)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
-const URL_USERINFO = /(\w+:\/\/)[^/\s:@]+:[^/\s@]+@/g;
+const URL_USERINFO = /(\w{1,32}:\/\/)[^/\s:@]+:[^/\s@]+@/g;
 const STRIPE_KEY = /\b(sk|rk|whsec)_(live|test)?_?[A-Za-z0-9]{8,}/g;
 
 const SENSITIVE_KEYS =
