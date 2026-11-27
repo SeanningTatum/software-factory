@@ -1,6 +1,6 @@
 # Software Factory
 
-[![check](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml/badge.svg?branch=staging)](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml)
+[![check](https://github.com/SeanningTatum/software-factory/actions/workflows/check.yml/badge.svg?branch=staging)](https://github.com/SeanningTatum/software-factory/actions/workflows/check.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
