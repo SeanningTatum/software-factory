@@ -53,6 +53,7 @@ import {
   isReady,
   migrate,
   missingSecrets,
+  PRODUCTION_POSTHOG_KEY,
   provision,
   type RunScript,
   readiness,
@@ -157,7 +158,12 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
         );
   const husky = await askHusky(args);
   const github = await askGithub(args);
-  const devVars = args.yes ? {} : await askBlankSettings(blankSettings(templateDir(), features));
+  const devVars = args.yes
+    ? {}
+    : {
+        ...(await askBlankSettings(blankSettings(templateDir(), features))),
+        ...(await askPosthog()),
+      };
   return {
     name,
     targetDir,
@@ -210,6 +216,46 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
     if (value) values[blank.key] = value;
   }
   return values;
+};
+
+const askPosthogKey = async (message: string) =>
+  cancelled(
+    await p.text({
+      message,
+      defaultValue: "",
+      validate: (v) =>
+        !v || /^phc_\S+$/.test(v.trim())
+          ? undefined
+          : "A project API key starts with phc_ (PostHog → Project settings)",
+    }),
+  ).trim();
+
+const askPosthog = async (): Promise<Record<string, string>> => {
+  const staging = await askPosthogKey(
+    "PostHog project API key for staging, which dev reports to as well (phc_…; leave empty to skip)",
+  );
+  if (!staging) return {};
+  const production = await askPosthogKey(
+    "PostHog project API key for production, from a project of its own (leave empty to use staging's)",
+  );
+  if (!production)
+    p.log.warn(
+      "Production shares staging's PostHog project, so staging's traffic counts in its numbers.",
+    );
+  const host = cancelled(
+    await p.select({
+      message: "Which PostHog cloud is the project in?",
+      options: [
+        { value: "https://us.i.posthog.com", label: "US" },
+        { value: "https://eu.i.posthog.com", label: "EU" },
+      ],
+    }),
+  );
+  return {
+    POSTHOG_KEY: staging,
+    [PRODUCTION_POSTHOG_KEY]: production || staging,
+    POSTHOG_HOST: host,
+  };
 };
 
 type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
@@ -346,8 +392,16 @@ export const create = async (args: CreateArgs) => {
   const cloudflare = args.yes ? undefined : await offerCloudflare(plan, context.features, pm);
   // The offer applies the rulesets in .github/, so without them there is nothing to offer.
   if (!args.yes && plan.git && plan.github) await offerGithub(plan);
+  printSetupSteps(plan.targetDir, cloudflare);
   p.note(steps.join("\n"), "Next");
   p.outro(closingLine(cloudflare, pm));
+};
+
+const printSetupSteps = (root: string, cloudflare: ReadonlyArray<Item> | undefined) => {
+  // The Cloudflare table already lists these steps.
+  if (cloudflare) return;
+  for (const step of [...loadManifests(root).values()].flatMap((m) => m.setup ?? []))
+    p.log.info(`${step.description}${step.help ? pc.dim(` (${step.help})`) : ""}`);
 };
 
 /** The last line of create: what setup is still for, or that nothing is left. */

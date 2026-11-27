@@ -52,6 +52,29 @@ Run through `npm create`, `pnpm create` or `bun create`, the wizard installs the
 with that same tool. Run from a global install, it uses Bun; pass `--pm npm`, `--pm pnpm` or
 `--pm yarn` to choose.
 
+## Before you start
+
+The wizard asks for these as it goes, and every one can be left empty. Gather them first and one
+run deploys both environments, with staging working end to end. The Cloudflare token is set later
+with `create-tanstack-cf-saas github` or `gh secret set CLOUDFLARE_API_TOKEN`; the rest with
+`bun run setup`.
+
+| What                                                                     | Needed for                        | Where to get it                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrangler login`                                                         | Cloudflare setup                  | Run `bunx wrangler login` once on this machine.                                                                                                                                                                       |
+| `gh auth login`                                                          | The GitHub repository and rules   | Install [`gh`](https://cli.github.com) and sign in.                                                                                                                                                                   |
+| Cloudflare API token (`CLOUDFLARE_API_TOKEN`)                            | Deploys from GitHub Actions       | My Profile → API Tokens → the "Edit Cloudflare Workers" template, plus Account → D1 → Edit with `db`.                                                                                                                 |
+| PostHog project API keys (`phc_…`), one per environment, and their cloud | Analytics in PostHog (optional)   | Make two PostHog projects, such as `my-app-staging` and `my-app`, and copy each one's key from Project settings. US or EU is in the address bar: `eu.posthog.com` is EU, `us.posthog.com` or `app.posthog.com` is US. |
+| Stripe secret key and Pro price id                                       | `billing`                         | [API keys](https://dashboard.stripe.com/apikeys) and [Products](https://dashboard.stripe.com/products). Use test keys: what you type here goes to staging only.                                                       |
+| Stripe webhook signing secret                                            | `billing`, after the first deploy | [Webhooks](https://dashboard.stripe.com/webhooks), pointed at `<APP_URL>/api/auth/stripe/webhook`. It needs the deployed URL, so leave it empty in the wizard.                                                        |
+
+Production's own Stripe keys, a real Turnstile secret, a Sentry DSN and an alert webhook are for
+later: `bun run setup --env production` asks for each one it doesn't have. Production's own Pro
+price id is a setting, not a key, so pass it: `--var STRIPE_PRICE_PRO=price_…`. GitHub Actions
+needs two of these keys in its own secrets too: `POSTHOG_KEY`, so each deploy reports to PostHog,
+and `ALERT_WEBHOOK_URL`, so a failed production deploy posts there. Set them with `gh secret set`.
+On PostHog's EU cloud, also run `gh variable set POSTHOG_HOST --body https://eu.i.posthog.com`.
+
 ## The wizard
 
 Run it with no arguments and it asks five things. Every one has a default, so Enter works all the
@@ -120,6 +143,12 @@ database. Cloudflare setup needs you logged in to wrangler, and the GitHub step 
 
 A feature that needs keys you don't have yet, such as Stripe for billing, asks for them and takes
 an empty answer. The feature stays off until you fill them in `.dev.vars`.
+
+It also asks for two PostHog project API keys (`phc_…`), one for staging and one for production,
+and their cloud, US or EU. Give them and both environments send analytics to PostHog, each to its
+own project: Cloudflare setup uploads each key to its Worker. `dev` keeps staging's key but stays
+on the console. Leave production's empty to share staging's project, and staging's empty to keep
+the console everywhere.
 
 ### Skip the questions
 

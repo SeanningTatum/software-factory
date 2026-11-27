@@ -171,6 +171,41 @@ describe("scaffold", () => {
     expect(devVars).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);
   });
 
+  test("a PostHog key switches staging and production to PostHog, and leaves dev on console", () => {
+    const vars = (dir: string, env: string) => {
+      const json = parse(readFileSync(join(dir, "wrangler.jsonc"), "utf8"));
+      return env === "production" ? json.vars : json.env[env].vars;
+    };
+    const dir = target();
+    scaffold({
+      templateDir: TEMPLATE,
+      harnessDir: undefined,
+      targetDir: dir,
+      name: "acme-app",
+      features: [],
+      devVars: { POSTHOG_KEY: "phc_test", POSTHOG_HOST: "https://eu.i.posthog.com" },
+    });
+    for (const env of ["production", "staging"])
+      expect(vars(dir, env)).toMatchObject({
+        ANALYTICS_PROVIDER: "posthog",
+        POSTHOG_HOST: "https://eu.i.posthog.com",
+      });
+    const devVars = readFileSync(join(dir, ".dev.vars"), "utf8");
+    expect(devVars).toMatch(/^POSTHOG_KEY=phc_test$/m);
+    expect(devVars).toMatch(/^POSTHOG_HOST=https:\/\/eu\.i\.posthog\.com$/m);
+    expect(devVars).toMatch(/^ANALYTICS_PROVIDER=console$/m);
+
+    const without = target();
+    scaffold({
+      templateDir: TEMPLATE,
+      harnessDir: undefined,
+      targetDir: without,
+      name: "acme-app",
+      features: [],
+    });
+    expect(vars(without, "production").ANALYTICS_PROVIDER).toBe("console");
+  });
+
   test("leaves no trace of removed features in generated files or package.json", () => {
     const dir = target();
     scaffold({

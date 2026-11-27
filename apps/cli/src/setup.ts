@@ -257,7 +257,7 @@ const provisionBinding = (
   return text;
 };
 
-const withVars = (text: string, env: EnvName, vars: Readonly<Record<string, string>>) =>
+export const withVars = (text: string, env: EnvName, vars: Readonly<Record<string, string>>) =>
   Object.entries(vars).reduce((acc, [key, value]) => {
     const path = env === "production" ? ["vars", key] : ["env", env, "vars", key];
     return applyEdits(acc, modify(acc, path, value, { formattingOptions: formattingOf(acc) }));
@@ -438,6 +438,9 @@ export const setupEnvs = (
   return envNames;
 };
 
+/** Where `create` keeps production's PostHog key; POSTHOG_KEY holds staging's, which dev uses. */
+export const PRODUCTION_POSTHOG_KEY = "POSTHOG_KEY_PRODUCTION";
+
 /**
  * What the settings typed during `create` give one environment. They were typed for local use, so
  * they are test data: staging gets them, production never does.
@@ -454,7 +457,10 @@ export const typedSettings = (
         return value ? [[b.key, value]] : [];
       }),
     );
-  return { vars: pick(false), secrets: pick(true) };
+  const secrets = pick(true);
+  const posthog = typed?.[env === "production" ? PRODUCTION_POSTHOG_KEY : "POSTHOG_KEY"];
+  if (posthog) secrets.POSTHOG_KEY = posthog;
+  return { vars: pick(false), secrets };
 };
 
 /** The deployed URL of `env`, once APP_URL holds one; undefined while it is blank or local. */
