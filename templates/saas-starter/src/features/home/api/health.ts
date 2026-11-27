@@ -1,5 +1,6 @@
 import { Effect } from "effect";
-import { CloudflareEnv, setting } from "#/app/env.ts";
+import { type AppEnv, CloudflareEnv, setting } from "#/app/env.ts";
+import { selectAdapter } from "#/features/core/analytics/api/analytics.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { type WorkerVersion, workerVersion } from "#/features/core/lib/version.ts";
@@ -14,7 +15,15 @@ export interface Readiness {
   readonly missing: ReadonlyArray<string>;
   readonly database?: "up" | "down";
   readonly version?: WorkerVersion;
+  readonly warnings?: ReadonlyArray<string>;
 }
+
+const analyticsWarning = (env: AppEnv) => {
+  const provider = setting(env, "ANALYTICS_PROVIDER");
+  return provider && provider !== "none" && selectAdapter(env).name === "none"
+    ? [`ANALYTICS_PROVIDER is ${provider}, but its key or binding is missing: analytics is off`]
+    : [];
+};
 
 export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: string) {
   const env = yield* CloudflareEnv;
@@ -34,10 +43,12 @@ export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: st
       )
     : undefined;
   const version = workerVersion(env);
+  const warnings = analyticsWarning(env);
   return {
     ok: missing.length === 0 && database !== "down",
     missing,
     ...(database ? { database } : {}),
     ...(version ? { version } : {}),
+    ...(warnings.length ? { warnings } : {}),
   } satisfies Readiness;
 });
