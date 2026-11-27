@@ -22,6 +22,20 @@ describe("runbook config", () => {
     expect(deploy).toMatch(/"\$ALERT_WEBHOOK_URL"[\s\S]*wrangler rollback/);
   });
 
+  it.skipIf(noGithub)(
+    "gives GitHub each environment's URL, so a deploy or a rollout step links to the live site",
+    () => {
+      const deploy = read(".github/workflows/deploy.yml");
+      const production =
+        /^ {4}environment:\n {6}name: production\n {6}url: \$\{\{ vars\.PRODUCTION_URL \}\}$/m;
+      expect(deploy).toMatch(
+        /^ {4}environment:\n {6}name: staging\n {6}url: \$\{\{ vars\.STAGING_URL \}\}$/m,
+      );
+      expect(deploy).toMatch(production);
+      expect(read(".github/workflows/rollout.yml")).toMatch(production);
+    },
+  );
+
   it("documents the export and the alerts", () => {
     const runbook = read("docs/runbook.md");
     for (const text of ["workers_trace_events", "Keep logs past a week", "ALERT_WEBHOOK_URL"]) {
@@ -133,7 +147,7 @@ describe("gradual rollout", () => {
     const rollout = workflow("rollout");
     expect(workflow("deploy")).toMatch(/^concurrency: deploy-\$\{\{ github\.ref_name \}\}$/m);
     expect(rollout).toMatch(/^concurrency: deploy-production$/m);
-    expect(rollout).toMatch(/^ {4}environment: production$/m);
+    expect(rollout).toMatch(/^ {4}environment:\n {6}name: production$/m);
     expect(rollout).toMatch(/"back out"\) bunx wrangler versions deploy "\$old@100"/);
     expect(rollout).toMatch(/jq 'length' <<<"\$pair"\)" != 2 \][\s\S]*case \$TO in/);
   });
