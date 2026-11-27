@@ -7,7 +7,6 @@ interface Metric {
   readonly name: string;
   readonly events: ReadonlyArray<string>;
 }
-/** Each feature's and core module's own events.ts; a route can share the name. */
 const eventFiles = import.meta.glob<{ metric?: Metric }>(
   ["/src/features/*/events.ts", "/src/features/core/*/events.ts"],
   { eager: true },

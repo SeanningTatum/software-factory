@@ -1,7 +1,3 @@
-/**
- * Removes secrets and personal data from anything about to be logged or reported.
- * Emails become a short stable hash so the same user can still be followed across lines.
- */
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const BEARER = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi;
 const JWT = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
@@ -15,7 +11,6 @@ const SENSITIVE_KEYS =
 const MAX_DEPTH = 6;
 const HASH_HEX = 16;
 
-/** A small non-cryptographic hash (FNV-1a, 64 bits) so redaction stays synchronous. */
 const fnv1a = (text: string) => {
   let hash = 0xcbf29ce484222325n;
   for (let i = 0; i < text.length; i++) {

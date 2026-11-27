@@ -11,9 +11,9 @@ describe("Uploads", () => {
   it("stores a valid file under the user's prefix and lists it", async () => {
     const { bucket } = memoryBucket();
     const uploads = Uploads.make(bucket, undefined);
-    const stored = await Effect.runPromise(uploads.upload("u1", png("my cat!.png")));
+    const stored = await Effect.runPromise(uploads.upload("u1", png('my "cat"!.png')));
     expect(stored.id).toMatch(/^\d{13}-[0-9a-f-]{36}$/);
-    expect(stored.name).toBe("my cat_.png");
+    expect(stored.name).toBe("my _cat_.png");
     const listed = await Effect.runPromise(uploads.list("u1"));
     expect(listed.files.map((f) => f.id)).toEqual([stored.id]);
     expect((await Effect.runPromise(uploads.list("u2"))).files).toEqual([]);
@@ -51,7 +51,6 @@ describe("Uploads", () => {
 
   const seed = (store: ReturnType<typeof memoryBucket>["store"], count: number) => {
     for (let i = 0; i < count; i++) {
-      // As upload names them: the later the file, the lower its key.
       store.set(`users/u1/${String(99_999 - i).padStart(5, "0")}`, {
         bytes: new ArrayBuffer(1),
         contentType: "image/png",

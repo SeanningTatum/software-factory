@@ -7,12 +7,14 @@ import { matchesAny } from "./glob.ts";
 import {
   externalCallSpan,
   fileSize,
+  noInlineHandler,
   noNestedYield,
   noProcessEnv,
   noRunEffect,
   noThrow,
   noTryCatch,
 } from "./rules/ast-rules.ts";
+import { noDuplicateComment, noUselessComment } from "./rules/comments.ts";
 import { featureLayout } from "./rules/feature-layout.ts";
 import { rulesFile } from "./rules/rules-file.ts";
 import { sharedLib } from "./rules/shared-lib.ts";
@@ -26,16 +28,28 @@ export const rules: ReadonlyArray<Rule> = [
   noProcessEnv,
   externalCallSpan,
   noNestedYield,
+  noInlineHandler,
+  noUselessComment,
   fileSize,
   testMap,
   sharedLib,
 ];
 
 /** Rules over the whole file list, not one source file. */
-export const projectRules: ReadonlyArray<ProjectRule> = [featureLayout, rulesFile];
+export const projectRules: ReadonlyArray<ProjectRule> = [
+  featureLayout,
+  rulesFile,
+  noDuplicateComment,
+];
 
 /** Rules that tests may break: they throw from mocks and run effects directly. */
-const SOURCE_ONLY = new Set(["no-throw", "no-try-catch", "no-run-effect", "external-call-span"]);
+const SOURCE_ONLY = new Set([
+  "no-throw",
+  "no-try-catch",
+  "no-run-effect",
+  "external-call-span",
+  "no-inline-handler",
+]);
 const TEST_FILE = /\.(test|spec)\.tsx?$/;
 
 const fileFindings = (

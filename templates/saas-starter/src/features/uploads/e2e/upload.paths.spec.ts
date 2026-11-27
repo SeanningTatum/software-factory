@@ -4,11 +4,6 @@ import { asVisitor } from "#/app/testing/e2e.ts";
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]);
 const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
-/**
- * Each test is its own visitor. The sign-up limiter allows 10 attempts a minute per IP; locally every
- * request comes from one address, so without this a second run inside a minute trips it.
- * (On Cloudflare the edge sets this header, so a client can't choose it.)
- */
 test.beforeEach(({ page }) => asVisitor(page));
 
 test.beforeEach(async ({ page }) => {
@@ -21,7 +16,6 @@ test.beforeEach(async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Welcome, E2E Uploads")).toBeVisible();
   await page.goto("/uploads");
-  // The picker turns on once React hydrates; a file picked before then would be ignored.
   await expect(page.getByLabel("Upload a file")).toBeEnabled();
 });
 

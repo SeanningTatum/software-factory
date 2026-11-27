@@ -36,27 +36,45 @@ const summary = (state: BillingState) => {
 
 type Send = (event: { type: "START"; action: CheckoutAction }) => void;
 
+interface StartProps {
+  readonly action: CheckoutAction;
+  readonly label: string;
+  readonly busy: boolean;
+  readonly disabled: boolean;
+  readonly send: Send;
+}
+
+function StartButton({ action, label, busy, disabled, send }: StartProps) {
+  const start = () => send({ type: "START", action });
+  return (
+    <Button disabled={disabled} onClick={start}>
+      {busy ? "Opening Stripe…" : label}
+    </Button>
+  );
+}
+
 function Actions({ state, busy, send }: { state: BillingState; busy: boolean; send: Send }) {
   const disabled = busy || !state.configured;
-  // A subscription to manage, even one not paying right now (past due): fixing the card is there.
   if (state.status) {
     return (
-      <Button
+      <StartButton
+        action={{ kind: "manage" }}
+        label="Manage subscription"
+        busy={busy}
         disabled={disabled}
-        onClick={() => send({ type: "START", action: { kind: "manage" } })}
-      >
-        {busy ? "Opening Stripe…" : "Manage subscription"}
-      </Button>
+        send={send}
+      />
     );
   }
   return state.plans.map((plan) => (
-    <Button
+    <StartButton
       key={plan.name}
+      action={{ kind: "upgrade", plan: plan.name }}
+      label={`Upgrade to ${plan.label}`}
+      busy={busy}
       disabled={disabled}
-      onClick={() => send({ type: "START", action: { kind: "upgrade", plan: plan.name } })}
-    >
-      {busy ? "Opening Stripe…" : `Upgrade to ${plan.label}`}
-    </Button>
+      send={send}
+    />
   ));
 }
 
@@ -65,6 +83,8 @@ export function PlanCard({ state }: { state: BillingState }) {
     checkoutMachine.provide({ actors: { redirect: fromPromise(({ input }) => redirect(input)) } }),
   );
   const busy = snapshot.matches("redirecting") || snapshot.status === "done";
+  const retry = () => send({ type: "RETRY" });
+  const dismiss = () => send({ type: "DISMISS" });
 
   return (
     <Card>
@@ -89,8 +109,8 @@ export function PlanCard({ state }: { state: BillingState }) {
       <CardFooter className="gap-2">
         {snapshot.matches("failed") ? (
           <>
-            <Button onClick={() => send({ type: "RETRY" })}>Try again</Button>
-            <Button variant="ghost" onClick={() => send({ type: "DISMISS" })}>
+            <Button onClick={retry}>Try again</Button>
+            <Button variant="ghost" onClick={dismiss}>
               Cancel
             </Button>
           </>

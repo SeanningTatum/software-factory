@@ -1,6 +1,5 @@
 import { getNextSnapshot, setup } from "xstate";
 
-/** Stripe's subscription statuses, plus "none" before the first checkout. */
 export type Status =
   | "none"
   | "incomplete"
@@ -12,10 +11,6 @@ export type Status =
 
 type Event = { type: `TO_${Uppercase<Exclude<Status, "none">>}` };
 
-/**
- * The subscription lifecycle as Stripe drives it through webhooks. Stripe stays the source of
- * truth; the server checks each change against this machine and logs any it did not expect.
- */
 export const subscriptionMachine = setup({ types: { events: {} as Event } }).createMachine({
   id: "subscription",
   initial: "none",
@@ -42,7 +37,6 @@ const STATUSES = new Set<string>([
 
 export const isStatus = (value: string): value is Status => STATUSES.has(value);
 
-/** Whether Stripe moving a subscription from one status to another is a change we expect. */
 export const isExpectedChange = (from: Status, to: Status): boolean => {
   if (from === to) return true;
   if (to === "none") return false;
@@ -51,5 +45,4 @@ export const isExpectedChange = (from: Status, to: Status): boolean => {
   return getNextSnapshot(subscriptionMachine, snapshot, event).value === to;
 };
 
-/** Plans that count as paid right now. */
 export const isEntitled = (status: Status) => status === "active" || status === "trialing";

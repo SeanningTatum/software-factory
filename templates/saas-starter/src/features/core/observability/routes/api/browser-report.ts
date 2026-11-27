@@ -5,7 +5,6 @@ import { reportBrowserError } from "#/features/core/observability/api/browser-re
 
 const NO_CONTENT = 204;
 
-/** Errors caught in the browser; see reportBrowserError. */
 export const Route = createFileRoute("/api/browser-report")({
   server: {
     handlers: {

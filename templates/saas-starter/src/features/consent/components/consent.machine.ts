@@ -3,19 +3,10 @@ import { assign, setup } from "xstate";
 export type ConsentChoice = "granted" | "denied";
 
 export interface ConsentInput {
-  /** The choice saved in the consent cookie, if any. */
   readonly stored: ConsentChoice | undefined;
-  /** Do Not Track or Global Privacy Control is on. */
   readonly optedOut: boolean;
 }
 
-/**
- * Whether the browser may send analytics. Server events for signed-in flows don't depend on it.
- *
- * resolving → blocked   when DNT or GPC is on (no banner, no browser events)
- *           → granted / denied from the saved cookie
- *           → asking    on a first visit
- */
 export const consentMachine = setup({
   types: {
     context: {} as { stored: ConsentChoice | undefined; optedOut: boolean },
@@ -23,7 +14,6 @@ export const consentMachine = setup({
     events: {} as { type: "ACCEPT" } | { type: "DECLINE" } | { type: "REOPEN" },
   },
   actions: {
-    /** Saves the choice; the component provides the cookie write. */
     persist: (_, _params: { choice: ConsentChoice }) => undefined,
   },
   guards: {

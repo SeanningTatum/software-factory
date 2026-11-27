@@ -11,11 +11,6 @@ export interface RuntimeInput {
   readonly waitUntil: (promise: Promise<unknown>) => void;
 }
 
-/**
- * What every request has before any feature: the Worker's env, the request, `waitUntil`, and the
- * logger and error reporter from the observability feature. Those two are installed here, not
- * through src/gen/layers.ts, because they need the env and the request before any layer is built.
- */
 export const kernelLayer = ({ env, request, waitUntil }: RuntimeInput) => {
   const base = Layer.mergeAll(
     CloudflareEnv.layer(env),
@@ -28,7 +23,6 @@ export const kernelLayer = ({ env, request, waitUntil }: RuntimeInput) => {
   );
 };
 
-/** The kernel plus every enabled feature's services, built fresh for one request. */
 export const appLayer = (input: RuntimeInput) =>
   FeaturesLayer.pipe(Layer.provideMerge(kernelLayer(input)));
 
@@ -37,6 +31,5 @@ export type AppServices = AppLayer extends Layer.Layer<infer A, infer _E, infer 
 export type AppLayerError = AppLayer extends Layer.Layer<infer _A, infer E, infer _R> ? E : never;
 export type AppRuntime = ManagedRuntime.ManagedRuntime<AppServices, AppLayerError>;
 
-/** One runtime per request; the request middleware disposes it, which flushes analytics. */
 export const makeRuntime = (input: RuntimeInput): AppRuntime =>
   ManagedRuntime.make(appLayer(input));

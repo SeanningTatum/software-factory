@@ -77,10 +77,10 @@ describe("lint", () => {
   });
 
   test("counts lines, not the final newline", () => {
-    const at = "//\n".repeat(defaults.maxLines);
+    const at = "// a line\n".repeat(defaults.maxLines);
     const rulesOf = (text: string) => lint(project({ "src/big.test.ts": text })).map((f) => f.rule);
     expect(rulesOf(at)).toEqual([]);
-    expect(rulesOf(`${at}//`)).toEqual(["file-size"]);
+    expect(rulesOf(`${at}// one more`)).toEqual(["file-size"]);
   });
 
   describe("CLAUDE.md is true", () => {
@@ -181,6 +181,63 @@ describe("lint", () => {
     expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
       "src/core/nested.test.ts:no-nested-yield:3",
       "src/core/nested.ts:no-nested-yield:3",
+    ]);
+  });
+
+  test("reports an inline function passed to a JSX prop, but not a named one or one in a test", () => {
+    const body = [
+      "export const A = ({ go }: { go: () => void }) => (",
+      "  <div onClick={go} title={String(go)}>",
+      "    <button onClick={() => go()} />",
+      "    <form onSubmit={(function (e) { e.preventDefault(); })} />",
+      "  </div>",
+      ");",
+    ].join("\n");
+    const root = project({ "src/core/a.tsx": body, "src/core/a.test.tsx": body });
+    expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/a.tsx:no-inline-handler:3",
+      "src/core/a.tsx:no-inline-handler:4",
+    ]);
+  });
+
+  test("reports commented-out code, TODOs, dividers and empty comments, not prose or directives", () => {
+    const body = [
+      "// const old = compute();",
+      "// if (old) {",
+      "//   send(old);",
+      "// }",
+      "",
+      "// TODO: make this faster",
+      "// ---- Helpers ----",
+      "//",
+      '/// <reference types="vite/client" />',
+      "// A 5 MB file plus form overhead; the upload route cuts the exact limit itself.",
+      "/** Runs `go()` once; see `retry` for the rest. */",
+      "",
+      "// Uses `a = b`",
+      "",
+      "// note: x = 1",
+      "",
+      "// e.g. foo(bar)",
+      "",
+      "// biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is not everywhere.",
+      "export const x = 1; // shortcut: one try only, retry once users see failures",
+    ].join("\n");
+    const root = project({ "src/core/c.ts": body });
+    expect(lint(root).map((f) => `${f.rule}:${f.line}`)).toEqual([
+      "no-useless-comment:1",
+      "no-useless-comment:6",
+      "no-useless-comment:7",
+      "no-useless-comment:8",
+    ]);
+  });
+
+  test("reports a comment said again in another place, but not a short one", () => {
+    const said = "/** The part of a KV binding the service uses. */\nexport const a = 1;\n";
+    const short = "// As above.\nexport const b = 1;\n";
+    const root = project({ "src/core/a.ts": said + short, "src/core/b.ts": short + said });
+    expect(lint(root).map((f) => `${f.file}:${f.rule}:${f.line}`)).toEqual([
+      "src/core/b.ts:no-duplicate-comment:3",
     ]);
   });
 

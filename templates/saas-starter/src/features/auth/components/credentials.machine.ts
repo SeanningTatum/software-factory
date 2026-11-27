@@ -3,16 +3,10 @@ import { assign, fromPromise, setup } from "xstate";
 export interface Credentials {
   readonly email: string;
   readonly password: string;
-  /** Only sign-up sends a name. */
   readonly name?: string;
-  /** The Turnstile token, when sign-up is guarded. Single-use, so each submit needs a fresh one. */
   readonly captcha?: string;
 }
 
-/**
- * The sign-in and sign-up forms: idle → submitting → done, or back to idle with an error.
- * The component provides `submit`, which calls Better Auth; tests provide a stub.
- */
 export const credentialsMachine = setup({
   types: {
     context: {} as { error: string | undefined },

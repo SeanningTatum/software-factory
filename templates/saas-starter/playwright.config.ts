@@ -16,6 +16,7 @@ const port = url.port || "3000";
 const ci = Boolean(process.env.CI);
 
 export default defineConfig({
+  // Every spec assumes the Turnstile test keys from .dev.vars.example.
   testDir: "src/features",
   testMatch: "**/e2e/*.spec.ts",
   fullyParallel: true,

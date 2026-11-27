@@ -6,7 +6,6 @@ export interface Plan {
   readonly label: string;
 }
 
-/** Paid plans whose Stripe price is set. A plan without a price is left out, not broken. */
 export const plansFrom = (env: AppEnv): ReadonlyArray<Plan> => {
   const pro = setting(env, "STRIPE_PRICE_PRO");
   return pro ? [{ name: "pro", priceId: pro, label: "Pro" }] : [];

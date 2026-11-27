@@ -11,7 +11,6 @@ const SignedOut = Schema.TaggedStruct("signed_out", {});
 
 export const events = [SignUpCompleted, SignInSucceeded, SignInFailed, SignedOut] as const;
 
-/** What success looks like for this feature, and the catalog events that measure it. */
 export const metric = {
   name: "Share of sign-in attempts that succeed",
   events: ["sign_up_completed", "sign_in_succeeded", "sign_in_failed"],

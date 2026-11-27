@@ -4,7 +4,6 @@ import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 
-/** The part of a KV namespace binding the service uses. */
 export interface KvNamespace {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
@@ -17,7 +16,6 @@ export class KvError extends Schema.TaggedError<KvError>()("KvError", {
   cause: Schema.Defect(),
 }) {}
 
-/** KV's own floor for expiring keys. */
 const MIN_TTL_SECONDS = 60;
 
 const codec = <S extends Schema.Codec<unknown, unknown>>(schema: S) =>
@@ -26,7 +24,6 @@ const codec = <S extends Schema.Codec<unknown, unknown>>(schema: S) =>
 export class KeyValue extends Context.Service<
   KeyValue,
   {
-    /** The value under `key`, decoded with `schema`; none when missing or no longer valid. */
     readonly get: <A, I>(
       key: string,
       schema: Schema.Codec<A, I>,
@@ -53,7 +50,6 @@ export class KeyValue extends Context.Service<
               ? Effect.succeedNone
               : Schema.decodeUnknownEffect(codec(schema))(raw).pipe(
                   Effect.map(Option.some),
-                  // A value written by an older schema is treated as a miss, not an error.
                   Effect.catch(() => Effect.succeedNone),
                 ),
           ),
@@ -87,7 +83,6 @@ export class KeyValue extends Context.Service<
   );
 }
 
-/** Read-through cache: the stored value when there is one, otherwise run `compute` and store it. */
 export const cached = <A, I, E, R>(
   key: string,
   schema: Schema.Codec<A, I>,

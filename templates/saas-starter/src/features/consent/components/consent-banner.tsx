@@ -8,7 +8,6 @@ import { type ConsentInput, consentMachine } from "./consent.machine.ts";
 type ConsentState = { readonly granted: boolean; readonly reopen: () => void };
 const ConsentContext = createContext<ConsentState>({ granted: false, reopen: () => undefined });
 
-/** Whether the browser may send analytics, and a way to change the answer. */
 export const useConsent = () => useContext(ConsentContext);
 
 export function ConsentProvider({ input, children }: { input: ConsentInput; children: ReactNode }) {
@@ -26,6 +25,8 @@ export function ConsentProvider({ input, children }: { input: ConsentInput; chil
     { input },
   );
   const value = { granted: snapshot.matches("granted"), reopen: () => send({ type: "REOPEN" }) };
+  const decline = () => send({ type: "DECLINE" });
+  const accept = () => send({ type: "ACCEPT" });
   return (
     <ConsentContext.Provider value={value}>
       {children}
@@ -40,10 +41,10 @@ export function ConsentProvider({ input, children }: { input: ConsentInput; chil
             tracking across sites.
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => send({ type: "DECLINE" })}>
+            <Button variant="outline" size="sm" onClick={decline}>
               No thanks
             </Button>
-            <Button size="sm" onClick={() => send({ type: "ACCEPT" })}>
+            <Button size="sm" onClick={accept}>
               Allow
             </Button>
           </div>

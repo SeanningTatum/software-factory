@@ -162,3 +162,22 @@ export const fileSize: Rule = {
       : [];
   },
 };
+
+/** `onClick={() => …}` or `onClick={function () {…}}`, parentheses and all. */
+const isInlineFunction = (n: ts.Node): boolean => {
+  if (!ts.isJsxAttribute(n) || !n.initializer || !ts.isJsxExpression(n.initializer)) return false;
+  let e = n.initializer.expression;
+  while (e && ts.isParenthesizedExpression(e)) e = e.expression;
+  return e !== undefined && (ts.isArrowFunction(e) || ts.isFunctionExpression(e));
+};
+
+export const noInlineHandler: Rule = {
+  id: "no-inline-handler",
+  description: "Pass a named function to a JSX prop (`onClick={signOut}`), not an inline one.",
+  check: ({ source }) =>
+    collect(source, (n) =>
+      isInlineFunction(n)
+        ? "name this function above the JSX and pass it: `onClick={handleClick}`"
+        : undefined,
+    ),
+};

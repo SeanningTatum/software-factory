@@ -3,8 +3,7 @@ import { describe, expect, it } from "vitest";
 import { makeTestDb } from "#/features/core/db/api/test-database.ts";
 import { authSchema } from "./schema.ts";
 
-/** Every lookup Better Auth or the audit log makes, other than by primary key, uses an index. */
-describe("auth schema", () => {
+describe("auth schema indexes every lookup other than by primary key", () => {
   it.each([
     ["account", "user_id"],
     ["session", "user_id"],

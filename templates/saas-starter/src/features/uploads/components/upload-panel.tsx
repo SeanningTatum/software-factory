@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useMachine } from "@xstate/react";
-import { useId } from "react";
+import { type ChangeEvent, useId } from "react";
 import { fromPromise } from "xstate";
 import { Button } from "#/features/core/ui/components/button.tsx";
 import { Label } from "#/features/core/ui/components/label.tsx";
@@ -31,6 +31,12 @@ export function UploadPanel() {
       },
     }),
   );
+  const pick = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    if (file) dispatch({ type: "PICK", file });
+    event.currentTarget.value = "";
+  };
+  const retry = () => dispatch({ type: "RETRY" });
 
   return (
     <div className="flex flex-col gap-3">
@@ -40,11 +46,7 @@ export function UploadPanel() {
         type="file"
         accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
         disabled={!hydrated || snapshot.matches("uploading")}
-        onChange={(event) => {
-          const file = event.currentTarget.files?.[0];
-          if (file) dispatch({ type: "PICK", file });
-          event.currentTarget.value = "";
-        }}
+        onChange={pick}
         className="text-sm"
       />
       {snapshot.matches("uploading") && <p className="text-sm text-muted-foreground">Uploading…</p>}
@@ -55,7 +57,7 @@ export function UploadPanel() {
         </p>
       )}
       {snapshot.matches("failed") && (
-        <Button size="sm" className="self-start" onClick={() => dispatch({ type: "RETRY" })}>
+        <Button size="sm" className="self-start" onClick={retry}>
           Try again
         </Button>
       )}

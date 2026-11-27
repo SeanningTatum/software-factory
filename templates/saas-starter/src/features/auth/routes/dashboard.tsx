@@ -18,6 +18,11 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const { user } = Route.useRouteContext();
   const router = useRouter();
+  const signOut = async () => {
+    await authClient.signOut();
+    await router.invalidate();
+    await router.navigate({ to: "/" });
+  };
   return (
     <main className="mx-auto max-w-5xl px-4 py-12">
       <Card>
@@ -26,14 +31,7 @@ function Dashboard() {
           <CardDescription>Signed in as {user.email}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              await authClient.signOut();
-              await router.invalidate();
-              await router.navigate({ to: "/" });
-            }}
-          >
+          <Button variant="outline" onClick={signOut}>
             Sign out
           </Button>
         </CardContent>

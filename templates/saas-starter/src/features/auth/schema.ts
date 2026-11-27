@@ -5,10 +5,6 @@ const timestamps = {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 };
 
-/**
- * Better Auth's core tables. Column names follow its defaults, so no field mapping is needed. The
- * indexes are the ones Better Auth's own schema asks for, plus the Stripe customer lookup.
- */
 export const user = sqliteTable(
   "user",
   {
@@ -17,7 +13,6 @@ export const user = sqliteTable(
     email: text("email").notNull().unique(),
     emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
     image: text("image"),
-    /** Filled by the billing feature's Stripe plugin when it is enabled; otherwise always null. */
     stripeCustomerId: text("stripe_customer_id"),
     ...timestamps,
   },
@@ -73,10 +68,6 @@ export const verification = sqliteTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-/**
- * Who did what, and when: one row per sign-up, sign-in (failed ones too), sign-out and plan change.
- * The app only ever adds rows. `actor_id` has no foreign key, so a row outlives its user.
- */
 export const auditLog = sqliteTable(
   "audit_log",
   {
@@ -84,7 +75,6 @@ export const auditLog = sqliteTable(
     at: integer("at", { mode: "timestamp_ms" }).notNull(),
     actorId: text("actor_id"),
     action: text("action").notNull(),
-    /** The event's properties as JSON; ids and codes only, like every analytics event. */
     details: text("details").notNull(),
     requestId: text("request_id").notNull(),
     ipAddress: text("ip_address"),

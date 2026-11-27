@@ -1,9 +1,5 @@
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-/**
- * The Stripe plugin's subscription table. `referenceId` is the user's id. Indexed on every column
- * the billing page and the webhook handlers look rows up by.
- */
 export const subscription = sqliteTable(
   "subscription",
   {

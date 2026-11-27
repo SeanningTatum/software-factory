@@ -42,10 +42,6 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   },
 ];
 
-/**
- * The analytics events an auth API response proves happened. Read on the server, where Better
- * Auth's answer is certain, not in the form. `body` is the parsed JSON response, if any.
- */
 export const authEvents = (
   method: string,
   path: string,

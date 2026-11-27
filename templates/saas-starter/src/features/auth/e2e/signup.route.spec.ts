@@ -11,7 +11,6 @@ test("@golden /signup shows the sign-up form and has no serious a11y violation",
   await expectAccessible(page);
 });
 
-// Assumes the Turnstile test keys from .dev.vars.example, as every browser spec does.
 test("@golden /signup shows the Turnstile check and turns the button on once it passes", async ({
   page,
 }) => {

@@ -15,10 +15,7 @@ const getUser = createServerFn({ method: "GET" }).handler(({ context }) =>
   ),
 );
 
-/**
- * For a page's `beforeLoad`: sends signed-out visitors to /login and gives the page the user.
- * Server functions still check the session themselves; this only decides what to render.
- */
+/** Server functions still check the session themselves; this only decides what to render. */
 export const ensureSignedIn = async ({ location }: { location: { href: string } }) => {
   const user = await getUser();
   if (!user) throw redirect({ to: "/login", search: { redirect: location.href } });

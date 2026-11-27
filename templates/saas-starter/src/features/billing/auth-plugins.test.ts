@@ -103,7 +103,6 @@ describe("a late subscription update", () => {
   const period = { periodStart: new Date(100_000), periodEnd: new Date(200_000) };
 
   it("puts back Stripe's status when a stale update follows the delete", async () => {
-    // The delete left the row canceled; an earlier update, retried, made the plugin write active.
     expect(await run("active", { status: "canceled", canceled_at: 150, ended_at: 150 })).toEqual([
       {
         model: "subscription",
@@ -121,7 +120,6 @@ describe("a late subscription update", () => {
   });
 
   it("puts back the cancel flag and the period end when only they are stale", async () => {
-    // The status matches, so comparing it alone would write nothing and keep the stale event's flag.
     const [written] = await run("active", { status: "active", cancel_at_period_end: true });
     expect(written).toMatchObject({
       update: { status: "active", cancelAtPeriodEnd: true, periodEnd: new Date(200_000) },

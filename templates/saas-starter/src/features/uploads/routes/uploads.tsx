@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "#/features/core/ui/com
 import { type FilePage, Uploads } from "#/features/uploads/api/uploads.ts";
 import { UploadPanel } from "#/features/uploads/components/upload-panel.tsx";
 
-/** The `?cursor=` of the next page: R2's opaque token, passed back as it came. */
 const CursorSearch = Schema.toStandardSchemaV1(
   Schema.Struct({ cursor: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(512))) }),
 );

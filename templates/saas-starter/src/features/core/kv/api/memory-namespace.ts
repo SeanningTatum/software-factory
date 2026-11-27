@@ -1,6 +1,5 @@
 import type { KvNamespace } from "./key-value.ts";
 
-/** An in-memory KV namespace for tests. */
 export const memoryNamespace = () => {
   const store = new Map<string, { value: string; ttl?: number }>();
   const kv: KvNamespace = {

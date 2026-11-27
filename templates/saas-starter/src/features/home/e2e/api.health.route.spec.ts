@@ -1,10 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-/**
- * The dev server can't be asked as another host (Vite refuses it), and a spec can't unset a
- * setting, so the two outcomes below depend on `.dev.vars`: with every Stripe key set the first
- * runs, without them the second does. Exactly one of them runs.
- */
 const health = async (request: import("@playwright/test").APIRequestContext) => {
   const res = await request.get("/api/health");
   return {

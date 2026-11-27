@@ -10,21 +10,13 @@ const MIN_SECRET_LENGTH = 32;
 const SESSION_DAYS = 30;
 const DAY_SECONDS = 60 * 60 * 24;
 
-/** What a feature that extends auth (billing, for one) gets to build its Better Auth plugins. */
 interface AuthPluginDeps {
   readonly env: AppEnv;
-  /**
-   * Queues an analytics event, sent with the request's batch, and an audit log row. Pass the user's
-   * id when the request has no session of its own: a Stripe webhook, say.
-   */
   readonly onEvent: (event: AnalyticsEvent, userId?: string) => void;
-  /** Queues a warning for the request's log, with the request id on it. */
   readonly onWarning: (message: string, details: Record<string, unknown>) => void;
-  /** How many errors Better Auth has logged while serving this request. */
   readonly loggedErrors: () => number;
 }
 
-/** Where Better Auth's own log lines go: the request's log and, for errors, the error reporter. */
 export type AuthLog = (level: "debug" | "info" | "warn" | "error", message: string) => void;
 export type AuthPluginFactory = (deps: AuthPluginDeps) => ReadonlyArray<BetterAuthPlugin>;
 
@@ -34,14 +26,12 @@ export interface AuthConfig {
   readonly trustedOrigins: ReadonlyArray<string>;
 }
 
-/** Checks the settings auth needs. Returns the name of the first bad one, or the config. */
 export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string } => {
   const secret = setting(env, "BETTER_AUTH_SECRET");
   if (!secret || secret.length < MIN_SECRET_LENGTH)
     return { missing: "BETTER_AUTH_SECRET (32+ characters)" };
   const baseURL = setting(env, "APP_URL");
   if (!baseURL) return { missing: "APP_URL" };
-  // `new URL` throws on a bare host, and this runs while the layer is built: every route would 500.
   if (!/^https?:\/\//.test(baseURL) || !URL.canParse(baseURL))
     return { missing: "APP_URL (a full https:// URL)" };
   const extra = (setting(env, "TRUSTED_ORIGINS") ?? "")
@@ -60,7 +50,6 @@ export const makeAuth = (
   db: Db,
   plugins: ReadonlyArray<BetterAuthPlugin>,
   log: AuthLog,
-  /** The plugins' own tables (billing's `subscription`): the adapter refuses one it was not given. */
   tables: Record<string, unknown> = {},
 ) =>
   betterAuth({
@@ -77,8 +66,6 @@ export const makeAuth = (
     // Workers rate-limit bindings guard sign-in and sign-up instead; see rate-limit.ts.
     rateLimit: { enabled: false },
     advanced: { useSecureCookies: config.baseURL.startsWith("https://") },
-    // Plugins (Stripe's webhook, for one) catch their own failures and only log them; route those
-    // lines to our logger and error reporter instead of the console.
     logger: { level: "warn", log: (level, message) => log(level, message) },
     plugins: [...plugins, tanstackStartCookies()],
   });

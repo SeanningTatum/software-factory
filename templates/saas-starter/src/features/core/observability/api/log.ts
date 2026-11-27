@@ -10,7 +10,6 @@ const text = (message: unknown) => {
   return parts.map((part) => (typeof part === "string" ? part : JSON.stringify(part))).join(" ");
 };
 
-/** A JSON logger that stamps every line with the request id, the user and the current span. */
 export const makeLogger = (info: RequestInfo, sink: Sink = writeLine) =>
   Logger.make<unknown, void>(({ message, logLevel, cause, fiber, date }) => {
     const span = Context.getOption(fiber.context, Tracer.ParentSpan);

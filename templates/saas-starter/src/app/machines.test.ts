@@ -4,11 +4,6 @@ import { checkMachine, type MachineDoc, withMachines } from "@tanstack-cf-saas/l
 import { describe, expect, it } from "vitest";
 import type { AnyStateMachine } from "xstate";
 
-/**
- * The machine gate: every `*.machine.ts` in the app and every enabled feature must be well formed,
- * and each feature's TIMELINE.md must hold the current Mermaid diagram of each of its machines.
- * `bun run machines:print` rewrites those diagrams.
- */
 const modules = import.meta.glob<Record<string, unknown>>("/src/**/*.machine.ts", { eager: true });
 
 const isMachine = (value: unknown): value is AnyStateMachine =>
@@ -24,7 +19,6 @@ const FEATURES = "src/features";
 const CORE = "src/features/core";
 const print = process.env.PRINT_MACHINES === "1";
 
-/** Each feature's and core module's folder, from the project root, e.g. `src/features/core/kv`. */
 const withTimeline = (dir: string) =>
   existsSync(dir)
     ? readdirSync(dir)
@@ -44,7 +38,6 @@ describe("state machines", () => {
   });
 
   it("every *.machine.ts exports its machine", () => {
-    // One built inside an exported function is never seen here, so nothing below would check it.
     const found = new Set(machines.map((m) => m.path));
     expect(Object.keys(modules).filter((path) => !found.has(path))).toEqual([]);
   });

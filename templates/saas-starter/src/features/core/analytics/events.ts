@@ -14,12 +14,10 @@ export const WebVital = Schema.TaggedStruct("web_vital", {
   path: Path,
 });
 
-/** Sent on the server at sign-up or sign-in: the visitor's consented anonymous id is now this user. */
 const UserIdentified = Schema.TaggedStruct("user_identified", {
   anonId: Schema.String.check(Schema.isMaxLength(64)),
 });
 
-/** Events the browser may send through /api/events. Everything else is captured on the server. */
 export const BrowserEvent = Schema.Union([PageViewed, WebVital]);
 export type BrowserEvent = typeof BrowserEvent.Type;
 export const events = [PageViewed, WebVital, UserIdentified] as const;
