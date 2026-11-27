@@ -5,8 +5,8 @@
 
 What auth does with email, through Better Auth's emailOTP plugin: a code to verify the address at sign-up, to reset a password, and to sign in without one.
 
-- Kind: feature, auto; on whenever auth and email are, and removed with either
-- Depends on: [auth](../auth/TIMELINE.md), [email](../core/email/TIMELINE.md)
+- Kind: feature, auto; on whenever auth and email and email-templates are, and removed with either
+- Depends on: [auth](../auth/TIMELINE.md), [email](../core/email/TIMELINE.md), [email-templates](../core/email-templates/TIMELINE.md)
 - Used by: none
 - Bindings: none
 - Vars: none

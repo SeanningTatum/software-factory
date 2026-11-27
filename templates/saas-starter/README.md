@@ -64,14 +64,14 @@ rule is there.
 src/
   app/                   the kernel: runtime, request, env, errors, middleware
   features/
-    core/<name>/         a core module: db, kv, email, observability, analytics, ui
+    core/<name>/         a core module: db, kv, email, email-templates, observability, analytics, ui
     core/lib/            shared pure helpers, such as outsideCall and binding
     <name>/              a feature: consent, home, auth, auth-email, billing, uploads, workflows, and yours
   gen/                   made by `bun run blocks:sync`; never edit
   routes/__root.tsx      the only route outside a feature
 ```
 
-Core holds shared modules of one kind: components only (`ui`), or services and helpers only (`db`,
+Core holds shared modules of one kind: components only (`ui`, `email-templates`), or services and helpers only (`db`,
 `kv`, `email`, `observability`, `analytics`). A module with both, or with a page, is a feature and lives
 beside `auth` and `billing`; put your own product features there too. `core/lib/` holds pure
 helpers that two or more features use.
@@ -79,7 +79,7 @@ helpers that two or more features use.
 Each feature or module lives in its own folder and nothing else. `observability`, `analytics`,
 `ui`, `consent` and `home` are required and always on. `db`, `kv`, `email`, `auth`, `billing`,
 `uploads` and `workflows` are optional and come and go, wherever they live; `auth-email` is on
-whenever `auth` and `email` both are. A feature's `routes/` folder is
+whenever `auth` and `email` both are, and `email-templates` whenever `email` is. A feature's `routes/` folder is
 served from the URL root, so
 `src/features/auth/routes/login.tsx` is `/login`. What features share (the runtime's layers, the
 error map, the event catalog, the nav, the route tree, wrangler bindings, `.dev.vars.example`) is
@@ -94,6 +94,23 @@ bunx create-tanstack-cf-saas remove kv
 what it is, what it is wired to and why it is built the way it is: a block that `blocks:sync`
 writes, the diagrams of its machines, and Decisions and History lines people write. Read both
 before changing a feature, and add a line to its timeline with the change.
+
+## Sending mail (`email`)
+
+Every mail is a React Email component wrapped in `MailLayout`, so they all look like one product.
+Never hand-write mail HTML. To add one:
+
+1. Write the mail in your feature's `components/`, from the parts in
+   `src/features/core/email-templates/components/mail.tsx`: `MailLayout`, `MailText`, `MailButton`
+   and `MailCode`. `src/features/auth-email/components/code-mail.tsx` is one to copy.
+2. Render it with `renderMail`, which returns the HTML and a plain-text part made from it, and hand
+   both to `Email.send` with a subject and a recipient.
+3. Keep codes and secrets out of the `preview`: inboxes and lock screens show it.
+
+Change the look in `mail.tsx`; every mail follows. Styles are inline because mail clients ignore
+stylesheets. Cloudflare Email Service is for transactional mail: receipts, codes, notices. A
+newsletter can reuse these components, but send it through a provider built for marketing, which
+handles unsubscribes and consent.
 
 ## Checks
 

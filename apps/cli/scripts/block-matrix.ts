@@ -44,7 +44,7 @@ const combos: Record<string, ReadonlyArray<string>> = {
 
 /**
  * Optional features, dependents before what they require, so each can be removed in turn.
- * `auth-email` is auto: it leaves with `email` and comes back when `email` joins `auth`.
+ * `auth-email` and `email-templates` are auto: they leave with `email` and come back with it.
  */
 const REMOVAL_ORDER = ["uploads", "billing", "workflows", "kv", "email", "auth", "db"];
 

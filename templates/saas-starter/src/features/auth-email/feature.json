@@ -2,6 +2,6 @@
   "name": "auth-email",
   "title": "Auth emails",
   "description": "What auth does with email, through Better Auth's emailOTP plugin: a code to verify the address at sign-up, to reset a password, and to sign in without one.",
-  "requires": ["auth", "email"],
+  "requires": ["auth", "email", "email-templates"],
   "auto": true
 }
