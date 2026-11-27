@@ -25,7 +25,7 @@ const commentsOf = (source: ts.SourceFile, merge: boolean): ReadonlyArray<Commen
   const visit = (n: ts.Node) => {
     add(ts.getLeadingCommentRanges(text, n.getFullStart()));
     add(ts.getTrailingCommentRanges(text, n.end));
-    ts.forEachChild(n, visit);
+    for (const child of n.getChildren(source)) visit(child);
   };
   visit(source);
   const out: Comment[] = [];
@@ -90,6 +90,28 @@ export const noUselessComment: Rule = {
       return message ? [{ line: c.line, message }] : [];
     });
     return [...code, ...lines].sort((a, b) => a.line - b.line);
+  },
+};
+
+const ALLOW = "cf-saas-lint allow comments";
+
+const lineOf = (source: ts.SourceFile, pos: number) =>
+  source.getLineAndCharacterOfPosition(pos).line + 1;
+
+export const noComment: Rule = {
+  id: "no-comment",
+  description: `No comments, unless the file opens with \`// ${ALLOW}\`.`,
+  check: ({ source }) => {
+    const prose = commentsOf(source, false).filter((c) => !DIRECTIVE.test(c.text));
+    const first = source.statements[0];
+    const codeStarts = first ? lineOf(source, first.getStart()) : Number.POSITIVE_INFINITY;
+    const opener = prose[0];
+    if (opener?.text.trim() === ALLOW && opener.line < codeStarts)
+      return prose.length > 1
+        ? []
+        : [{ line: opener.line, message: "delete this line: the file has no comments to allow" }];
+    const message = `delete the comment, or open the file with \`// ${ALLOW}\` to keep its comments`;
+    return prose.map((c) => ({ line: c.line, message }));
   },
 };
 

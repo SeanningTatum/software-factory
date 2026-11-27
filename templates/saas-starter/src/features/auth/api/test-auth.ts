@@ -13,7 +13,6 @@ import { AuthRateLimiter } from "./rate-limit.ts";
 export const APP = "http://localhost:3000";
 export const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as AppEnv;
 
-/** One request through `Auth.handle`, with what it sent to analytics and the error reporter. */
 export const handled = (
   db: Db,
   incoming: Request,
@@ -52,7 +51,6 @@ export const handled = (
     return yield* auth.handle(incoming);
   }).pipe(
     Effect.provide(layer),
-    // After provide: analytics sends its buffer when the layer closes.
     Effect.map((response) => ({
       response,
       events: sent.map((c) => c.event._tag),
@@ -63,7 +61,6 @@ export const handled = (
   );
 };
 
-/** A limiter that lets every key through but the account one. */
 export const overAccountLimit = (key: string) => !key.startsWith("acct:");
 
 export const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>

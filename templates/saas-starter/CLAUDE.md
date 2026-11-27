@@ -63,7 +63,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   through `runEffect` / `runResponse` from `src/app/run-effect.ts`. Write each `/api/` path once,
   in its feature's `constants.ts` (rule `no-repeated-api-path`).
 - One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
-- Names say what the code does. Comment only to stop a wrong change (rule `no-useless-comment`).
+- Names say what the code does. No comments, unless line one allows them (rule `no-comment`).
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
   `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
 - With `db`, name each migration for its change: `bun run db:generate add_invoices`. Bare, it fails.

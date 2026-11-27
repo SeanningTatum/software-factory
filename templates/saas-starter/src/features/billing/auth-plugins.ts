@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { stripe } from "@better-auth/stripe";
 import type { AuthContext, BetterAuthPlugin } from "better-auth";
 import Stripe from "stripe";

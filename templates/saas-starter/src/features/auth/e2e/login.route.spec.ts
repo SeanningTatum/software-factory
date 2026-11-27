@@ -30,7 +30,6 @@ test("@error /login shows the Turnstile check when the server asks for one, then
     const token = route.request().headers()["x-captcha-response"];
     tokens.push(token);
     if (token) return route.continue();
-    // What Better Auth answers when the account is past its limit and no token came.
     return route.fulfill({
       status: 400,
       json: { code: "MISSING_RESPONSE", message: "Missing CAPTCHA response" },

@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,7 +8,6 @@ import { unstable_readConfig } from "wrangler";
 
 const read = (path: string) => readFileSync(path, "utf8");
 const noGithub = !existsSync(".github");
-// The workflow scripts need jq, which a GitHub runner has and an older macOS does not.
 const noJq = spawnSync("sh", ["-c", "command -v jq"]).status !== 0;
 const noBun = spawnSync("sh", ["-c", "command -v bun"]).status !== 0;
 
@@ -244,7 +244,6 @@ describe("gradual rollout", () => {
     expect(workflow("deploy")).toMatch(
       /versions deploy "\$NEW@\$PERCENT" "\$OLD"[\s\S]*if ! sh \.github\/scripts\/check-pinned\.sh[\s\S]*versions deploy "\$OLD@100"[\s\S]*exit 1/,
     );
-    // Stand-ins on PATH: curl answers with the ids given, and sleep does not wait.
     const bin = mkdtempSync(join(tmpdir(), "pinned-"));
     writeFileSync(join(bin, "sleep"), "#!/bin/sh\n", { mode: 0o755 });
     const answeredBy = (...ids: Array<string>) => {
@@ -263,7 +262,6 @@ describe("gradual rollout", () => {
       expect(workflow("deploy")).toMatch(
         /name: Check a gradual rollout can start[\s\S]*sh \.github\/scripts\/pin-visitors\.sh "\$URL"[\s\S]*name: Migrate and deploy/,
       );
-      // A stand-in for curl: it logs each call, and answers the ruleset read with $CODE and $RULES.
       const bin = mkdtempSync(join(tmpdir(), "pin-"));
       const log = join(bin, "calls");
       writeFileSync(
@@ -305,7 +303,6 @@ esac
         "POST https://api.cloudflare.com/client/v4/zones/z1/rulesets",
       ]);
       expect(writes(403, "[]")).toEqual([]);
-      // Known to be missing and refused: the one case that stops the release.
       expect(writes(200, "[]", false)).toHaveLength(1);
     },
   );

@@ -20,7 +20,6 @@ export const Route = createFileRoute("/login")({
   component: Login,
 });
 
-/** Better Auth's captcha plugin: this account is past its limit, so the server wants a token. */
 const NO_CAPTCHA = "MISSING_RESPONSE";
 
 /** With auth-email on: the address isn't verified yet, and the server has just mailed it a code. */
