@@ -20,7 +20,7 @@ test("@error /forgot-password answers an unknown address like a known one, then 
   await expect(page.getByRole("button", { name: "Email me a code" })).toBeEnabled();
   await page.getByLabel("Email").fill("nobody@example.com");
   await page.getByRole("button", { name: "Email me a code" }).click();
-  await page.getByLabel("Code").fill("000000");
+  await page.getByLabel("Code").fill("00000000");
   await page.getByLabel("New password").fill("a brand new secret");
   await page.getByRole("button", { name: "Set new password" }).click();
   await expect(page.getByRole("alert")).toBeVisible();

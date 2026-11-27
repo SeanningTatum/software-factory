@@ -23,7 +23,7 @@ test("@error /sign-in-code refuses a wrong code", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Email me a code" })).toBeEnabled();
   await page.getByLabel("Email").fill("nobody@example.com");
   await page.getByRole("button", { name: "Email me a code" }).click();
-  await page.getByLabel("Code").fill("000000");
+  await page.getByLabel("Code").fill("00000000");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("alert")).toBeVisible();
 });

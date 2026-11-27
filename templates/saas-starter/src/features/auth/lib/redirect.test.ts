@@ -5,7 +5,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
-import { afterSignIn, RedirectSearch, verifyHref } from "./redirect.ts";
+import { afterSignIn, RedirectSearch, toVerify } from "./redirect.ts";
 
 const root = createRootRoute();
 const page = (path: string) => createRoute({ getParentRoute: () => root, path });
@@ -36,8 +36,9 @@ describe("RedirectSearch", () => {
   );
 });
 
-describe("verifyHref", () => {
-  it("carries the email as an escaped search param", () => {
-    expect(verifyHref("/verify-email", "a+b@c.dev")).toBe("/verify-email?email=a%2Bb%40c.dev");
+describe("toVerify", () => {
+  it("carries the email in history state and keeps it out of the URL", () => {
+    const target = toVerify("/verify-email", "a+b@c.dev");
+    expect(target).toEqual({ href: "/verify-email", state: { unverifiedEmail: "a+b@c.dev" } });
   });
 });

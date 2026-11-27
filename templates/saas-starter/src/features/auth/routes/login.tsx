@@ -5,7 +5,7 @@ import type { Credentials } from "#/features/auth/components/credentials.machine
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
 import { ChallengeRequired, Unverified } from "#/features/auth/errors.ts";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
-import { afterSignIn, RedirectSearch, verifyHref } from "#/features/auth/lib/redirect.ts";
+import { afterSignIn, RedirectSearch, toVerify } from "#/features/auth/lib/redirect.ts";
 import {
   Card,
   CardContent,
@@ -48,7 +48,7 @@ function Login() {
   const submit = (credentials: Credentials) =>
     signIn(credentials).catch((error: unknown) => {
       if (error instanceof Unverified && verify)
-        void router.navigate({ href: verifyHref(verify.to, error.email) });
+        void router.navigate(toVerify(verify.to, error.email));
       return Promise.reject(error);
     });
   return (

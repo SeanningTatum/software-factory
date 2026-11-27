@@ -1,6 +1,7 @@
 import { useMachine } from "@xstate/react";
 import { type FormEvent, useId } from "react";
 import { fromPromise } from "xstate";
+import { CODE_LENGTH } from "#/features/auth-email/constants.ts";
 import { Button } from "#/features/core/ui/components/button.tsx";
 import { Input } from "#/features/core/ui/components/input.tsx";
 import { Label } from "#/features/core/ui/components/label.tsx";
@@ -56,7 +57,7 @@ export function CodeForm({ email, withPassword, confirmLabel, request, confirm, 
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            If {snapshot.context.email} has an account, we sent it a 6-digit code.
+            If {snapshot.context.email} has an account, we sent it a {CODE_LENGTH}-digit code.
           </p>
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${id}-code`}>Code</Label>
@@ -64,8 +65,8 @@ export function CodeForm({ email, withPassword, confirmLabel, request, confirm, 
               id={`${id}-code`}
               name="code"
               inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern={`[0-9]{${CODE_LENGTH}}`}
+              maxLength={CODE_LENGTH}
               autoComplete="one-time-code"
               required
             />

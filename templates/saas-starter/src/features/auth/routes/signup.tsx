@@ -5,7 +5,7 @@ import { getSiteKey } from "#/features/auth/api/guard.ts";
 import type { Credentials } from "#/features/auth/components/credentials.machine.ts";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
-import { verifyHref } from "#/features/auth/lib/redirect.ts";
+import { toVerify } from "#/features/auth/lib/redirect.ts";
 import {
   Card,
   CardContent,
@@ -38,12 +38,15 @@ function SignUp() {
     unverified.current = await signUp(credentials);
   };
   const done = () =>
-    void router.invalidate().then(() =>
-      router.navigate({
-        href:
-          verify && unverified.current ? verifyHref(verify.to, unverified.current) : "/dashboard",
-      }),
-    );
+    void router
+      .invalidate()
+      .then(() =>
+        router.navigate(
+          verify && unverified.current
+            ? toVerify(verify.to, unverified.current)
+            : { href: "/dashboard" },
+        ),
+      );
   return (
     <main className="mx-auto flex max-w-sm flex-col px-4 py-16">
       <Card>

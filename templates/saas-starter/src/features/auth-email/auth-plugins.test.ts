@@ -1,9 +1,10 @@
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { AppEnv } from "#/app/env.ts";
 import { env, handled, post } from "#/features/auth/api/test-auth.ts";
 import { CODE_PATHS } from "#/features/auth/constants.ts";
-import { authSchema } from "#/features/auth/schema.ts";
+import { authSchema, session, user } from "#/features/auth/schema.ts";
 import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb } from "#/features/core/db/api/test-database.ts";
 import type { Mail } from "#/features/core/email/api/email.ts";
@@ -36,7 +37,7 @@ describe("auth with email", () => {
     Effect.runPromise(handled(db, post(path, body), true, plugins));
   const codeFor = (email: string) => {
     const mail = sent.findLast((m) => m.to === email);
-    return /\d{6}/.exec(mail?.text ?? "")?.[0];
+    return /\d{8}/.exec(mail?.text ?? "")?.[0];
   };
   const signUp = (email: string) =>
     call("/api/auth/sign-up/email", { email, password: PASSWORD, name: "Ada" });
@@ -67,9 +68,34 @@ describe("auth with email", () => {
     expect(later.response.status).toBe(200);
   });
 
-  it("resets a password with a mailed code, and refuses a wrong one", async () => {
+  it("refuses a code route once its account is past the limit, whichever address asks", async () => {
+    const keys: Array<string> = [];
+    const body = { email: "Ada@Example.com", otp: "00000000" };
+    const { response } = await Effect.runPromise(
+      handled(
+        db,
+        post("/api/auth/email-otp/verify-email", body),
+        (key) => !key.startsWith("code:"),
+        plugins,
+        env,
+        keys,
+      ),
+    );
+    expect(response.status).toBe(429);
+    expect(keys.at(-1)).toBe("code:ada@example.com");
+  });
+
+  it("resets a password with a mailed code, refuses a wrong one, and ends every session", async () => {
     const email = "lin@example.com";
+    const sessions = () =>
+      db
+        .select({ id: session.id })
+        .from(session)
+        .innerJoin(user, eq(session.userId, user.id))
+        .where(eq(user.email, email));
     await signUp(email);
+    await call("/api/auth/email-otp/verify-email", { email, otp: codeFor(email) });
+    expect(await sessions()).toHaveLength(1);
     await call("/api/auth/email-otp/request-password-reset", { email });
     const otp = codeFor(email);
     const reset = (code: string | undefined) =>
@@ -78,10 +104,11 @@ describe("auth with email", () => {
         otp: code,
         password: "a brand new secret",
       });
-    expect((await reset("000000")).response.status).toBe(400);
+    expect((await reset("00000000")).response.status).toBe(400);
     const done = await reset(otp);
     expect(done.response.status).toBe(200);
     expect(done.events).toEqual(["password_reset"]);
+    expect(await sessions()).toHaveLength(0);
   });
 
   it("signs in with a mailed code, and mails nothing to an address with no account", async () => {

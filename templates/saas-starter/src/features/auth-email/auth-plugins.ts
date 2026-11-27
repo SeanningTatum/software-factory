@@ -5,14 +5,21 @@ import { setting } from "#/app/env.ts";
 import type { AuthPluginFactory } from "#/features/auth/api/auth.ts";
 import { Email, type Mail } from "#/features/core/email/api/email.ts";
 import { binding } from "#/features/core/lib/binding.ts";
+import { CODE_LENGTH } from "./constants.ts";
 import { codeMail } from "./lib/mails.ts";
 
-/** Better Auth merges these under auth's own options, so sign-in waits for a verified address. */
+/** Better Auth merges these under auth's own options: sign-in waits for a verified address. */
 const requireVerifiedEmail: BetterAuthPlugin = {
   id: "require-verified-email",
   init: () => ({
     options: {
-      emailAndPassword: { enabled: true, requireEmailVerification: true },
+      emailAndPassword: {
+        enabled: true,
+        requireEmailVerification: true,
+        // A reset is how an owner locks a thief out. The session cookie cache keeps a revoked
+        // session alive for up to five minutes.
+        revokeSessionsOnPasswordReset: true,
+      },
       emailVerification: {
         sendOnSignUp: true,
         sendOnSignIn: true,
@@ -30,6 +37,7 @@ export const authEmailPlugins = (
     // A code for an address with no account would make one, past the sign-up form and its check.
     disableSignUp: true,
     storeOTP: "hashed",
+    otpLength: CODE_LENGTH,
     // Better Auth answers success even when this rejects, so the caller of `authEmailPlugins`
     // must record a failed send itself; the page can't tell the user.
     sendVerificationOTP: ({ email, otp, type }) => send({ to: email, ...codeMail(type, otp) }),

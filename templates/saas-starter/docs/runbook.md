@@ -122,7 +122,7 @@ bunx wrangler d1 execute DB --remote --command "DELETE FROM audit_log WHERE at <
 
 ## Codes that never arrive (`email`)
 
-Sign-up, password reset and sign-in by code each mail a 6-digit code. The page says "we sent it"
+Sign-up, password reset and sign-in by code each mail an 8-digit code. The page says "we sent it"
 whether or not the send worked, so a user who reports no mail is your only signal besides the logs.
 
 1. Search the logs for `code mail not sent`. Its `reason` is Cloudflare Email Service's error code:

@@ -27,7 +27,7 @@ export const asVisitor = (page: Page) =>
 const SENT_MAIL = "/cdn-cgi/local/explorer/api/local/email/sending";
 
 /**
- * The newest 6-digit code mailed to `email` under `subject`, read from the dev server's simulated
+ * The newest code mailed to `email` under `subject`, read from the dev server's simulated
  * mailbox. The subject matters: one address gets a verification mail, then a reset or sign-in one.
  */
 export const mailedCode = async (page: Page, email: string, subject: string) => {
@@ -45,7 +45,7 @@ export const mailedCode = async (page: Page, email: string, subject: string) => 
       `${SENT_MAIL}?email_id=${encodeURIComponent(newest?.messageId ?? "")}`,
     );
     const { result: mail } = (await one.json()) as { result: { text: string } };
-    code = /\b\d{6}\b/.exec(mail.text)?.[0];
+    code = /\b\d{8}\b/.exec(mail.text)?.[0];
     expect(code).toBeDefined();
   }).toPass();
   return code ?? "";
