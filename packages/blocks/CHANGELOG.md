@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- a1fdbf2: Renamed from `create-tanstack-cf-saas` and `@tanstack-cf-saas/*`: the CLI is `create-software-factory` and
+- a1fdbf2: Renamed from `create-tanstack-cf-saas` and `@tanstack-cf-saas/*`: the CLI is `@seanningtatum/create-software-factory` (command `create-software-factory`) and
   the packages are `@seanningtatum/software-factory-*`. The bins are now
   `software-factory-blocks` and `software-factory-lint`, and a project's config files are
   `software-factory.json` and `software-factory-lint.json`. A project made with the old names must

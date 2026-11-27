@@ -68,7 +68,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.3.0",
     "@vitest/coverage-v8": "5.1.1",
-    "create-software-factory": "workspace:*",
+    "@seanningtatum/create-software-factory": "workspace:*",
     "drizzle-kit": "^0.31.11",
     "knip": "^6.48.0",
     "tailwindcss": "^4.3.5",

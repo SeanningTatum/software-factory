@@ -14,8 +14,8 @@
       },
     },
     "apps/cli": {
-      "name": "create-software-factory",
-      "version": "0.3.0",
+      "name": "@seanningtatum/create-software-factory",
+      "version": "0.4.0",
       "bin": {
         "create-software-factory": "./dist/index.js",
       },
@@ -57,6 +57,7 @@
         "@biomejs/biome": "2.6.8",
         "@cloudflare/vite-plugin": "^1.70.1",
         "@playwright/test": "^1.65.1",
+        "@seanningtatum/create-software-factory": "workspace:*",
         "@seanningtatum/software-factory-biome-config": "workspace:*",
         "@seanningtatum/software-factory-blocks": "workspace:*",
         "@seanningtatum/software-factory-lint": "workspace:*",
@@ -70,7 +71,6 @@
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.3.0",
         "@vitest/coverage-v8": "5.1.1",
-        "create-software-factory": "workspace:*",
         "knip": "^6.48.0",
         "tailwindcss": "^4.3.5",
         "typescript": "^7.0.2",
@@ -81,19 +81,19 @@
     },
     "packages/biome-config": {
       "name": "@seanningtatum/software-factory-biome-config",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "peerDependencies": {
         "@biomejs/biome": "^2.6.0",
       },
     },
     "packages/blocks": {
       "name": "@seanningtatum/software-factory-blocks",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "bin": {
         "software-factory-blocks": "./dist/bin.js",
       },
       "dependencies": {
-        "@seanningtatum/software-factory-lint": "^0.3.0",
+        "@seanningtatum/software-factory-lint": "^0.4.0",
         "effect": "^4.1.5",
         "jsonc-parser": "^3.3.1",
       },
@@ -104,7 +104,7 @@
     },
     "packages/lint": {
       "name": "@seanningtatum/software-factory-lint",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "bin": {
         "software-factory-lint": "./dist/bin.js",
       },
@@ -122,7 +122,7 @@
     },
     "packages/tsconfig": {
       "name": "@seanningtatum/software-factory-tsconfig",
-      "version": "0.1.0",
+      "version": "0.2.0",
     },
     "templates/saas-starter": {
       "name": "@seanningtatum/software-factory-saas-starter",
@@ -152,6 +152,7 @@
         "@cloudflare/vite-plugin": "^1.70.1",
         "@libsql/client": "^0.18.0",
         "@playwright/test": "^1.65.1",
+        "@seanningtatum/create-software-factory": "workspace:*",
         "@seanningtatum/software-factory-biome-config": "workspace:*",
         "@seanningtatum/software-factory-blocks": "workspace:*",
         "@seanningtatum/software-factory-lint": "workspace:*",
@@ -165,7 +166,6 @@
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.3.0",
         "@vitest/coverage-v8": "5.1.1",
-        "create-software-factory": "workspace:*",
         "drizzle-kit": "^0.31.11",
         "knip": "^6.48.0",
         "tailwindcss": "^4.3.5",
@@ -671,6 +671,8 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.1.1", "", {}, "sha512-glFIJDvLNDtJhT9qrMFWLPbvS+skxgt4L0K8Ei2YtnhPysAJnsI7nyxSJxKj4ADeKX0OLjC4ntRkwpLOoS3rwA=="],
 
+    "@seanningtatum/create-software-factory": ["@seanningtatum/create-software-factory@workspace:apps/cli"],
+
     "@seanningtatum/software-factory-biome-config": ["@seanningtatum/software-factory-biome-config@workspace:packages/biome-config"],
 
     "@seanningtatum/software-factory-blocks": ["@seanningtatum/software-factory-blocks@workspace:packages/blocks"],
@@ -996,8 +998,6 @@
     "cookie": ["cookie@1.1.1", "", {}, "sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ=="],
 
     "cookie-es": ["cookie-es@3.1.1", "", {}, "sha512-UaXxwISYJPTr9hwQxMFYZ7kNhSXboMXP+Z3TRX6f1/NyaGPfuNUZOWP1pUEb75B2HjfklIYLVRfWiFZJyC6Npg=="],
-
-    "create-software-factory": ["create-software-factory@workspace:apps/cli"],
 
     "csstype": ["csstype@3.2.4", "", {}, "sha512-PoKaoPzQapnEoqUSnHx1u6W6ku8CVEgKsnpmmzU3m1nwkidpPBQ8V/Zq2+bWNrsOKoKLwTGdbx6xF7BXP1zLVQ=="],
 

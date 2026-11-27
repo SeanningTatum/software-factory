@@ -16,7 +16,7 @@ working on the project after day one, for you and for a coding agent.
 Today it makes one kind of product: a SaaS on [TanStack Start](https://tanstack.com/start).
 
 ```bash
-npm install -g create-software-factory
+npm install -g @seanningtatum/create-software-factory
 create-software-factory my-saas
 ```
 
@@ -52,9 +52,9 @@ You need [Node](https://nodejs.org) 20.19 or newer, [Bun](https://bun.sh) 1.4 or
 Install the CLI once, with the tool you already use:
 
 ```bash
-npm install -g create-software-factory
-bun add -g create-software-factory
-pnpm add -g create-software-factory
+npm install -g @seanningtatum/create-software-factory
+bun add -g @seanningtatum/create-software-factory
+pnpm add -g @seanningtatum/create-software-factory
 ```
 
 Then run `create-software-factory` in any folder. To update it, run the same install command again.
@@ -62,9 +62,9 @@ Then run `create-software-factory` in any folder. To update it, run the same ins
 Or run it once without installing:
 
 ```bash
-npm create software-factory@latest
-bun create software-factory
-pnpm create software-factory
+npm create @seanningtatum/software-factory@latest
+bun create @seanningtatum/software-factory
+pnpm create @seanningtatum/software-factory
 ```
 
 Run through `npm create`, `pnpm create` or `bun create`, the wizard installs the project's packages
@@ -267,7 +267,7 @@ bun run test:e2e     # Playwright; first run: bunx playwright install chromium
 After a change to the template, prove every feature combination still works:
 
 ```bash
-bun run --filter create-software-factory test:matrix
+bun run --filter @seanningtatum/create-software-factory test:matrix
 ```
 
 ### Try your copy of the CLI

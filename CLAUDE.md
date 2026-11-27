@@ -38,7 +38,7 @@ that builds projects from it.
 - **The template never depends on this repo's layout.** It imports `@seanningtatum/software-factory-*` packages by
   name; the CLI's bundle step swaps `workspace:*` for published versions.
 - **A change to the template is proven by the feature matrix**, not only by the template's own
-  tests: `bun run --filter create-software-factory test:matrix`. It scaffolds the required features
+  tests: `bun run --filter @seanningtatum/create-software-factory test:matrix`. It scaffolds the required features
   alone, each optional one with what it requires, and everything together, then runs every gate on
   each.
 - **The template keeps one migration, `drizzle/0000_init.sql`.** After a schema change, delete
@@ -58,7 +58,7 @@ format; when an item is done, delete it and update its row in `SCORECARD.md` in 
 bun install
 bun run check                                              # lint, typecheck, test, build everywhere
 bun run --cwd templates/saas-starter dev                   # work on the template
-bun run --filter create-software-factory test:matrix       # prove every feature combination
+bun run --filter @seanningtatum/create-software-factory test:matrix       # prove every feature combination
 node apps/cli/dist/index.js my-app --features db,auth      # try the CLI (after bun run build)
 ```
 
@@ -110,7 +110,8 @@ adds `.github/`; `--no-github` leaves it out.
 
 `bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
 pull request; on `production` it publishes `packages/*` under the
-owner's npm scope, `@seanningtatum`, and the CLI as `create-software-factory`.
+owner's npm scope, `@seanningtatum`, with the CLI as
+`@seanningtatum/create-software-factory`. Its command is still `create-software-factory`.
 
 `RELEASING.md` has the steps: merge the version pull request, wait for the checks, `bun run
 promote`. Never merge into `production` or force-push it. `/release` has Claude follow it.
