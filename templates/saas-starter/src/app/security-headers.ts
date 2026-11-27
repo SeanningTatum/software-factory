@@ -1,4 +1,3 @@
-/** Security headers for every HTML and API response. The CSP is only sent in production builds. */
 export const securityHeaders = (nonce: string, production: boolean): Record<string, string> => {
   const headers: Record<string, string> = {
     "x-content-type-options": "nosniff",

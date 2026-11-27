@@ -9,8 +9,7 @@ import {
 import { useConsent } from "./consent-banner.tsx";
 
 /**
- * Sends a page view on each navigation and web vitals once, but only after consent. Consent also
- * gives a signed-out visitor a random id, so their page views count as one visitor.
+ * Consent also gives a signed-out visitor a random id, so their page views count as one visitor.
  */
 export function AnalyticsTracker() {
   const { granted } = useConsent();

@@ -1,7 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page } from "@playwright/test";
 
-/** Fails when axe finds a serious or critical accessibility violation on the page as it is now. */
 export const expectAccessible = async (page: Page) => {
   const { violations } = await new AxeBuilder({ page }).analyze();
   const serious = violations
@@ -30,7 +29,6 @@ export const asVisitor = (page: Page) =>
     (route) => route.continue({ headers: { ...route.request().headers(), ...visitor() } }),
   );
 
-/** Signs a new visitor up through the /signup page (needs the `auth` feature) and waits for the dashboard. */
 export const signUp = async (page: Page, name = "E2E User") => {
   await asVisitor(page);
   await page.goto("/signup");

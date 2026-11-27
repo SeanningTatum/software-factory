@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { makeTestDb } from "#/features/core/db/api/test-database.ts";
 import { subscription } from "./schema.ts";
 
-/** The billing page and the Stripe webhook handlers look subscriptions up by these columns. */
 describe("billing schema", () => {
   it.each(["reference_id", "stripe_subscription_id", "stripe_customer_id"])(
     "looks subscriptions up by %s through an index",

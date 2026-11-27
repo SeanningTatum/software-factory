@@ -3,9 +3,8 @@ import { outsideCall } from "#/features/core/lib/call.ts";
 import { type AnalyticsAdapter, AnalyticsDeliveryError, properties } from "../adapter.ts";
 
 /**
- * Sends a batch to PostHog's /batch/ endpoint over fetch; no SDK, so nothing joins the bundle.
- * `version` goes on every event as `app_version`, so a chart can compare the two versions of a
- * gradual rollout.
+ * No SDK, so nothing joins the bundle. `version` goes on every event as `app_version`, so a chart
+ * can compare the two versions of a gradual rollout.
  */
 export const posthogAdapter = (
   apiKey: string,

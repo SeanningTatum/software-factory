@@ -10,21 +10,14 @@ const MIN_SECRET_LENGTH = 32;
 const SESSION_DAYS = 30;
 const DAY_SECONDS = 60 * 60 * 24;
 
-/** What a feature that extends auth (billing, for one) gets to build its Better Auth plugins. */
 interface AuthPluginDeps {
   readonly env: AppEnv;
-  /**
-   * Queues an analytics event, sent with the request's batch, and an audit log row. Pass the user's
-   * id when the request has no session of its own: a Stripe webhook, say.
-   */
+  /** Pass the user's id when the request has no session of its own: a Stripe webhook, say. */
   readonly onEvent: (event: AnalyticsEvent, userId?: string) => void;
-  /** Queues a warning for the request's log, with the request id on it. */
   readonly onWarning: (message: string, details: Record<string, unknown>) => void;
-  /** How many errors Better Auth has logged while serving this request. */
   readonly loggedErrors: () => number;
 }
 
-/** Where Better Auth's own log lines go: the request's log and, for errors, the error reporter. */
 export type AuthLog = (level: "debug" | "info" | "warn" | "error", message: string) => void;
 export type AuthPluginFactory = (deps: AuthPluginDeps) => ReadonlyArray<BetterAuthPlugin>;
 
@@ -34,7 +27,6 @@ export interface AuthConfig {
   readonly trustedOrigins: ReadonlyArray<string>;
 }
 
-/** Checks the settings auth needs. Returns the name of the first bad one, or the config. */
 export const authConfig = (env: AppEnv): AuthConfig | { readonly missing: string } => {
   const secret = setting(env, "BETTER_AUTH_SECRET");
   if (!secret || secret.length < MIN_SECRET_LENGTH)

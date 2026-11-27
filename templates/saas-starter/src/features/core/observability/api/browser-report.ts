@@ -13,10 +13,7 @@ const Report = Schema.Struct({
   path: Schema.String.check(Schema.isMaxLength(512)),
 });
 
-/**
- * An error caught in the browser, sent to the same reporter as server errors. Rate-limited per
- * address, so a script can't spend the error tracker's quota.
- */
+/** Rate-limited per address, so a script can't spend the error tracker's quota. */
 export const reportBrowserError = Effect.fn("Observability.browserReport")(function* (
   request: Request,
 ) {

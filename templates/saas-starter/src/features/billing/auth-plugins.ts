@@ -10,7 +10,6 @@ const WEBHOOK_PATH = "/stripe/webhook";
 const SERVER_ERROR = 500;
 const MS_PER_SECOND = 1000;
 
-/** Stripe gives times in seconds, and null for one that has not happened. */
 const dateOf = (seconds: number | null) => (seconds ? new Date(seconds * MS_PER_SECOND) : null);
 
 /**
@@ -37,10 +36,6 @@ export const webhookRetry = (loggedErrors: () => number): BetterAuthPlugin => {
   };
 };
 
-/**
- * Adds Stripe to Better Auth. Without STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET billing stays off
- * and the rest of the app works; /billing explains what is missing.
- */
 export const authPlugins: AuthPluginFactory = (deps) => {
   const secretKey = setting(deps.env, "STRIPE_SECRET_KEY");
   const webhookSecret = setting(deps.env, "STRIPE_WEBHOOK_SECRET");
@@ -49,7 +44,7 @@ export const authPlugins: AuthPluginFactory = (deps) => {
   return billingPlugins(stripeClient, webhookSecret, deps);
 };
 
-/** The plugins `authPlugins` adds once Stripe is set up; split out so tests can pass a Stripe client. */
+/** Split out of `authPlugins` so tests can pass a Stripe client. */
 export const billingPlugins = (
   stripeClient: Stripe,
   webhookSecret: string,

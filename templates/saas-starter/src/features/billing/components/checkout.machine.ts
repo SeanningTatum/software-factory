@@ -4,10 +4,6 @@ export type CheckoutAction =
   | { readonly kind: "upgrade"; readonly plan: string }
   | { readonly kind: "manage" };
 
-/**
- * The billing page's button: send the visitor to Stripe Checkout (upgrade) or the customer portal
- * (manage). Leaving for Stripe ends the machine; a failure can be retried or dismissed.
- */
 export const checkoutMachine = setup({
   types: {
     context: {} as { error: string | undefined; last: CheckoutAction | undefined },

@@ -1,6 +1,6 @@
 import type { Bucket } from "./uploads.ts";
 
-/** An in-memory R2 bucket for tests. Lists in key order and pages with a cursor, as R2 does. */
+/** Lists in key order and pages with a cursor, as R2 does. */
 export const memoryBucket = () => {
   const store = new Map<
     string,

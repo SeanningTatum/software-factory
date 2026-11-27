@@ -16,7 +16,6 @@ import { AuthRateLimiter, LIMITED_PATHS } from "./rate-limit.ts";
 const APP = "http://localhost:3000";
 const env = { APP_URL: APP, BETTER_AUTH_SECRET: "x".repeat(40) } as unknown as AppEnv;
 
-/** Runs one request through a real Auth service on an in-memory database. */
 const request = async (
   db: Db,
   incoming: Request,
@@ -260,7 +259,7 @@ describe("Auth", () => {
     expect(response.headers.getSetCookie().some((c) => c.startsWith("aid=;"))).toBe(true);
   });
 
-  it("answers 429 when the limiter says so, without reaching Better Auth", async () => {
+  it("answers 429 when the limiter says so, without reaching Better Auth or the audit log", async () => {
     const { response, events, info } = await request(
       db,
       post("/api/auth/sign-in/email", { email: "a@b.dev", password: "whatever123" }),
@@ -269,7 +268,6 @@ describe("Auth", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("60");
     expect(events).toEqual(["sign_in_failed"]);
-    // A flood of blocked attempts must not grow the audit log.
     const rows = await db.select().from(auditLog).where(eq(auditLog.requestId, info.id));
     expect(rows).toEqual([]);
   });

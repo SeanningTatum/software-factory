@@ -11,7 +11,7 @@ import { posthogAdapter } from "./adapters/posthog.ts";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 
-/** Picks the adapter from ANALYTICS_PROVIDER. A missing key or binding turns analytics off, never the app. */
+/** A missing key or binding turns analytics off, never the app. */
 export const selectAdapter = (env: AppEnv): AnalyticsAdapter => {
   const provider = setting(env, "ANALYTICS_PROVIDER") ?? "console";
   if (provider === "console") return consoleAdapter;
@@ -35,7 +35,7 @@ export const selectAdapter = (env: AppEnv): AnalyticsAdapter => {
 export class Analytics extends Context.Service<
   Analytics,
   {
-    /** Queues an event; the batch is sent when the request ends. */
+    /** The batch is sent when the request ends. */
     readonly capture: (event: AnalyticsEvent, distinctId?: string) => Effect.Effect<void>;
   }
 >()("app/features/analytics/Analytics") {

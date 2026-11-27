@@ -15,13 +15,12 @@ export class AnalyticsDeliveryError extends Schema.TaggedError<AnalyticsDelivery
   },
 ) {}
 
-/** Somewhere events can go. Adapters never fail the request: the service logs and drops errors. */
+/** Adapters never fail the request: the service logs and drops errors. */
 export interface AnalyticsAdapter {
   readonly name: string;
   readonly send: (batch: ReadonlyArray<Captured>) => Effect.Effect<void, AnalyticsDeliveryError>;
 }
 
-/** The event's properties without its tag, for providers that take a name plus a property bag. */
 export const properties = (event: AnalyticsEvent): Record<string, unknown> => {
   const { _tag, ...rest } = event as AnalyticsEvent & Record<string, unknown>;
   void _tag;

@@ -8,7 +8,6 @@ const GUARDED = ["/sign-up/email"];
 /** Cloudflare's published test keys all start `1x`, `2x` or `3x` and a long run of zeros. */
 const isTestKey = (key: string) => /^[123]x0{20}/.test(key);
 
-/** Both Turnstile keys, or undefined: with either one missing, sign-up is not guarded. */
 export const turnstileKeys = (env: AppEnv) => {
   const siteKey = setting(env, "TURNSTILE_SITE_KEY");
   const secretKey = setting(env, "TURNSTILE_SECRET_KEY");

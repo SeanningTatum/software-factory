@@ -17,9 +17,9 @@ export class DatabaseError extends Schema.TaggedError<DatabaseError>()("Database
 export class Database extends Context.Service<
   Database,
   {
-    /** The Drizzle handle, for libraries such as Better Auth that take one; undefined without a binding. */
+    /** For libraries such as Better Auth that take one. */
     readonly db: Db | undefined;
-    /** Runs one query. The name becomes the span name and appears in errors. */
+    /** The name becomes the span name and appears in errors. */
     readonly query: <A>(
       operation: string,
       run: (db: Db) => Promise<A>,
@@ -37,7 +37,6 @@ export class Database extends Context.Service<
         ),
     });
 
-  /** Without a binding every query fails with NotConfigured; the rest of the app keeps working. */
   static readonly unconfigured = Database.of({
     db: undefined,
     query: () => Effect.fail(new NotConfigured({ setting: "DB (D1 binding)" })),

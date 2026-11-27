@@ -1,8 +1,8 @@
 import { getNextSnapshot, setup } from "xstate";
 
 /**
- * The onboarding workflow's steps. The workflow runs them in this order, and a test checks that it
- * does, so this diagram is always what production runs.
+ * The workflow runs these steps in this order, and a test checks that it does, so this diagram is
+ * always what production runs.
  */
 export const onboardingMachine = setup({
   types: { events: {} as { type: "STEP_DONE" } },
@@ -17,7 +17,6 @@ export const onboardingMachine = setup({
   },
 });
 
-/** Step names in the order the machine visits them, ending before the final state. */
 export const stepOrder = (): ReadonlyArray<string> => {
   const order: Array<string> = [];
   let snapshot = onboardingMachine.resolveState({ value: "welcome" });

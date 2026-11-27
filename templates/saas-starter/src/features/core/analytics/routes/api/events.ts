@@ -6,7 +6,6 @@ import { ingestBrowserEvents } from "#/features/core/analytics/api/ingest.ts";
 
 const NO_CONTENT = 204;
 
-/** First-party ingest for browser events; see ingestBrowserEvents. */
 export const Route = createFileRoute("/api/events")({
   server: {
     handlers: {

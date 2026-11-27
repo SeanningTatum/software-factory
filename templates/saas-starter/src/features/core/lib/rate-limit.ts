@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 import { RateLimited } from "#/app/errors.ts";
 
-/** The part of a Workers rate-limit binding we use. */
 export interface Limiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
 }
@@ -9,8 +8,8 @@ export interface Limiter {
 const WINDOW_SECONDS = 60;
 
 /**
- * Fails with RateLimited when `key` is over the limit. No binding, or a limiter that is down, lets
- * the request through: an outage of the limiter should not lock everyone out.
+ * No binding, or a limiter that is down, lets the request through: an outage of the limiter should
+ * not lock everyone out.
  */
 export const checkLimit = (limiter: Limiter | undefined, key: string) =>
   limiter
@@ -25,7 +24,7 @@ export const checkLimit = (limiter: Limiter | undefined, key: string) =>
       )
     : Effect.void;
 
-/** An IPv6 address cut to its first 64 bits (one customer's whole network); IPv4 is unchanged. */
+/** A /64 is one customer's whole network. */
 const network = (address: string) => {
   if (!address.includes(":") || address.includes(".")) return address;
   const [head = "", tail = ""] = address.toLowerCase().split("::");
@@ -40,10 +39,6 @@ const network = (address: string) => {
     .join(":")}::/64`;
 };
 
-/**
- * The client's address as Cloudflare saw it (an IPv6 one as its /64); only "unknown" outside
- * Cloudflare (tests, local dev).
- */
 export const clientAddress = (headers: Headers) => {
   const address = headers.get("cf-connecting-ip");
   return address ? network(address) : "unknown";

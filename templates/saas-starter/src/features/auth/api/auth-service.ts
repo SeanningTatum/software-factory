@@ -36,11 +36,10 @@ export interface SessionUser {
 export class Auth extends Context.Service<
   Auth,
   {
-    /** Serves /api/auth/*: rate limits password paths and records what happened. */
     readonly handle: (
       request: Request,
     ) => Effect.Effect<Response, AuthServiceError | Unauthorized | NotConfigured>;
-    /** The signed-in user, or undefined. Also tags the request's logs with the user id. */
+    /** Also tags the request's logs with the user id. */
     readonly currentUser: Effect.Effect<SessionUser | undefined, AuthServiceError>;
     readonly requireUser: Effect.Effect<
       SessionUser,
@@ -48,10 +47,6 @@ export class Auth extends Context.Service<
     >;
   }
 >()("app/features/auth/Auth") {
-  /**
-   * Auth without its settings: everyone is signed out, and the auth API answers 503 naming what is
-   * missing. The rest of the app keeps working.
-   */
   static readonly unconfigured = (setting: string) =>
     Auth.of({
       handle: () => Effect.fail(new NotConfigured({ setting })),
@@ -59,7 +54,6 @@ export class Auth extends Context.Service<
       requireUser: Effect.fail(new NotConfigured({ setting })),
     });
 
-  /** Auth with the given plugin factories and their tables; `layer` uses every enabled feature's. */
   static readonly layerWith = (
     factories: ReadonlyArray<AuthPluginFactory>,
     tables: Record<string, unknown> = {},
@@ -97,7 +91,6 @@ export class Auth extends Context.Service<
         const plugins = [captchaPlugin, ...factories].flatMap((factory) => factory(deps));
         const instance = makeAuth(config, database.db, plugins, log, tables);
 
-        /** Writes one audit row. A failed write is logged, never the user's problem. */
         const audit = Effect.fn("Auth.audit")(function* (event: AnalyticsEvent, actorId?: string) {
           const at = DateTime.toDateUtc(yield* DateTime.now);
           const { info } = request;
@@ -120,7 +113,6 @@ export class Auth extends Context.Service<
               ),
             );
         });
-        /** Every auth and billing outcome goes to analytics and to the audit log. */
         const record = (event: AnalyticsEvent, userId?: string) =>
           Effect.all([analytics.capture(event, userId), audit(event, userId)], { discard: true });
 
@@ -165,7 +157,6 @@ export class Auth extends Context.Service<
           Effect.tap((user) => request.setUser(user?.id)),
         );
 
-        /** Records an auth outcome and, at sign-up or sign-in, ties the consented anonymous id to it. */
         const recordOutcome = (event: AnalyticsEvent, userId: string | undefined) => {
           const anonId = readAnonId(request.info.headers.get("cookie"));
           const identify =
@@ -175,7 +166,6 @@ export class Auth extends Context.Service<
           return Effect.andThen(record(event, userId), identify);
         };
 
-        /** Records what Better Auth's answer proves happened; a sign-out also resets the anonymous id. */
         const afterResponse = Effect.fn("Auth.afterResponse")(function* (
           method: string,
           path: string,
@@ -207,7 +197,7 @@ export class Auth extends Context.Service<
           return reset;
         });
 
-        /** The lower-cased email in a sign-in or sign-up body, read from a copy so Better Auth still gets it. */
+        /** Read from a copy, so Better Auth still gets the body. */
         const emailOf = (incoming: Request) =>
           Effect.promise(() =>
             (incoming.clone().json() as Promise<{ email?: unknown } | null>)
@@ -247,7 +237,6 @@ export class Auth extends Context.Service<
                 )
             : Effect.void;
 
-        /** A 429 when the request is over a limit, else undefined. */
         const refuseIfLimited = Effect.fn("Auth.refuseIfLimited")(function* (
           incoming: Request,
           path: string,
@@ -274,7 +263,6 @@ export class Auth extends Context.Service<
           );
         });
 
-        /** Better Auth's answer, cleaning up after a sign-up that failed part way. */
         const serve = Effect.fn("Auth.serve")(function* (incoming: Request, path: string) {
           const signUpEmail =
             incoming.method === "POST" && path === SIGN_UP ? yield* emailOf(incoming) : undefined;

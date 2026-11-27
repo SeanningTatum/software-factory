@@ -1,5 +1,5 @@
 import { useMachine } from "@xstate/react";
-import { useId, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { fromPromise } from "xstate";
 import { Button } from "#/features/core/ui/components/button.tsx";
 import { Input } from "#/features/core/ui/components/input.tsx";
@@ -11,7 +11,6 @@ interface Props {
   readonly mode: "sign-in" | "sign-up";
   readonly submit: (credentials: Credentials) => Promise<void>;
   readonly onDone: () => void;
-  /** Turnstile site key: when set, the form shows the check and sends its token with the submit. */
   readonly siteKey?: string;
 }
 
@@ -26,31 +25,29 @@ export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
   if (snapshot.status === "done") queueMicrotask(onDone);
   const busy = snapshot.matches("submitting") || snapshot.status === "done";
 
+  const edit = () => snapshot.matches("failed") && send({ type: "EDIT" });
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    if (siteKey) {
+      setToken(undefined);
+      setAttempt((n) => n + 1);
+    }
+    send({
+      type: "SUBMIT",
+      credentials: {
+        email: String(form.get("email") ?? ""),
+        password: String(form.get("password") ?? ""),
+        ...(mode === "sign-up" ? { name: String(form.get("name") ?? "") } : {}),
+        ...(siteKey ? { captcha: token } : {}),
+      },
+    });
+  };
+
   return (
     // POST, so a submit that somehow lands before hydration never puts the password in the URL.
     // The button stays disabled until then (see Button), which also blocks submitting with Enter.
-    <form
-      method="post"
-      className="flex flex-col gap-4"
-      onChange={() => snapshot.matches("failed") && send({ type: "EDIT" })}
-      onSubmit={(event) => {
-        event.preventDefault();
-        const form = new FormData(event.currentTarget);
-        if (siteKey) {
-          setToken(undefined);
-          setAttempt((n) => n + 1);
-        }
-        send({
-          type: "SUBMIT",
-          credentials: {
-            email: String(form.get("email") ?? ""),
-            password: String(form.get("password") ?? ""),
-            ...(mode === "sign-up" ? { name: String(form.get("name") ?? "") } : {}),
-            ...(siteKey ? { captcha: token } : {}),
-          },
-        });
-      }}
-    >
+    <form method="post" className="flex flex-col gap-4" onChange={edit} onSubmit={onSubmit}>
       {mode === "sign-up" && (
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${id}-name`}>Name</Label>

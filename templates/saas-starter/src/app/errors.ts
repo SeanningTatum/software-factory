@@ -30,7 +30,6 @@ export type CoreError =
   | NotConfigured
   | ExternalServiceError;
 
-/** How an error reaches the user: the HTTP status and a message safe to show. */
 export interface ErrorInfo {
   readonly status: number;
   readonly message: string;
@@ -46,10 +45,8 @@ export const coreErrorStatus = {
   ExternalServiceError: { status: 502, message: "A service we depend on failed. Try again." },
 } as const satisfies Record<CoreError["_tag"], ErrorInfo>;
 
-/** Every error a request can fail with. Features add theirs through src/gen/errors.ts. */
 export type AppError = CoreError | FeatureError;
 
-/** One entry per error tag. The `satisfies` makes a new error without an entry a type error. */
 export const errorStatus = { ...coreErrorStatus, ...featureErrorStatus } satisfies Record<
   AppError["_tag"],
   ErrorInfo

@@ -5,7 +5,7 @@ import { readiness } from "#/features/home/api/health.ts";
 
 const UNAVAILABLE = 503;
 
-/** 200 when this deploy can serve users, 503 with what is wrong otherwise. The deploy smoke test. */
+/** The deploy's smoke test. */
 export const Route = createFileRoute("/api/health")({
   server: {
     handlers: {

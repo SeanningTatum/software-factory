@@ -5,13 +5,11 @@ import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import type { OnboardingParams } from "./onboarding.ts";
 
-/** The part of a Workflow binding the service uses. */
 export interface WorkflowBinding {
   create(options: { id?: string; params: OnboardingParams }): Promise<{ id: string }>;
   get(id: string): Promise<{ status(): Promise<{ status: string }> }>;
 }
 
-/** The run's id: fixed per user, so starting twice is the same run. */
 const instanceIdFor = (userId: string) => `onboarding-${userId}`;
 
 export class WorkflowError extends Schema.TaggedError<WorkflowError>()("WorkflowError", {
@@ -20,9 +18,8 @@ export class WorkflowError extends Schema.TaggedError<WorkflowError>()("Workflow
 }) {}
 
 /**
- * Starts and reads onboarding runs. Nothing starts one for you: call it from your own server code,
- * for example after sign-up: `const onboarding = yield* Onboarding;` then
- * `yield* onboarding.start({ userId: user.id })`.
+ * Nothing starts a run for you: call it from your own server code, for example after sign-up:
+ * `const onboarding = yield* Onboarding;` then `yield* onboarding.start({ userId: user.id })`.
  */
 export class Onboarding extends Context.Service<
   Onboarding,

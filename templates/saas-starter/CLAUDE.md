@@ -27,8 +27,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
     `errors.ts`, `layer.ts`, `nav.ts`, `viewer.ts`, `auth-plugins.ts`, `workflows.ts`, each with an
     optional sibling `*.test.ts`;
   - `*.machine.ts` only in `components/` or `machines/`, `*.spec.ts` only in `e2e/`;
-  - every feature has `feature.json` and `TIMELINE.md`. To change the list, set `featureLayout` in
-    `cf-saas-lint.json`.
+  - every feature has `feature.json` and `TIMELINE.md`. To change the list, edit `featureLayout`.
 - `"required": true` ones can't be removed: `observability`, `analytics`, `ui`, `consent`, `home`.
 - Imports (`cf-saas-blocks check`): a core module imports the kernel, `src/gen/`, `core/lib` and
   other core modules (an optional one only if its `requires` lists it); nothing in core imports a
@@ -64,6 +63,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `cf-saas-lint.json`. Server functions and server routes run effects through `runEffect` /
   `runResponse` from `src/app/run-effect.ts`.
 - One `yield*` per expression (rule `no-nested-yield`): name the service, then call it.
+- Names say what the code does. A comment gives only a reason the code can't show, said once.
 - Every outside call is an `Effect.tryPromise` inside `Effect.fn("Name.method")` or piped through
   `Effect.withSpan`; `outsideCall` in `src/features/core/lib/call.ts` does both.
 - With `db`, name each migration for its change: `bun run db:generate add_invoices`. Bare, it fails.
@@ -72,7 +72,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `audit_log`. What on-call does is in `docs/runbook.md`; keep it true when you change a flow.
 - Every flow a user can see, and every lifecycle, is an XState machine in a `*.machine.ts` file with a
   unit test. Machines that drive UI sit in a feature's `components/` and also need
-  `e2e/<name>.paths.spec.ts` in that feature.
+  `e2e/<name>.paths.spec.ts` in that feature. Name event handlers (rule `no-inline-handler`).
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
   `metric`: the feature's success measure and the catalog events behind it (a test checks both). No
   personal data in event properties.

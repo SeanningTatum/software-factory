@@ -8,13 +8,11 @@ import { isEntitled, isStatus } from "../machines/subscription.machine.ts";
 import { subscription } from "../schema.ts";
 
 export interface BillingState {
-  /** False until Stripe keys and a price are set; the page then says what is missing. */
   readonly configured: boolean;
-  /** Whether the user gets paid features now. Gate on this; it is the one place that decides. */
+  /** Gate on this; it is the one place that decides. */
   readonly entitled: boolean;
-  /** The plan the user gets now: the subscription's plan when entitled, else free. */
   readonly plan: string;
-  /** The subscription's Stripe status; set while there is one to manage, even when not entitled. */
+  /** Set while there is a subscription to manage, even when not entitled. */
   readonly status: string | undefined;
   readonly cancelAtPeriodEnd: boolean;
   readonly plans: ReadonlyArray<Pick<Plan, "name" | "label">>;

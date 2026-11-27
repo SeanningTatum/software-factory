@@ -3,24 +3,14 @@ import { getShortestPaths } from "xstate/graph";
 import { asVisitor } from "#/app/testing/e2e.ts";
 import { credentialsMachine } from "../components/credentials.machine.ts";
 
-/**
- * Replays every path through the sign-up form in the browser. Paths come from the machine, so a
- * new state or event shows up here without editing this file.
- */
 const paths = getShortestPaths(credentialsMachine, {
   events: [{ type: "SUBMIT", credentials: { email: "", password: "" } }, { type: "EDIT" }],
 });
 
 const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
-/**
- * Each test is its own visitor. The sign-up limiter allows 10 attempts a minute per IP; locally every
- * request comes from one address, so without this a second run inside a minute trips it.
- * (On Cloudflare the edge sets this header, so a client can't choose it.)
- */
 test.beforeEach(({ page }) => asVisitor(page));
 
-/** Waits until the form works (its button turns on once React hydrates), then fills it. */
 const fill = async (page: Page, email: string, password: string) => {
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await page.getByLabel("Name").fill("E2E User");
