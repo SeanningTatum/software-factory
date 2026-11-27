@@ -1,9 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { Effect } from "effect";
-import { CloudflareEnv } from "#/app/env.ts";
-import { runEffect } from "#/app/run-effect.ts";
-import { turnstileKeys } from "#/features/auth/api/captcha.ts";
+import { getSiteKey } from "#/features/auth/api/guard.ts";
 import type { Credentials } from "#/features/auth/components/credentials.machine.ts";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
@@ -14,17 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "#/features/core/ui/components/card.tsx";
-
-const getSiteKey = createServerFn({ method: "GET" }).handler(({ context }) =>
-  runEffect(
-    context,
-    Effect.gen(function* () {
-      const env = yield* CloudflareEnv;
-      return turnstileKeys(env)?.siteKey ?? null;
-    }),
-    "auth.siteKey",
-  ),
-);
 
 export const Route = createFileRoute("/signup")({
   loader: () => getSiteKey(),

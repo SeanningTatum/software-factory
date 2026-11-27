@@ -7,9 +7,12 @@ export interface Credentials {
   readonly captcha?: string;
 }
 
+/** The server wants a Turnstile token with this sign-in; the form shows the check from then on. */
+export class ChallengeRequired extends Error {}
+
 export const credentialsMachine = setup({
   types: {
-    context: {} as { error: string | undefined },
+    context: {} as { error: string | undefined; challenged: boolean },
     events: {} as { type: "SUBMIT"; credentials: Credentials } | { type: "EDIT" },
   },
   actors: {
@@ -19,7 +22,7 @@ export const credentialsMachine = setup({
   },
 }).createMachine({
   id: "credentials",
-  context: { error: undefined },
+  context: { error: undefined, challenged: false },
   initial: "idle",
   states: {
     idle: {
@@ -35,6 +38,8 @@ export const credentialsMachine = setup({
           actions: assign({
             error: ({ event }) =>
               event.error instanceof Error ? event.error.message : "Something went wrong",
+            challenged: ({ context, event }) =>
+              context.challenged || event.error instanceof ChallengeRequired,
           }),
         },
       },

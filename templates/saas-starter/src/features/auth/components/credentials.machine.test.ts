@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createActor, fromPromise, waitFor } from "xstate";
-import { credentialsMachine } from "./credentials.machine.ts";
+import { ChallengeRequired, credentialsMachine } from "./credentials.machine.ts";
 
 const credentials = { email: "a@b.dev", password: "correct horse battery" };
 
@@ -40,6 +40,26 @@ describe("credentials machine", () => {
     expect(actor.getSnapshot().context.error).toBe("Invalid email or password");
     actor.send({ type: "EDIT" });
     expect(actor.getSnapshot()).toMatchObject({ value: "idle", context: { error: undefined } });
+  });
+
+  it("keeps asking for the bot check once the server wants one", async () => {
+    let calls = 0;
+    const actor = start(() =>
+      Promise.reject(
+        ++calls === 1 ? new ChallengeRequired("Confirm you're a person") : new Error("no"),
+      ),
+    );
+    expect(actor.getSnapshot().context.challenged).toBe(false);
+    actor.send({ type: "SUBMIT", credentials });
+    await waitFor(actor, (s) => s.matches("failed"));
+    expect(actor.getSnapshot().context).toEqual({
+      error: "Confirm you're a person",
+      challenged: true,
+    });
+    actor.send({ type: "EDIT" });
+    actor.send({ type: "SUBMIT", credentials });
+    await waitFor(actor, (s) => s.matches("failed"));
+    expect(actor.getSnapshot().context).toEqual({ error: "no", challenged: true });
   });
 
   it("can retry straight from a failure", async () => {

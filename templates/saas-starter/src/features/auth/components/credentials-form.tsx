@@ -23,12 +23,14 @@ export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
   const [attempt, setAttempt] = useState(0);
   if (snapshot.status === "done") queueMicrotask(onDone);
   const busy = snapshot.matches("submitting") || snapshot.status === "done";
+  // Sign-up always asks; sign-in only once the server has asked for a token.
+  const checkKey = mode === "sign-up" || snapshot.context.challenged ? siteKey : undefined;
 
   const edit = () => snapshot.matches("failed") && send({ type: "EDIT" });
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    if (siteKey) {
+    if (checkKey) {
       setToken(undefined);
       setAttempt((n) => n + 1);
     }
@@ -38,7 +40,7 @@ export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
         email: String(form.get("email") ?? ""),
         password: String(form.get("password") ?? ""),
         ...(mode === "sign-up" ? { name: String(form.get("name") ?? "") } : {}),
-        ...(siteKey ? { captcha: token } : {}),
+        ...(checkKey ? { captcha: token } : {}),
       },
     });
   };
@@ -68,13 +70,13 @@ export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
           required
         />
       </div>
-      {siteKey && <Turnstile key={attempt} siteKey={siteKey} onToken={setToken} />}
+      {checkKey && <Turnstile key={attempt} siteKey={checkKey} onToken={setToken} />}
       {snapshot.context.error && (
         <p role="alert" className="text-sm text-destructive">
           {snapshot.context.error}
         </p>
       )}
-      <Button type="submit" disabled={busy || (Boolean(siteKey) && !token)}>
+      <Button type="submit" disabled={busy || (Boolean(checkKey) && !token)}>
         {busy ? "Please wait…" : mode === "sign-in" ? "Sign in" : "Create account"}
       </Button>
     </form>
