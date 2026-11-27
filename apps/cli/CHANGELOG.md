@@ -1,4 +1,4 @@
-# create-tanstack-cf-saas
+# create-software-factory
 
 ## 0.3.0
 

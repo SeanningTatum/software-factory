@@ -1,20 +1,20 @@
-# tanstack-cf-saas-starter
+# software-factory
 
 A monorepo for a SaaS template (TanStack Start on Cloudflare Workers, written in Effect) and the CLI
 that builds projects from it.
 
 ## Layout
 
-| Path                      | What it is                                                                                                                    |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `templates/saas-starter/` | The template, with every feature on. Its own `CLAUDE.md` holds the code rules.                                                |
-| `apps/cli/`               | `create-tanstack-cf-saas`: `create`, `add`, `remove`, `setup`, `github`, `harness`. Ships the template, `claude/`, `.husky/`. |
-| `apps/docs-website/`      | The docs site: a project `create` made with the required features only. It keeps its own timelines, as any project does.      |
-| `packages/biome-config/`  | Shared Biome rules (published).                                                                                               |
-| `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                        |
-| `packages/lint/`          | `cf-saas-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |
-| `packages/blocks/`        | `cf-saas-blocks`: feature manifests, the generators for `src/gen`, `FEATURES.md` and timelines, add/remove/prune (published). |
-| `claude/`                 | The Claude harness the CLI ships to new projects, as plain files. A stand-in until B-08.                                      |
+| Path                      | What it is                                                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `templates/saas-starter/` | The template, with every feature on. Its own `CLAUDE.md` holds the code rules.                                                         |
+| `apps/cli/`               | `create-software-factory`: `create`, `add`, `remove`, `setup`, `github`, `harness`. Ships the template, `claude/`, `.husky/`.          |
+| `apps/docs-website/`      | The docs site: a project `create` made with the required features only. It keeps its own timelines, as any project does.               |
+| `packages/biome-config/`  | Shared Biome rules (published).                                                                                                        |
+| `packages/tsconfig/`      | Shared TypeScript presets (published).                                                                                                 |
+| `packages/lint/`          | `software-factory-lint`: house rules, test map, feature layout, timeline gate, machine checker (published).                            |
+| `packages/blocks/`        | `software-factory-blocks`: feature manifests, the generators for `src/gen`, `FEATURES.md` and timelines, add/remove/prune (published). |
+| `claude/`                 | The Claude harness the CLI ships to new projects, as plain files. A stand-in until B-08.                                               |
 
 ## Rules
 
@@ -25,7 +25,7 @@ that builds projects from it.
   `workflows`, and the user's own).
 - **A feature or module owns one folder and nothing else**, plus the paths its `feature.json` lists
   in `files`. Names are unique across both levels; tools find the folder from the name. The kernel
-  is `src/app/`. Shared wiring is generated into `src/gen/` by `cf-saas-blocks sync`; never
+  is `src/app/`. Shared wiring is generated into `src/gen/` by `software-factory-blocks sync`; never
   hand-edit it. Required ones (`"required": true`: `observability`, `analytics`, `ui`, `consent`,
   `home`) can't be removed; `db`, `kv`, `email`, `auth`, `billing`, `workflows` and `uploads` can.
   An `"auto": true` one (`auth-email`, `email-templates`) is never chosen: it is on exactly when everything it
@@ -35,10 +35,10 @@ that builds projects from it.
   History afresh. Here History stays empty, and a Decisions line that a change makes untrue is
   fixed or deleted. This overrides the template's own `CLAUDE.md` and `FEATURES.md`, which tell the
   projects made from it to add a line with every change.
-- **The template never depends on this repo's layout.** It imports `@tanstack-cf-saas/*` packages by
+- **The template never depends on this repo's layout.** It imports `@software-factory/*` packages by
   name; the CLI's bundle step swaps `workspace:*` for published versions.
 - **A change to the template is proven by the feature matrix**, not only by the template's own
-  tests: `bun run --filter create-tanstack-cf-saas test:matrix`. It scaffolds the required features
+  tests: `bun run --filter create-software-factory test:matrix`. It scaffolds the required features
   alone, each optional one with what it requires, and everything together, then runs every gate on
   each.
 - **The template keeps one migration, `drizzle/0000_init.sql`.** After a schema change, delete
@@ -58,7 +58,7 @@ format; when an item is done, delete it and update its row in `SCORECARD.md` in 
 bun install
 bun run check                                              # lint, typecheck, test, build everywhere
 bun run --cwd templates/saas-starter dev                   # work on the template
-bun run --filter create-tanstack-cf-saas test:matrix       # prove every feature combination
+bun run --filter create-software-factory test:matrix       # prove every feature combination
 node apps/cli/dist/index.js my-app --features db,auth      # try the CLI (after bun run build)
 ```
 
@@ -84,7 +84,7 @@ asks for them, so a change to a hook is a change to what `create` hands out.
 ## Claude harness
 
 `claude/` holds the files the CLI ships. Its bundle copies them into each new project's `.claude/`
-and records a hash per file in `harness.lock.json`; `create-tanstack-cf-saas harness check|sync`
+and records a hash per file in `harness.lock.json`; `create-software-factory harness check|sync`
 compares and refreshes it. They are plain files in this repo, not a submodule.
 
 Its workflows are blocks, like features: a script in `claude/workflows/` does the agent work and a
@@ -109,7 +109,7 @@ promote button: `templates/saas-starter/docs/branches.md` draws that flow. `crea
 adds `.github/`; `--no-github` leaves it out.
 
 `bun run changeset` to describe a change, then merge. On `staging`, `release.yml` opens the version
-pull request; on `production` it publishes `packages/*` and the CLI under the `@tanstack-cf-saas`
+pull request; on `production` it publishes `packages/*` and the CLI under the `@software-factory`
 npm scope (claim it before the first publish).
 
 `RELEASING.md` has the steps: merge the version pull request, wait for the checks, `bun run

@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { Effect } from "effect";
 import { InvalidInput } from "./errors.ts";
 

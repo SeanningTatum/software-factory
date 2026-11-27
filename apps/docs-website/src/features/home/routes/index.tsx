@@ -10,18 +10,19 @@ function Home() {
   return (
     <HomeLayout
       className="[--fd-layout-width:64rem]"
-      nav={{ title: "create-tanstack-cf-saas" }}
+      nav={{ title: "Software Factory" }}
       links={navItems
         .filter((item) => item.to !== "/")
         .map((item) => ({ text: item.label, url: item.to }))}
     >
       <div className="mx-auto w-full max-w-5xl px-4 py-24">
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-          create-tanstack-cf-saas
+          Software Factory for Cloudflare Workers
         </h1>
         <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-          A CLI that builds a TanStack Start SaaS on Cloudflare Workers. You pick the features (db,
-          auth, billing, kv, workflows, uploads) and it writes a project with only those.
+          <code>create-software-factory</code> builds a TanStack Start SaaS on Cloudflare Workers.
+          You pick the features (db, auth, billing, kv, workflows, uploads) and it writes a project
+          with only those, plus a harness for Claude Code.
         </p>
         <Link
           className="mt-8 inline-block font-medium underline underline-offset-4"

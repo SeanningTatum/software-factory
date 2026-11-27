@@ -8,7 +8,7 @@ import {
   readProject,
   removeBlock,
   WRANGLER_FILE,
-} from "@tanstack-cf-saas/blocks";
+} from "@software-factory/blocks";
 import pc from "picocolors";
 import {
   type Cli,
@@ -86,7 +86,7 @@ const moveCommand = (pm: PackageManager) =>
     .flat()
     .join(" ");
 
-export const GITHUB = "create-tanstack-cf-saas github";
+export const GITHUB = "create-software-factory github";
 
 /** Feature names from the command line (`kv workflows` or `kv,workflows`), old block names mapped and noted. */
 const featureArgs = (args: ReadonlyArray<string>) => {
@@ -111,7 +111,7 @@ export const add = (...names: ReadonlyArray<string>) => {
   const added = features.flatMap((f) => addBlock(root, templateDir(), f));
   // A new limiter arrives with its manifest's id, the same in every project; see `create`.
   uniqueNamespaceIds(root, ids);
-  resetHistory(root, added, `- ${today()} — Added with create-tanstack-cf-saas ${VERSION}.`);
+  resetHistory(root, added, `- ${today()} — Added with create-software-factory ${VERSION}.`);
   if (!added.length) {
     console.log(`Already on: ${features.join(", ")}.`);
     return;
@@ -130,7 +130,7 @@ export const add = (...names: ReadonlyArray<string>) => {
 };
 
 const commitScaffold = (root: string, git: Cli, added: ReadonlyArray<string>) => {
-  const message = `feat(scaffold): add ${added.join(", ")} with create-tanstack-cf-saas ${VERSION}`;
+  const message = `feat(scaffold): add ${added.join(", ")} with create-software-factory ${VERSION}`;
   for (const args of [
     ["add", "-A"],
     [...gitIdentity(root), "commit", "--quiet", "--no-verify", "-m", message],

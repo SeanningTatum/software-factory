@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Auth (`auth`)
 
 Better Auth with email and password, sessions in D1, rate-limited sign-in and sign-up.
 
-- Kind: feature, optional; `cf-saas-blocks remove auth` takes it out
+- Kind: feature, optional; `software-factory-blocks remove auth` takes it out
 - Depends on: [db](../core/db/TIMELINE.md)
 - Used by: [auth-email](../auth-email/TIMELINE.md), [billing](../billing/TIMELINE.md), [uploads](../uploads/TIMELINE.md)
 - Bindings: `AUTH_LIMITER` (ratelimit)

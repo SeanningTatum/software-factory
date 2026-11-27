@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { Effect, ErrorReporter, Schema } from "effect";
 import { Analytics } from "#/features/core/analytics/api/analytics.ts";
 import { stepOrder } from "../machines/onboarding.machine.ts";

@@ -1,4 +1,4 @@
-# @tanstack-cf-saas/biome-config
+# @software-factory/biome-config
 
 ## 0.2.0
 

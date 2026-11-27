@@ -1,5 +1,5 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Analytics (`analytics`)
 

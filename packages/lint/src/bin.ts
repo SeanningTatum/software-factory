@@ -4,7 +4,7 @@ import { runTimeline } from "./timeline-git.ts";
 
 const args = process.argv.slice(2);
 
-const usage = `cf-saas-lint [command]
+const usage = `software-factory-lint [command]
 
   (none)                     run the house rules on this project
   --rules                    list the rules
@@ -16,11 +16,11 @@ const runLint = () => {
   const findings = lint(process.cwd());
   for (const f of findings) console.error(`${f.file}:${f.line}  ${f.rule}  ${f.message}`);
   if (!findings.length) {
-    console.log("cf-saas-lint: no problems.");
+    console.log("software-factory-lint: no problems.");
     return 0;
   }
   console.error(
-    `\n${findings.length} problem(s). Allow a file only in cf-saas-lint.json "allow", with a reason in review.`,
+    `\n${findings.length} problem(s). Allow a file only in software-factory-lint.json "allow", with a reason in review.`,
   );
   return 1;
 };

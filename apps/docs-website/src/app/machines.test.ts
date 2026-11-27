@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkMachine, type MachineDoc, withMachines } from "@tanstack-cf-saas/lint/machines";
+import { checkMachine, type MachineDoc, withMachines } from "@software-factory/lint/machines";
 import { describe, expect, it } from "vitest";
 import type { AnyStateMachine } from "xstate";
 

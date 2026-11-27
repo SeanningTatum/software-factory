@@ -1,7 +1,7 @@
 {
-  "name": "@tanstack-cf-saas/lint",
+  "name": "@software-factory/lint",
   "version": "0.3.0",
-  "description": "House lint rules for tanstack-cf-saas projects: Effect rules, the test map and the state machine gate",
+  "description": "House lint rules for software-factory projects: Effect rules, the test map and the state machine gate",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -19,7 +19,7 @@
     }
   },
   "bin": {
-    "cf-saas-lint": "./dist/bin.js"
+    "software-factory-lint": "./dist/bin.js"
   },
   "scripts": {
     "build": "bun build src/index.ts src/machines.ts src/bin.ts --outdir dist --target node --packages external",
@@ -30,7 +30,7 @@
     "@typescript/typescript6": "^6.0.2"
   },
   "devDependencies": {
-    "@tanstack-cf-saas/tsconfig": "workspace:*",
+    "@software-factory/tsconfig": "workspace:*",
     "@types/bun": "latest",
     "xstate": "5.33.4"
   },

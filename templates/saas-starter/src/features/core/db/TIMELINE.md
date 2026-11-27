@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # D1 database (`db`)
 
 Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real-SQL tests.
 
-- Kind: core module, optional; `cf-saas-blocks remove db` takes it out
+- Kind: core module, optional; `software-factory-blocks remove db` takes it out
 - Depends on: none
 - Used by: [auth](../../auth/TIMELINE.md)
 - Bindings: `DB` (d1)

@@ -1,6 +1,6 @@
 /**
  * A feature's TIMELINE.md has marked blocks that tools write and a part people write.
- * `cf-saas-blocks sync` owns the generated block; `bun run machines:print` owns the machines block.
+ * `software-factory-blocks sync` owns the generated block; `bun run machines:print` owns the machines block.
  */
 export const TIMELINE_FILE = "TIMELINE.md";
 export const GENERATED_START = "<!-- generated:start -->";

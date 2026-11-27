@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type Feature, loadManifests, timelinePath } from "@tanstack-cf-saas/blocks";
+import { type Feature, loadManifests, timelinePath } from "@software-factory/blocks";
 
 const HISTORY = "## History";
 /** Where the History section stops: the next heading or marked block. */

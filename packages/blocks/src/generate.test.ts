@@ -26,7 +26,7 @@ const manifests = new Map(
 );
 
 const project = (files: ReadonlyArray<string>) => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-gen-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-gen-"));
   for (const path of files) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), "export {};\n");

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadManifests, timelinePath } from "@tanstack-cf-saas/blocks";
+import { loadManifests, timelinePath } from "@software-factory/blocks";
 import { freshHistory } from "./timeline.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../template");
@@ -18,7 +18,7 @@ describe("the template", () => {
   });
 });
 
-const LINE = "- 2030-01-02 — Created from create-tanstack-cf-saas 1.0.0.";
+const LINE = "- 2030-01-02 — Created from create-software-factory 1.0.0.";
 
 describe("freshHistory", () => {
   test("replaces the History lines and keeps its guide comment and the Decisions", () => {

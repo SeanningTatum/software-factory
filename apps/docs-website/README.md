@@ -1,7 +1,7 @@
 # Docs Website
 
 TanStack Start on Cloudflare Workers, written in Effect, with every flow drawn as a state machine.
-Made with `create-tanstack-cf-saas`.
+Made with `create-software-factory`.
 
 ## Run it
 
@@ -60,8 +60,8 @@ error map, the event catalog, the nav, the route tree, wrangler bindings, `.dev.
 built from their `feature.json` by `bun run blocks:sync`.
 
 ```bash
-bunx create-tanstack-cf-saas add kv
-bunx create-tanstack-cf-saas remove kv
+bunx create-software-factory add kv
+bunx create-software-factory remove kv
 ```
 
 `FEATURES.md` lists every core module and feature in one line each. Each one's `TIMELINE.md` says
@@ -71,9 +71,9 @@ before changing a feature, and add a line to its timeline with the change.
 
 ## Checks
 
-`bun run check` runs Biome, the house rules (`cf-saas-lint`), the feature boundary check, the type
+`bun run check` runs Biome, the house rules (`software-factory-lint`), the feature boundary check, the type
 checker, the unit tests (including the state machine gate) and knip. `bun run machines:print`
 writes each machine's Mermaid diagram into its feature's `TIMELINE.md`; the tests fail when one is
-out of date. With the GitHub workflows, CI also runs `cf-saas-lint timeline` on pull requests,
+out of date. With the GitHub workflows, CI also runs `software-factory-lint timeline` on pull requests,
 which fails when a feature changed without a new line in its `TIMELINE.md`; the `no-timeline`
 label skips it.

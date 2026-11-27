@@ -1,13 +1,13 @@
 /**
- * Runs the real CLI from this repo, the way `bunx create-tanstack-cf-saas` will run once it is
- * published. New projects depend on the @tanstack-cf-saas packages, which are not on npm yet, so
+ * Runs the real CLI from this repo, the way `bunx create-software-factory` will run once it is
+ * published. New projects depend on the @software-factory packages, which are not on npm yet, so
  * this copies the bundled template, packs them into the copy's `.packs/`, points the copy at them
- * by relative path, and hands the copy to the CLI through CF_SAAS_TEMPLATE_DIR (an internal
+ * by relative path, and hands the copy to the CLI through SOFTWARE_FACTORY_TEMPLATE_DIR (an internal
  * variable, not listed in --help). The project carries the tarballs, so a clone of it installs
  * anywhere, GitHub Actions included. The bundled template itself is never changed, so it stays fit
  * to publish.
  *
- *   bun run try                                   the wizard, into ../cf-saas-try
+ *   bun run try                                   the wizard, into ../software-factory-try
  *   bun run try ../my-app --features db,auth --yes
  */
 import { spawnSync } from "node:child_process";
@@ -20,7 +20,7 @@ import { ownRepository, teardownPlan } from "./teardown.ts";
 const cli = join(repo, "apps/cli");
 const packs = join(cli, ".packs");
 const template = join(packs, "template");
-const defaultDir = resolve(repo, "../cf-saas-try");
+const defaultDir = resolve(repo, "../software-factory-try");
 
 const run = (label: string, cmd: string, args: Array<string>, cwd: string) => {
   console.log(`• ${label}`);
@@ -40,7 +40,7 @@ const target = dirGiven ? resolve(process.env.INIT_CWD ?? process.cwd(), first) 
 const flags = dirGiven ? restArgs : argv;
 
 // Only the default folder is cleared, and only when an earlier try made it.
-if (!dirGiven && existsSync(join(target, "cf-saas.json"))) {
+if (!dirGiven && existsSync(join(target, "software-factory.json"))) {
   // The folder holds the only record of what that try made outside this machine.
   // shortcut: sees a repository and recorded D1 or KV ids; a bucket or draft Worker alone leaves no mark.
   const made = teardownPlan(target, ownRepository(target, capture("git", target)));
@@ -57,7 +57,7 @@ if (!dirGiven && existsSync(join(target, "cf-saas.json"))) {
 run(
   "Building the packages and the CLI",
   "bunx",
-  ["turbo", "run", "build", "--filter=./packages/*", "--filter=create-tanstack-cf-saas"],
+  ["turbo", "run", "build", "--filter=./packages/*", "--filter=create-software-factory"],
   repo,
 );
 
@@ -67,7 +67,7 @@ console.log("• Packing the packages");
 linkLocal(template, packAll(join(template, ".packs"), "./.packs"));
 
 console.log(`\nRunning the CLI into ${target}\n`);
-const env = { ...process.env, CF_SAAS_TEMPLATE_DIR: template };
+const env = { ...process.env, SOFTWARE_FACTORY_TEMPLATE_DIR: template };
 const args = [join(cli, "dist/index.js"), target, ...flags];
 const result = spawnSync("node", args, { stdio: "inherit", env }); // NOSONAR: runs the CLI with the developer's node, as npx would.
 

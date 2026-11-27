@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # R2 uploads (`uploads`)
 
 Per-user file uploads to R2 with size, type and magic-byte checks, a rate limit and an upload state machine.
 
-- Kind: feature, optional; `cf-saas-blocks remove uploads` takes it out
+- Kind: feature, optional; `software-factory-blocks remove uploads` takes it out
 - Depends on: [auth](../auth/TIMELINE.md)
 - Used by: none
 - Bindings: `BUCKET` (r2), `UPLOAD_LIMITER` (ratelimit)

@@ -1,4 +1,4 @@
-// Bindings and vars marked in cf-saas.json are managed by `bun run blocks:sync`.
+// Bindings and vars marked in software-factory.json are managed by `bun run blocks:sync`.
 // Everything else here is yours: it is kept when blocks are added or removed.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
@@ -18,10 +18,14 @@
   "logpush": true,
   "upload_source_maps": true,
   "placement": { "mode": "smart" },
+  // Production answers on this domain only; with a route, workers.dev is off.
+  "routes": [{ "pattern": "createsoftwarefactory.dev", "custom_domain": true }],
   // Tells the Worker which version it is: /api/health reports it and PostHog events carry it.
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "env": {
     "staging": {
+      // Staging answers on this domain only; with a route, workers.dev is off.
+      "routes": [{ "pattern": "staging.createsoftwarefactory.dev", "custom_domain": true }],
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       // An env's block replaces the one above instead of merging, so it is repeated in full.
       "observability": {

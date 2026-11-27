@@ -19,7 +19,7 @@ import {
   sync,
   WRANGLER_FILE,
   writeProject,
-} from "@tanstack-cf-saas/blocks";
+} from "@software-factory/blocks";
 import { applyEdits, modify, parse } from "jsonc-parser";
 import { installHarness } from "./harness.ts";
 import { GENERATED_SECRETS, SECRET_BYTES, withVars } from "./setup.ts";
@@ -267,7 +267,7 @@ const installHusky = (huskyDir: string, dir: string) => {
  */
 const GITHUB_FILES = [".github", "docs/branches.md"];
 const GITHUB_README =
-  /<!-- github:start -->[\s\S]*?<!-- github:end -->\n*|^bunx create-tanstack-cf-saas github .*\n/gm;
+  /<!-- github:start -->[\s\S]*?<!-- github:end -->\n*|^bunx create-software-factory github .*\n/gm;
 
 /** Takes out the workflows, the rulesets, their doc and the README's words about them. */
 const removeGithub = (dir: string) => {
@@ -314,7 +314,7 @@ export const scaffold = (options: ScaffoldOptions): ScaffoldResult => {
   resetHistory(
     targetDir,
     [...loadManifests(targetDir).values()],
-    `- ${options.date ?? today()} — Created from create-tanstack-cf-saas ${VERSION}.`,
+    `- ${options.date ?? today()} — Created from create-software-factory ${VERSION}.`,
   );
   writeDevVars(targetDir, options.devVars ?? {});
   usePosthog(targetDir, options.devVars ?? {});

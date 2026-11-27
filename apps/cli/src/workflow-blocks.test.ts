@@ -32,7 +32,7 @@ describe.each(names)("workflow block %s", (name) => {
   test("has no comments in its script or its checks, unless the file opens by allowing them", () => {
     for (const file of [join(workflows, `${name}.js`), join(evals, "check.js")]) {
       const text = readFileSync(file, "utf8");
-      const allowed = text.startsWith("// cf-saas-lint allow comments\n");
+      const allowed = text.startsWith("// software-factory-lint allow comments\n");
       expect(allowed || !/^\s*(\/\/|\/\*)/m.test(text), file).toBe(true);
     }
   });

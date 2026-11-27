@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Email (`email`)
 
 Transactional email through Cloudflare Email Service, as an Effect Email service over the send_email binding. With auth, adds password reset, email verification and sign-in by code.
 
-- Kind: core module, optional; `cf-saas-blocks remove email` takes it out
+- Kind: core module, optional; `software-factory-blocks remove email` takes it out
 - Depends on: none
 - Used by: [auth-email](../../auth-email/TIMELINE.md), [email-templates](../email-templates/TIMELINE.md)
 - Bindings: `EMAIL` (send_email)

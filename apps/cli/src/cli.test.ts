@@ -54,7 +54,7 @@ describe("create", () => {
   test("a failed scaffold stops the spinner and exits non-zero instead of hanging", () => {
     const dir = scratch();
     const empty = scratch();
-    const result = cli(["app", ...QUICK], dir, { CF_SAAS_TEMPLATE_DIR: empty });
+    const result = cli(["app", ...QUICK], dir, { SOFTWARE_FACTORY_TEMPLATE_DIR: empty });
     expect(result.signal).toBeNull();
     expect(result.status).toBe(1);
     expect(result.out).toContain("may hold a partial copy");
@@ -135,7 +135,7 @@ describe("the command line", () => {
     writeFileSync(join(dir, "package.json"), "{}");
     const result = cli(["add", "kv"], dir);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("cf-saas.json not found");
+    expect(result.stderr).toContain("software-factory.json not found");
     expect(existsSync(join(dir, "src"))).toBe(false);
   });
 

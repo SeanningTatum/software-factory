@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Workflows (`workflows`)
 
 A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a state machine sets.
 
-- Kind: feature, optional; `cf-saas-blocks remove workflows` takes it out
+- Kind: feature, optional; `software-factory-blocks remove workflows` takes it out
 - Depends on: none
 - Used by: none
 - Bindings: `ONBOARDING_WORKFLOW` (workflow)

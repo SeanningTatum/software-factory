@@ -1,5 +1,5 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Home (`home`)
 
@@ -34,6 +34,7 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-27 — The heading reads "Software Factory for Cloudflare Workers" and the intro names the CLI and the Claude Code harness, after the project was renamed.
 - 2026-11-27 — The home page sits in Fumadocs' `HomeLayout`, whose nav links to the docs.
 - 2026-11-27 — The home page introduces the docs and links to /docs.
 

@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve, sep } from "node:path";
-import { addBlock, check, removeBlock } from "@tanstack-cf-saas/blocks";
+import { addBlock, check, removeBlock } from "@software-factory/blocks";
 import { hasTables, scaffold } from "../src/scaffold.ts";
 import { linkLocal, packAll } from "./pack.ts";
 
@@ -22,7 +22,9 @@ const tempRoot = resolve(process.env.RUNNER_TEMP ?? tmpdir());
 const outDir = join(
   tempRoot,
   basename(
-    process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "cf-saas-matrix",
+    process.argv[2] && !process.argv[2].startsWith("--")
+      ? process.argv[2]
+      : "software-factory-matrix",
   ),
 );
 const onlyIndex = process.argv.indexOf("--only");
@@ -48,7 +50,7 @@ const combos: Record<string, ReadonlyArray<string>> = {
  */
 const REMOVAL_ORDER = ["uploads", "billing", "workflows", "kv", "email", "auth", "db"];
 
-/** Fast, install-free: after every add or remove, `cf-saas-blocks check` must find nothing. */
+/** Fast, install-free: after every add or remove, `software-factory-blocks check` must find nothing. */
 const walkFeatures = (name: string, kind: "remove" | "add", failures: Array<string>) => {
   const dir = join(outDir, `${name}-${kind}`);
   scaffold({
@@ -130,8 +132,8 @@ for (const [name, features] of Object.entries(combos)) {
         >)
       : []),
     ["biome", "bunx", ["biome", "check", "."]],
-    ["house rules", "bunx", ["cf-saas-lint"]],
-    ["feature check", "bunx", ["cf-saas-blocks", "check"]],
+    ["house rules", "bunx", ["software-factory-lint"]],
+    ["feature check", "bunx", ["software-factory-blocks", "check"]],
     ["typecheck", "bunx", ["tsc", "-p", "."]],
     ["unit tests", "bun", ["run", "test"]],
     ["knip", "bunx", ["knip"]],

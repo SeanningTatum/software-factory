@@ -25,7 +25,7 @@ const git = (root: string, ...args: Array<string>) => {
 
 /** A repo with one commit holding feature kv and its timeline. */
 const repo = () => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-timeline-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-timeline-"));
   git(root, "init", "-q");
   write(root, "src/features/kv/api/key-value.ts", "export const a = 1;\n");
   write(root, "src/features/kv/TIMELINE.md", "## Decisions\n\n## History\n");
@@ -36,7 +36,7 @@ const repo = () => {
 
 describe("runTimeline", () => {
   test("skips outside a git repository and when asked", () => {
-    const plain = mkdtempSync(join(tmpdir(), "cf-saas-timeline-"));
+    const plain = mkdtempSync(join(tmpdir(), "software-factory-timeline-"));
     expect(runTimeline(plain).code).toBe(0);
     expect(runTimeline(plain).lines[0]).toContain("not a git repository");
     expect(runTimeline(repo(), { skip: true }).lines[0]).toContain("skipped");

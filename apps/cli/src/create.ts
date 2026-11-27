@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { type EnvName, loadManifests, WRANGLER_FILE } from "@tanstack-cf-saas/blocks";
+import { type EnvName, loadManifests, WRANGLER_FILE } from "@software-factory/blocks";
 import pc from "picocolors";
 import { createActor, fromPromise, toPromise } from "xstate";
 import {
@@ -40,7 +40,7 @@ import { askPlan, type CreateArgs, cancelled } from "./wizard.ts";
 
 type Step = "scaffold" | "install" | "migrate" | "git" | "hooks";
 
-const COMMIT_MESSAGE = `chore(scaffold): create project with create-tanstack-cf-saas ${VERSION}`;
+const COMMIT_MESSAGE = `chore(scaffold): create project with create-software-factory ${VERSION}`;
 const shellPath = (dir: string) => (/\s/.test(dir) ? JSON.stringify(dir) : dir);
 
 /** What is left to run by hand when `failed` broke, in order. */
@@ -64,7 +64,7 @@ const stepsLeft = (failed: Step, plan: CreatePlan, pm: PackageManager, hasDb: bo
 };
 
 export const create = async (args: CreateArgs) => {
-  p.intro(pc.inverse(" create-tanstack-cf-saas "));
+  p.intro(pc.inverse(" create-software-factory "));
   const plan = await askPlan(args);
   const known = packageManagers.includes(args.pm as PackageManager);
   if (args.pm !== undefined && !known) {

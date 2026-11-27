@@ -77,5 +77,5 @@ export const gitIdentity = (cwd: string): Array<string> => {
     spawnSync("git", ["config", key], { cwd, encoding: "utf8" }).stdout.trim() !== ""; // NOSONAR: the user's own git, from their PATH like any CLI.
   return has("user.name") && has("user.email")
     ? []
-    : ["-c", "user.name=create-tanstack-cf-saas", "-c", "user.email=noreply@example.com"];
+    : ["-c", "user.name=create-software-factory", "-c", "user.email=noreply@example.com"];
 };

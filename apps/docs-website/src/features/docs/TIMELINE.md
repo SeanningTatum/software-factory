@@ -1,11 +1,11 @@
 <!-- generated:start -->
-<!-- Written by `cf-saas-blocks sync` from feature.json and the source. Edits here are lost. -->
+<!-- Written by `software-factory-blocks sync` from feature.json and the source. Edits here are lost. -->
 
 # Docs (`docs`)
 
 The documentation pages: MDX from content/docs, rendered with Fumadocs, with a sidebar and search.
 
-- Kind: feature, optional; `cf-saas-blocks remove docs` takes it out
+- Kind: feature, optional; `software-factory-blocks remove docs` takes it out
 - Depends on: none
 - Used by: none
 - Bindings: `SEARCH_LIMITER` (ratelimit)
@@ -31,6 +31,7 @@ The documentation pages: MDX from content/docs, rendered with Fumadocs, with a s
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-27 — Getting started opens with what Software Factory is, to match the README after the rename.
 - 2026-11-27 — Two docs e2e tests: the theme button stays inside the window, and `/docs` passes the accessibility check in dark mode.
 - 2026-11-27 — The search limiter got random namespace ids like the other limiters, and the search test now checks the hits.
 - 2026-11-27 — Pages load lazily, one chunk each. The theme provider moved to the root route and the app's colours follow its `dark` class, so the sidebar's theme button works on every page.

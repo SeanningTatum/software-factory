@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Schema } from "effect";
 
-export const PROJECT_FILE = "cf-saas.json";
+export const PROJECT_FILE = "software-factory.json";
 
 export const ProjectConfig = Schema.Struct({
   $schema: Schema.optionalKey(Schema.String),
@@ -20,7 +20,7 @@ const decode = Schema.decodeUnknownSync(ProjectConfig);
 export const readProject = (root: string): ProjectConfig => {
   const path = join(root, PROJECT_FILE);
   if (!existsSync(path)) {
-    throw new Error(`${PROJECT_FILE} not found in ${root}. Is this a tanstack-cf-saas project?`);
+    throw new Error(`${PROJECT_FILE} not found in ${root}. Is this a software-factory project?`);
   }
   return decode(JSON.parse(readFileSync(path, "utf8")));
 };

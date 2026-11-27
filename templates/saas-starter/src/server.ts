@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import handler from "@tanstack/react-start/server-entry";
 
 // Cloudflare finds Workflow classes by their export name from the Worker's entry module.

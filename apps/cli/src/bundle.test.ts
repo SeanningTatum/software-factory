@@ -56,8 +56,8 @@ test("the bundled template holds no local links (a `bun run try` must not leak i
 test("a project carries the CLI that made it, so `setup` runs from the project", () => {
   const read = (path: string) => JSON.parse(readFileSync(join(import.meta.dirname, path), "utf8"));
   const project = read("../template/package.json");
-  expect(project.devDependencies["create-tanstack-cf-saas"]).toBe(
+  expect(project.devDependencies["create-software-factory"]).toBe(
     `^${read("../package.json").version}`,
   );
-  expect(project.scripts.setup).toBe("create-tanstack-cf-saas setup");
+  expect(project.scripts.setup).toBe("create-software-factory setup");
 });

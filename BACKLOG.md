@@ -32,17 +32,17 @@ Rules for a good item:
 
 ## At a glance
 
-| Id   | Title                                             | Area              | Size | Needs you           |
-| ---- | ------------------------------------------------- | ----------------- | ---- | ------------------- |
-| B-03 | The health check and Stripe keys agree            | Deployment        | S    | A decision          |
-| B-07 | Billing works with real Stripe test keys          | Features          | M    | Stripe test keys    |
-| B-08 | New projects get a real Claude harness            | Agentic workflows | S    | A decision          |
-| B-10 | The packages are on npm                           | Repo              | S    | Claim the npm scope |
-| B-20 | cf-saas-lint parses without a second TypeScript   | Repo              | M    | no                  |
-| B-21 | A stranger can't lock a user out of sign-in       | Security          | M    | A decision          |
-| B-22 | A repeated Stripe event leaves one audit row      | Logging           | M    | no                  |
-| B-24 | A live project moves to its own domain in one run | Deployment        | M    | A custom domain     |
-| B-25 | The kernel's body cap knows no feature's path     | Features          | S    | no                  |
+| Id   | Title                                                    | Area              | Size | Needs you           |
+| ---- | -------------------------------------------------------- | ----------------- | ---- | ------------------- |
+| B-03 | The health check and Stripe keys agree                   | Deployment        | S    | A decision          |
+| B-07 | Billing works with real Stripe test keys                 | Features          | M    | Stripe test keys    |
+| B-08 | New projects get a real Claude harness                   | Agentic workflows | S    | A decision          |
+| B-10 | The packages are on npm                                  | Repo              | S    | Claim the npm scope |
+| B-20 | software-factory-lint parses without a second TypeScript | Repo              | M    | no                  |
+| B-21 | A stranger can't lock a user out of sign-in              | Security          | M    | A decision          |
+| B-22 | A repeated Stripe event leaves one audit row             | Logging           | M    | no                  |
+| B-24 | A live project moves to its own domain in one run        | Deployment        | M    | A custom domain     |
+| B-25 | The kernel's body cap knows no feature's path            | Features          | S    | no                  |
 
 ## Now
 
@@ -98,31 +98,31 @@ Rules for a good item:
 
 - **Area:** Repo
 - **Size:** S
-- **Needs you:** Claim the `@tanstack-cf-saas` scope, and decide between an npm token and trusted publishing
+- **Needs you:** Claim the `@software-factory` scope, and decide between an npm token and trusted publishing
 
 **Why:** A project made by the CLI cannot install until the four packages are published. `bun run try` works round it with local files.
 
 **Done when:**
 
-- [ ] `bunx create-tanstack-cf-saas my-app` installs and runs with no local files.
+- [ ] `bunx create-software-factory my-app` installs and runs with no local files.
 - [ ] `release.yml` publishes on a merged changeset.
 
 **Where:** `.github/workflows/release.yml`, `.changeset/`.
 
 ## Later
 
-### B-20 · cf-saas-lint parses without a second TypeScript
+### B-20 · software-factory-lint parses without a second TypeScript
 
 - **Area:** Repo
 - **Size:** M
 - **Needs you:** no
 
-**Why:** TypeScript 7 has no JS API, so `cf-saas-lint` reads source through `@typescript/typescript6`. Every project installs a second full compiler just for lint, and that parser stays on TypeScript 6 syntax.
+**Why:** TypeScript 7 has no JS API, so `software-factory-lint` reads source through `@typescript/typescript6`. Every project installs a second full compiler just for lint, and that parser stays on TypeScript 6 syntax.
 
 **Done when:**
 
 - [ ] `packages/lint` parses with `oxc-parser` (already in the tree through knip) and no longer depends on `@typescript/typescript6`.
-- [ ] `bun run --filter @tanstack-cf-saas/lint test` and `test:matrix` pass.
+- [ ] `bun run --filter @software-factory/lint test` and `test:matrix` pass.
 
 **Where:** `packages/lint/src/files.ts`, `lint.ts`, `rules/ast-rules.ts`, `rules/shared-lib.ts`, `rules/types.ts`.
 
@@ -167,7 +167,7 @@ Rules for a good item:
 
 **Done when:**
 
-- [ ] `create-tanstack-cf-saas setup`, run at a terminal in a project whose `APP_URL` is on `workers.dev`, asks for each environment's URL in the words `create` uses; a domain given there becomes that environment's `APP_URL` and the environment deploys under it.
+- [ ] `create-software-factory setup`, run at a terminal in a project whose `APP_URL` is on `workers.dev`, asks for each environment's URL in the words `create` uses; a domain given there becomes that environment's `APP_URL` and the environment deploys under it.
 - [ ] In a project with a GitHub repository, the same run sets `STAGING_URL` or `PRODUCTION_URL` to match: `gh variable list` shows the new URL, and the next deploy's link on GitHub goes to the domain.
 - [ ] The run ends by saying `wrangler.jsonc` changed and must reach `staging` before the next promotion.
 - [ ] `create` with production's URL left empty lists the domain under "Next": what it unlocks (gradual production rollouts), the one command to run once the domain exists, and the Transform Rule in `docs/branches.md`. With a domain given, the step is absent.
@@ -187,7 +187,7 @@ Rules for a good item:
 
 **Done when:**
 
-- [ ] A feature declares its own body cap (in `feature.json` or a contribution file) and `cf-saas-blocks sync` writes it to `src/gen/`.
-- [ ] `src/app/body.ts` reads the generated caps and no longer appears under `no-repeated-api-path` in `cf-saas-lint.json`.
+- [ ] A feature declares its own body cap (in `feature.json` or a contribution file) and `software-factory-blocks sync` writes it to `src/gen/`.
+- [ ] `src/app/body.ts` reads the generated caps and no longer appears under `no-repeated-api-path` in `software-factory-lint.json`.
 
 **Where:** `templates/saas-starter/src/app/body.ts`, `packages/blocks/src/generate.ts`.

@@ -74,7 +74,7 @@ const createCommand = defineCommand({
 
 const main = defineCommand({
   meta: {
-    name: "create-tanstack-cf-saas",
+    name: "create-software-factory",
     version: VERSION,
     description:
       "TanStack Start SaaS on Cloudflare Workers, built from features. Run with a folder to create a project.",
@@ -162,7 +162,7 @@ const SUBCOMMANDS = new Set(["create", "add", "remove", "setup", "github", "harn
 const MAIN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 const rawArgs = legacyArgs(process.argv.slice(2));
 const first = rawArgs[0];
-/** `create-tanstack-cf-saas my-app --features auth` means create; `--help` alone shows every command. */
+/** `create-software-factory my-app --features auth` means create; `--help` alone shows every command. */
 const toMain = first !== undefined && (MAIN_FLAGS.has(first) || SUBCOMMANDS.has(first));
 
 if (toMain) runMain(main, { rawArgs });

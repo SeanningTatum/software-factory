@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { and, eq, inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv, setting } from "#/app/env.ts";

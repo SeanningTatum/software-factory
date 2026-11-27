@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useRef } from "react";
 import { navFor } from "#/app/nav.ts";

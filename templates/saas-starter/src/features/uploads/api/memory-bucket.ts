@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import type { Bucket } from "./uploads.ts";
 
 export const memoryBucket = () => {

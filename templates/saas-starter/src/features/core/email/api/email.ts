@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { Context, Effect, Layer } from "effect";
 import { type AppEnv, CloudflareEnv, setting } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";

@@ -1,4 +1,4 @@
-# @tanstack-cf-saas/lint
+# @software-factory/lint
 
 ## 0.3.0
 

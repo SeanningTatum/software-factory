@@ -93,7 +93,7 @@ export const noUselessComment: Rule = {
   },
 };
 
-const ALLOW = "cf-saas-lint allow comments";
+const ALLOW = "software-factory-lint allow comments";
 
 const lineOf = (source: ts.SourceFile, pos: number) =>
   source.getLineAndCharacterOfPosition(pos).line + 1;

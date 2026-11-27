@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import type { BetterAuthPlugin } from "better-auth";
 import { captcha } from "better-auth/plugins/captcha";
 import { type AppEnv, setting } from "#/app/env.ts";

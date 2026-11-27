@@ -12,7 +12,7 @@ const project = (
   files: Record<string, string>,
   base: Record<string, string> = { "src/a.test.ts": "" },
 ) => {
-  const root = mkdtempSync(join(tmpdir(), "cf-saas-lint-"));
+  const root = mkdtempSync(join(tmpdir(), "software-factory-lint-"));
   for (const [path, text] of Object.entries({ ...base, ...files })) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), text);
@@ -107,7 +107,7 @@ describe("lint", () => {
         '`bun run nope`: package.json has no script "nope"',
       ]);
       expect(messages("The rule `no-such-rule` bites.")).toEqual([
-        "rule `no-such-rule` is not a cf-saas-lint rule",
+        "rule `no-such-rule` is not a software-factory-lint rule",
       ]);
     });
   });
@@ -268,7 +268,9 @@ describe("lint", () => {
       "src/route.ts": 'export const Route = createFileRoute("/api/once")({});',
       "src/c.test.ts": 'fetch("/api/once");',
       "src/kernel.ts": 'fetch("/api/once");',
-      "cf-saas-lint.json": JSON.stringify({ allow: { "no-repeated-api-path": ["src/kernel.ts"] } }),
+      "software-factory-lint.json": JSON.stringify({
+        allow: { "no-repeated-api-path": ["src/kernel.ts"] },
+      }),
     });
     const found = lint(root).filter((f) => f.rule === "no-repeated-api-path");
     expect(found.map((f) => `${f.file}:${f.line}`)).toEqual(["src/a.ts:1", "src/b.ts:1"]);
@@ -341,7 +343,7 @@ describe("lint", () => {
   });
 
   test("reports a comment said again in another place, but not a short one", () => {
-    const allow = "// cf-saas-lint allow comments\n";
+    const allow = "// software-factory-lint allow comments\n";
     const said = "/** The part of a KV binding the service uses. */\nexport const a = 1;\n";
     const short = "// As above.\nexport const b = 1;\n";
     const root = project({
@@ -354,7 +356,7 @@ describe("lint", () => {
   });
 
   test("reports every comment unless the file opens by allowing them, and an allow line with none", () => {
-    const allow = "// cf-saas-lint allow comments\n";
+    const allow = "// software-factory-lint allow comments\n";
     const code = "export const a = 1;\n/** Why. */\nexport const b = 2; // shortcut: one try\n";
     const directives =
       '/// <reference types="vite/client" />\n// biome-ignore lint/x: because\nexport const c = 1;\n';

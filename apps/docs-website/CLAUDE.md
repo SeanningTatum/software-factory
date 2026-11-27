@@ -17,7 +17,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   - `src/features/<name>/` is a feature: `consent`, `home`, `auth`, `billing`, `uploads`, `workflows`.
 - Names are unique across both levels; `core` and `lib` are reserved. Tools find a folder by name.
 - A feature or module owns its folder and the paths its `feature.json` lists in `files`, and
-  nothing else. `cf-saas-lint` (rule `feature-layout`) allows only this vocabulary inside a
+  nothing else. `software-factory-lint` (rule `feature-layout`) allows only this vocabulary inside a
   feature; make only the folders it needs:
   - folders: `api/` (server functions and services), `routes/` (file routes, served from the URL
     root), `components/` (React, with UI machines beside them), `machines/` (lifecycle machines),
@@ -28,21 +28,21 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   - `*.machine.ts` only in `components/` or `machines/`, `*.spec.ts` only in `e2e/`;
   - every feature has `feature.json` and `TIMELINE.md`. To change the list, edit `featureLayout`.
 - `"required": true` ones can't be removed: `observability`, `analytics`, `ui`, `consent`, `home`.
-- Imports (`cf-saas-blocks check`): a core module imports the kernel, `src/gen/`, `core/lib` and
+- Imports (`software-factory-blocks check`): a core module imports the kernel, `src/gen/`, `core/lib` and
   other core modules (an optional one only if its `requires` lists it); nothing in core imports a
   feature outside core. A feature imports the kernel, `src/gen/`, `core/lib`, required features and
   modules, and what its `requires` lists, transitively.
 - `src/routes/` holds only `__root.tsx`. `src/gen/routes.ts` mounts each feature's `routes/`.
 - `bun run blocks:sync` writes `src/gen/`, `FEATURES.md`, `.dev.vars.example` and the bindings in
   `wrangler.jsonc`. Never edit those by hand; change a `feature.json` or the feature's own files.
-- `cf-saas-blocks check` fails on a file outside `src/app/`, `src/features/`, `src/gen/`,
+- `software-factory-blocks check` fails on a file outside `src/app/`, `src/features/`, `src/gen/`,
   `src/routes/__root.tsx` and `src/{start.ts,router.tsx,server.ts,styles.css}`.
 
 ## Before and after you change a feature
 
 - Read `FEATURES.md`, then the feature's `TIMELINE.md`, before you change it.
 - `TIMELINE.md` has three parts. Between `<!-- generated:start -->` and `<!-- generated:end -->`,
-  `bun run blocks:sync` writes what the feature is and what it is wired to; `cf-saas-blocks check`
+  `bun run blocks:sync` writes what the feature is and what it is wired to; `software-factory-blocks check`
   fails when that is stale. Between `<!-- machines:start -->` and `<!-- machines:end -->`,
   `bun run machines:print` writes each machine's diagram; `bun run test` fails when one is stale.
   Never edit either block by hand.
@@ -50,7 +50,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   `- YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>)` and
   `- YYYY-MM-DD — <what changed>. (<commit sha or PR URL>)`.
 - Add a Decisions or History line with every change to a feature. With `.github/`, CI runs
-  `bunx cf-saas-lint timeline --base origin/<base>` on pull requests, which fails when a feature
+  `bunx software-factory-lint timeline --base origin/<base>` on pull requests, which fails when a feature
   changed with no new line. The `no-timeline` label (or `TIMELINE_SKIP=1`) skips a trivial change.
 
 ## Code
@@ -58,7 +58,7 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
 - Effect for everything on the server. Services are `Context.Service` classes with a static `layer`.
   Errors are `Schema.TaggedError` classes, declared in their feature's `errors.ts` with a status and
   a safe message (rule `error-placement`). Validation is Effect Schema; zod is banned.
-- No `throw`, `try/catch`, `process.env` or `Effect.run*` outside the edges in `cf-saas-lint.json`.
+- No `throw`, `try/catch`, `process.env` or `Effect.run*` outside the edges in `software-factory-lint.json`.
   Server functions live in `api/` (rule `server-fn-placement`); they and server routes run effects
   through `runEffect` / `runResponse` from `src/app/run-effect.ts`. Write each `/api/` path once,
   in its feature's `constants.ts` (rule `no-repeated-api-path`).
@@ -76,5 +76,5 @@ Every rule here is checked by `bun run check`. If a check and this file disagree
   (`one-component-per-file`, `class-placement`, `no-inline-handler`).
 - New user-visible outcomes get an analytics event in the feature's `events.ts`, which also exports
   `metric`, its success measure and the events behind it (a test checks both); no personal data.
-- Every source file in `src/app` and `src/features` has a sibling `*.test.ts` unless `cf-saas-lint.json`
+- Every source file in `src/app` and `src/features` has a sibling `*.test.ts` unless `software-factory-lint.json`
   exempts it. A test runs code; one that only restates constants fails (`no-restating-test`).

@@ -1,7 +1,7 @@
 # SaaS Starter
 
 TanStack Start on Cloudflare Workers, written in Effect, with every flow drawn as a state machine.
-Made with `create-tanstack-cf-saas`.
+Made with `create-software-factory`.
 
 ## Run it
 
@@ -29,7 +29,7 @@ so after `bun install` these run that copy and fetch nothing:
 ```bash
 bun run setup                        # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
 bun run setup --check                # what is still missing, and the command that fixes each
-bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, what CI deploys with, and an issue per manual setup step
+bunx create-software-factory github  # the GitHub repository, its branches and rules, what CI deploys with, and an issue per manual setup step
 bun run deploy:staging               # by hand
 bun run deploy
 ```
@@ -86,8 +86,8 @@ error map, the event catalog, the nav, the route tree, wrangler bindings, `.dev.
 built from their `feature.json` by `bun run blocks:sync`.
 
 ```bash
-bunx create-tanstack-cf-saas add kv
-bunx create-tanstack-cf-saas remove kv
+bunx create-software-factory add kv
+bunx create-software-factory remove kv
 ```
 
 `FEATURES.md` lists every core module and feature in one line each. Each one's `TIMELINE.md` says
@@ -114,9 +114,9 @@ handles unsubscribes and consent.
 
 ## Checks
 
-`bun run check` runs Biome, the house rules (`cf-saas-lint`), the feature boundary check, the type
+`bun run check` runs Biome, the house rules (`software-factory-lint`), the feature boundary check, the type
 checker, the unit tests (including the state machine gate) and knip. `bun run machines:print`
 writes each machine's Mermaid diagram into its feature's `TIMELINE.md`; the tests fail when one is
-out of date. With the GitHub workflows, CI also runs `cf-saas-lint timeline` on pull requests,
+out of date. With the GitHub workflows, CI also runs `software-factory-lint timeline` on pull requests,
 which fails when a feature changed without a new line in its `TIMELINE.md`; the `no-timeline`
 label skips it.

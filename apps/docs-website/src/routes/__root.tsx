@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 /// <reference types="vite/client" />
 import { createRootRoute, HeadContent, Outlet, Scripts, useRouter } from "@tanstack/react-router";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
@@ -10,14 +10,19 @@ import { AnalyticsTracker } from "#/features/consent/components/tracker.tsx";
 import { SiteFooter } from "#/features/core/ui/components/site-footer.tsx";
 import appCss from "../styles.css?url";
 
-export const APP_NAME = "Docs Website";
+export const APP_NAME = "Software Factory";
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: APP_NAME },
+      { title: `${APP_NAME} for Cloudflare Workers` },
+      {
+        name: "description",
+        content:
+          "Compose a SaaS from blocks with one command: TanStack Start on Cloudflare Workers, with a harness for Claude Code.",
+      },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

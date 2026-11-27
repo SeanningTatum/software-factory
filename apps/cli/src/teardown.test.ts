@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { envNames, setBindingField, WRANGLER_FILE } from "@tanstack-cf-saas/blocks";
+import { envNames, setBindingField, WRANGLER_FILE } from "@software-factory/blocks";
 import { isGone, lastWords, ownRepository, teardownPlan } from "../scripts/teardown.ts";
 import type { Cli } from "./github.ts";
 

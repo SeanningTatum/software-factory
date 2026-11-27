@@ -7,26 +7,26 @@
       "devDependencies": {
         "@biomejs/biome": "2.6.8",
         "@changesets/cli": "^3.0.3",
-        "@tanstack-cf-saas/biome-config": "workspace:*",
+        "@software-factory/biome-config": "workspace:*",
         "husky": "^9.1.7",
         "turbo": "^2.11.13",
         "typescript": "^7.0.2",
       },
     },
     "apps/cli": {
-      "name": "create-tanstack-cf-saas",
-      "version": "0.2.1",
+      "name": "create-software-factory",
+      "version": "0.3.0",
       "bin": {
-        "create-tanstack-cf-saas": "./dist/index.js",
+        "create-software-factory": "./dist/index.js",
       },
       "dependencies": {
         "jsonc-parser": "^3.3.1",
       },
       "devDependencies": {
         "@clack/prompts": "^1.9.0",
-        "@tanstack-cf-saas/blocks": "workspace:*",
-        "@tanstack-cf-saas/lint": "workspace:*",
-        "@tanstack-cf-saas/tsconfig": "workspace:*",
+        "@software-factory/blocks": "workspace:*",
+        "@software-factory/lint": "workspace:*",
+        "@software-factory/tsconfig": "workspace:*",
         "@types/bun": "latest",
         "citty": "^0.2.2",
         "picocolors": "^1.1.1",
@@ -57,11 +57,11 @@
         "@biomejs/biome": "2.6.8",
         "@cloudflare/vite-plugin": "^1.70.1",
         "@playwright/test": "^1.65.1",
+        "@software-factory/biome-config": "workspace:*",
+        "@software-factory/blocks": "workspace:*",
+        "@software-factory/lint": "workspace:*",
+        "@software-factory/tsconfig": "workspace:*",
         "@tailwindcss/vite": "^4.3.5",
-        "@tanstack-cf-saas/biome-config": "workspace:*",
-        "@tanstack-cf-saas/blocks": "workspace:*",
-        "@tanstack-cf-saas/lint": "workspace:*",
-        "@tanstack-cf-saas/tsconfig": "workspace:*",
         "@tanstack/router-cli": "^1.168.0",
         "@tanstack/virtual-file-routes": "^1.162.0",
         "@types/mdx": "^2.0.14",
@@ -70,7 +70,7 @@
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.3.0",
         "@vitest/coverage-v8": "5.1.1",
-        "create-tanstack-cf-saas": "workspace:*",
+        "create-software-factory": "workspace:*",
         "knip": "^6.48.0",
         "tailwindcss": "^4.3.5",
         "typescript": "^7.0.2",
@@ -80,39 +80,39 @@
       },
     },
     "packages/biome-config": {
-      "name": "@tanstack-cf-saas/biome-config",
+      "name": "@software-factory/biome-config",
       "version": "0.2.0",
       "peerDependencies": {
         "@biomejs/biome": "^2.6.0",
       },
     },
     "packages/blocks": {
-      "name": "@tanstack-cf-saas/blocks",
-      "version": "0.1.1",
+      "name": "@software-factory/blocks",
+      "version": "0.2.0",
       "bin": {
-        "cf-saas-blocks": "./dist/bin.js",
+        "software-factory-blocks": "./dist/bin.js",
       },
       "dependencies": {
-        "@tanstack-cf-saas/lint": "^0.2.0",
+        "@software-factory/lint": "^0.3.0",
         "effect": "^4.1.5",
         "jsonc-parser": "^3.3.1",
       },
       "devDependencies": {
-        "@tanstack-cf-saas/tsconfig": "workspace:*",
+        "@software-factory/tsconfig": "workspace:*",
         "@types/bun": "latest",
       },
     },
     "packages/lint": {
-      "name": "@tanstack-cf-saas/lint",
-      "version": "0.2.0",
+      "name": "@software-factory/lint",
+      "version": "0.3.0",
       "bin": {
-        "cf-saas-lint": "./dist/bin.js",
+        "software-factory-lint": "./dist/bin.js",
       },
       "dependencies": {
         "@typescript/typescript6": "^6.0.2",
       },
       "devDependencies": {
-        "@tanstack-cf-saas/tsconfig": "workspace:*",
+        "@software-factory/tsconfig": "workspace:*",
         "@types/bun": "latest",
         "xstate": "5.33.4",
       },
@@ -121,11 +121,11 @@
       },
     },
     "packages/tsconfig": {
-      "name": "@tanstack-cf-saas/tsconfig",
+      "name": "@software-factory/tsconfig",
       "version": "0.1.0",
     },
     "templates/saas-starter": {
-      "name": "@tanstack-cf-saas/saas-starter",
+      "name": "@software-factory/saas-starter",
       "version": "0.0.0",
       "dependencies": {
         "@better-auth/stripe": "^1.7.27",
@@ -152,11 +152,11 @@
         "@cloudflare/vite-plugin": "^1.70.1",
         "@libsql/client": "^0.18.0",
         "@playwright/test": "^1.65.1",
+        "@software-factory/biome-config": "workspace:*",
+        "@software-factory/blocks": "workspace:*",
+        "@software-factory/lint": "workspace:*",
+        "@software-factory/tsconfig": "workspace:*",
         "@tailwindcss/vite": "^4.3.5",
-        "@tanstack-cf-saas/biome-config": "workspace:*",
-        "@tanstack-cf-saas/blocks": "workspace:*",
-        "@tanstack-cf-saas/lint": "workspace:*",
-        "@tanstack-cf-saas/tsconfig": "workspace:*",
         "@tanstack/router-cli": "^1.168.0",
         "@tanstack/virtual-file-routes": "^1.162.0",
         "@types/html-to-text": "^9.0.4",
@@ -165,7 +165,7 @@
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.3.0",
         "@vitest/coverage-v8": "5.1.1",
-        "create-tanstack-cf-saas": "workspace:*",
+        "create-software-factory": "workspace:*",
         "drizzle-kit": "^0.31.11",
         "knip": "^6.48.0",
         "tailwindcss": "^4.3.5",
@@ -691,6 +691,16 @@
 
     "@sindresorhus/is": ["@sindresorhus/is@7.2.0", "", {}, "sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw=="],
 
+    "@software-factory/biome-config": ["@software-factory/biome-config@workspace:packages/biome-config"],
+
+    "@software-factory/blocks": ["@software-factory/blocks@workspace:packages/blocks"],
+
+    "@software-factory/lint": ["@software-factory/lint@workspace:packages/lint"],
+
+    "@software-factory/saas-starter": ["@software-factory/saas-starter@workspace:templates/saas-starter"],
+
+    "@software-factory/tsconfig": ["@software-factory/tsconfig@workspace:packages/tsconfig"],
+
     "@speed-highlight/core": ["@speed-highlight/core@1.2.24", "", {}, "sha512-qeW2e1l78afw8VhRPfPQ1Gjj+KU5XFQ/OFV5ti6eTa9bruO7mJyZtA4vw0ofqmA3tKCkROE9xLk3VZoeRc98nw=="],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
@@ -724,16 +734,6 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.3.5", "", { "os": "win32", "cpu": "x64" }, "sha512-XiKFfIy1RWe7qK4WqByxNW7Oz1/nkOy8o/BWhHminyV1PmpUd8Eedj5v2A8h2kpqeVlz6xRnwk9Fr/ZXNLcZfg=="],
 
     "@tailwindcss/vite": ["@tailwindcss/vite@4.3.5", "", { "dependencies": { "@tailwindcss/node": "4.3.5", "@tailwindcss/oxide": "4.3.5", "tailwindcss": "4.3.5" }, "peerDependencies": { "vite": "^5.2.0 || ^6 || ^7 || ^8" } }, "sha512-BCNiY0a1ZjdOHVqw7kyb7U72BwfMF3dfUuN+tQsLWky/J5JOI/r7abibglXfygrZhVO/3u3V+E25kkKTeMkXaQ=="],
-
-    "@tanstack-cf-saas/biome-config": ["@tanstack-cf-saas/biome-config@workspace:packages/biome-config"],
-
-    "@tanstack-cf-saas/blocks": ["@tanstack-cf-saas/blocks@workspace:packages/blocks"],
-
-    "@tanstack-cf-saas/lint": ["@tanstack-cf-saas/lint@workspace:packages/lint"],
-
-    "@tanstack-cf-saas/saas-starter": ["@tanstack-cf-saas/saas-starter@workspace:templates/saas-starter"],
-
-    "@tanstack-cf-saas/tsconfig": ["@tanstack-cf-saas/tsconfig@workspace:packages/tsconfig"],
 
     "@tanstack/history": ["@tanstack/history@1.162.5", "", {}, "sha512-w1+YvwmTkwt5n8yUqEH3IWZ9DsmorCZW/EQ3KYHnqEgIkOZpH54NvW6/Epq3Dzb8H0ifIeYX8PExvrNLIH5FIA=="],
 
@@ -997,7 +997,7 @@
 
     "cookie-es": ["cookie-es@3.1.1", "", {}, "sha512-UaXxwISYJPTr9hwQxMFYZ7kNhSXboMXP+Z3TRX6f1/NyaGPfuNUZOWP1pUEb75B2HjfklIYLVRfWiFZJyC6Npg=="],
 
-    "create-tanstack-cf-saas": ["create-tanstack-cf-saas@workspace:apps/cli"],
+    "create-software-factory": ["create-software-factory@workspace:apps/cli"],
 
     "csstype": ["csstype@3.2.4", "", {}, "sha512-PoKaoPzQapnEoqUSnHx1u6W6ku8CVEgKsnpmmzU3m1nwkidpPBQ8V/Zq2+bWNrsOKoKLwTGdbx6xF7BXP1zLVQ=="],
 

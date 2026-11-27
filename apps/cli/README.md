@@ -1,28 +1,30 @@
-# create-tanstack-cf-saas
+# create-software-factory
 
-Build a SaaS on Cloudflare from building blocks. One command asks what your product needs (a
-database, sign-in, billing, file uploads, background jobs) and hands you a working
-[TanStack Start](https://tanstack.com/start) app with those parts wired together, tested, and ready
-to deploy to Cloudflare Workers.
+A software factory for Cloudflare Workers, made to be run with Claude Code. You compose a product
+from blocks (a database, sign-in, billing, file uploads, background jobs). The factory wires them
+together, tests them and deploys the result, and the same blocks, checks and workflows keep
+working on the project after day one, for you and for a coding agent.
+
+Today it makes one kind of product: a SaaS on [TanStack Start](https://tanstack.com/start).
 
 ## Install
 
 You need Node 20.19 or newer, [Bun](https://bun.sh) 1.4 or newer, and git.
 
 ```bash
-npm install -g create-tanstack-cf-saas
-bun add -g create-tanstack-cf-saas
-pnpm add -g create-tanstack-cf-saas
+npm install -g create-software-factory
+bun add -g create-software-factory
+pnpm add -g create-software-factory
 ```
 
 Then, in any folder:
 
 ```bash
-create-tanstack-cf-saas my-saas
+create-software-factory my-saas
 ```
 
-Or run it once without installing: `npm create tanstack-cf-saas@latest`,
-`bun create tanstack-cf-saas` or `pnpm create tanstack-cf-saas`.
+Or run it once without installing: `npm create software-factory@latest`,
+`bun create software-factory` or `pnpm create software-factory`.
 
 ## What it asks
 
@@ -32,7 +34,7 @@ Cloudflare side for staging and production and a GitHub repository with branch r
 wait. To skip the questions:
 
 ```bash
-create-tanstack-cf-saas my-saas --features db,auth,uploads --yes
+create-software-factory my-saas --features db,auth,uploads --yes
 ```
 
 ## Features
@@ -53,12 +55,12 @@ analytics, and logging with error reports. You choose the rest:
 
 | Command                 | What it does                                                       |
 | ----------------------- | ------------------------------------------------------------------ |
-| `create [dir]`          | Create a project. The default: `create-tanstack-cf-saas my-saas`.  |
+| `create [dir]`          | Create a project. The default: `create-software-factory my-saas`.  |
 | `add <feature>`         | Add a feature, and the features it needs, to this project.         |
 | `remove <feature>`      | Remove a feature and everything it owns.                           |
 | `setup`                 | Create the Cloudflare resources, migrate, set secrets and deploy.  |
 | `github`                | Put the project on GitHub with branch rules and deploy settings.   |
 | `harness check \| sync` | Show local edits to `.claude/`, or update it from this CLI's copy. |
 
-`create-tanstack-cf-saas --help` lists every flag. The wizard, step by step, is in the
+`create-software-factory --help` lists every flag. The wizard, step by step, is in the
 [repository's README](https://github.com/SeanningTatum/tanstack-cf-saas-starter#readme).

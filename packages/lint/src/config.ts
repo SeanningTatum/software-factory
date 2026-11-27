@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export const CONFIG_FILE = "cf-saas-lint.json";
+export const CONFIG_FILE = "software-factory-lint.json";
 
 export interface TestMapEntry {
   /** Source files this entry covers. Every matching entry applies. */

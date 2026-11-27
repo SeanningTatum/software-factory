@@ -1,4 +1,4 @@
-// cf-saas-lint allow comments
+// software-factory-lint allow comments
 import { assign, fromPromise, setup } from "xstate";
 
 export interface Confirmation {

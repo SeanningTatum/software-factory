@@ -1,4 +1,4 @@
-import { byCodeUnit } from "@tanstack-cf-saas/lint";
+import { byCodeUnit } from "@software-factory/lint";
 import type { BlockManifest } from "./manifest.ts";
 
 export type PackageJson = {
