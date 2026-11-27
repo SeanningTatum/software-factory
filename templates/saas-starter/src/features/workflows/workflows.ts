@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import type { AppEnv } from "#/app/env.ts";
 import { requestInfoFrom } from "#/app/request.ts";
 import { makeRuntime } from "#/app/runtime.ts";
@@ -25,9 +25,7 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<AppEnv, OnboardingPar
           request,
           waitUntil: (p) => this.ctx.waitUntil(p),
         });
-        await runtime
-          .runPromise(effect.pipe(Effect.withSpan("workflow.onboarding.step")))
-          .finally(() => runtime.dispose());
+        await runtime.runPromise(effect).finally(() => runtime.dispose());
       },
     );
   }
