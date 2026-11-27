@@ -7,6 +7,7 @@ import { parse } from "jsonc-parser";
 import {
   accountId,
   appUrl,
+  domainStep,
   firstDeploy,
   isLoggedIn,
   isReady,
@@ -403,17 +404,34 @@ describe("firstDeploy", () => {
     expect(appUrl(dir, "staging")).toBe("https://saas-starter-staging.acme.workers.dev");
   });
 
-  test("an environment with its own domain deploys once under it; a later URL is only recorded", () => {
+  test("an environment with its own domain deploys once under it, and again under a new one", () => {
     const dir = project([]);
     const { ran, script } = deployer();
     const urls = { production: "https://app.example.com" };
-    firstDeploy(dir, ["production"], script, () => {}, urls);
+    expect(firstDeploy(dir, ["production"], script, () => {}, urls)).toEqual(urls);
     expect(ran).toEqual(["deploy"]);
     expect(appUrl(dir, "production")).toBe("https://app.example.com");
 
-    firstDeploy(dir, ["production"], script, () => {}, { production: "https://new.example.com" });
+    expect(firstDeploy(dir, ["production"], script, () => {}, urls)).toEqual({});
     expect(ran).toEqual(["deploy"]);
+
+    const moved = { production: "https://new.example.com" };
+    expect(firstDeploy(dir, ["production"], script, () => {}, moved)).toEqual(moved);
+    expect(ran).toEqual(["deploy", "deploy"]);
     expect(appUrl(dir, "production")).toBe("https://new.example.com");
+  });
+
+  test("names the domain step while production is on workers.dev, and stops once it is not", () => {
+    const dir = project([]);
+    const { script } = deployer();
+    const move = "bun run setup --env production --var APP_URL=https://your-domain";
+    expect(domainStep(dir, move)).toBeUndefined();
+    firstDeploy(dir, ["production", "staging"], script, () => {});
+    expect(domainStep(dir, move)).toContain("saas-starter.acme.workers.dev");
+    expect(domainStep(dir, move)).toContain(move);
+    expect(domainStep(dir, move)).toContain("Transform Rule in docs/branches.md");
+    firstDeploy(dir, ["production"], script, () => {}, { production: "https://app.example.com" });
+    expect(domainStep(dir, move)).toBeUndefined();
   });
 
   test("touches only the environments asked for", () => {

@@ -390,8 +390,8 @@ const WORKERS_DEV = /https:\/\/[a-z0-9-]+\.([a-z0-9-]+)\.workers\.dev/i;
  * address, the URL is written, and that environment deploys once more under it. The subdomain then
  * gives every other environment's address up front.
  *
- * An environment that has a URL is never deployed from here, so this happens once. A new URL given
- * for it is only recorded: the next deploy carries it.
+ * An environment that has a URL deploys from here again only when it is given a new one, such as
+ * the domain it moves to off workers.dev. Returns each URL it recorded, by environment.
  */
 export const firstDeploy = (
   root: string,
@@ -413,14 +413,16 @@ export const firstDeploy = (
     return WORKERS_DEV.exec(said)?.[1];
   };
   let subdomain: string | undefined;
+  const recordedNow: Partial<Record<EnvName, string>> = {};
   // Staging first: if a first deploy goes wrong, it goes wrong there.
   for (const env of (["staging", "production"] as const).filter((e) => envs.includes(e))) {
     const recorded = appUrl(root, env);
     const given = urls[env];
     if (recorded) {
       if (given && given !== recorded) {
-        writeFileSync(file, withVars(wranglerText(root), env, { APP_URL: given }));
-        log(`${env}: URL is now ${given}; its next deploy carries it`);
+        deployUnder(file, env, given, () => deploy(env));
+        log(`${env}: live at ${given}`);
+        recordedNow[env] = given;
       }
       continue;
     }
@@ -434,7 +436,26 @@ export const firstDeploy = (
       `https://${env === "production" ? worker : `${worker}-${env}`}.${subdomain}.workers.dev`;
     deployUnder(file, env, url, () => deploy(env));
     log(`${env}: live at ${url}`);
+    recordedNow[env] = url;
   }
+  return recordedNow;
+};
+
+/** Whether `url` is a workers.dev address, where a gradual rollout cannot pin visitors. */
+export const onWorkersDev = (url: string) => /\.workers\.dev\/?$/i.test(url);
+
+/**
+ * The step the closing note lists while production is on workers.dev: what a domain unlocks and
+ * `move`, the command that moves it there. Undefined once production has a domain, or no URL.
+ */
+export const domainStep = (root: string, move: string): string | undefined => {
+  const url = appUrl(root, "production");
+  if (!url || !onWorkersDev(url)) return undefined;
+  return [
+    `Production is on ${url}. A domain of your own unlocks gradual rollouts and a stable link on GitHub.`,
+    `Once it is on Cloudflare: ${move}`,
+    "Add the Transform Rule in docs/branches.md with it (Move to your own domain).",
+  ].join("\n");
 };
 
 /**

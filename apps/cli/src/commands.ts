@@ -20,6 +20,7 @@ import {
   hasSecret,
   readRulesets,
   requireGh,
+  setUrlVariables,
   setupGithub,
 } from "./github.ts";
 import { harnessStatus, syncHarness } from "./harness.ts";
@@ -48,12 +49,14 @@ import {
 import {
   accountId,
   appUrl,
+  domainStep,
   firstDeploy,
   type Item,
   isLoggedIn,
   isReady,
   migrate,
   missingSecrets,
+  onWorkersDev,
   PRODUCTION_POSTHOG_KEY,
   provision,
   type RunScript,
@@ -407,7 +410,7 @@ export const create = async (args: CreateArgs) => {
   // The offer applies the rulesets in .github/, so without them there is nothing to offer.
   if (!args.yes && plan.git && plan.github) await offerGithub(plan);
   printSetupSteps(plan.targetDir, cloudflare);
-  p.note(steps.join("\n"), "Next");
+  printNext(plan.targetDir, steps, pm);
   p.outro(closingLine(cloudflare, pm));
 };
 
@@ -436,6 +439,29 @@ const runScript =
     const [cmd, args] = runCommand(pm, script);
     return capture(cmd, cwd)(args);
   };
+
+/** Asks for an environment's URL; empty keeps its workers.dev address. */
+const askUrl = async (env: EnvName) =>
+  cancelled(
+    await p.text({
+      message: `URL of ${env}, if it has its own domain (leave empty to use its workers.dev address)`,
+      defaultValue: "",
+      validate: (v) => (!v || /^https:\/\/\S+$/.test(v) ? undefined : "Start with https://"),
+    }),
+  ).trim() || undefined;
+
+/** The closing note: `steps`, then the move to a domain while production is on workers.dev. */
+const printNext = (root: string, steps: ReadonlyArray<string>, pm: PackageManager) => {
+  const domain = domainStep(root, moveCommand(pm));
+  const lines = [...steps, ...(domain ? ["", domain] : [])];
+  if (lines.length) p.note(lines.join("\n"), "Next");
+};
+
+/** The command that moves production to its own domain, for the closing note. */
+const moveCommand = (pm: PackageManager) =>
+  runCommand(pm, "setup", "--env", "production", "--var", "APP_URL=https://your-domain")
+    .flat()
+    .join(" ");
 
 const SETUP_LATER = "Run the project's `setup` script when you are ready.";
 
@@ -472,13 +498,7 @@ const offerCloudflare = async (
   const urls: Partial<Record<EnvName, string>> = {};
   try {
     for (const env of ["staging", "production"] as const) {
-      const url = cancelled(
-        await p.text({
-          message: `URL of ${env}, if it has its own domain (leave empty to use its workers.dev address)`,
-          defaultValue: "",
-          validate: (v) => (!v || /^https:\/\/\S+$/.test(v) ? undefined : "Start with https://"),
-        }),
-      ).trim();
+      const url = await askUrl(env);
       if (url) urls[env] = url;
       const typed = typedSettings(blanks, plan.devVars, env);
       await provision(plan.targetDir, wrangler, {
@@ -666,6 +686,7 @@ export const setup = async (args: SetupArgs) => {
   migrate(root, wrangler, "local", (line) => p.log.step(line));
   // A URL is given with --env, so it belongs to the one environment named.
   const { APP_URL: url, ...rest } = vars;
+  const urls = await setupUrls(root, envs, url, !args.yes && process.stdin.isTTY);
   await provision(root, wrangler, {
     envs,
     vars: rest,
@@ -680,16 +701,51 @@ export const setup = async (args: SetupArgs) => {
     },
     log: (line) => p.log.step(line),
   });
-  firstDeploy(
-    root,
-    envs,
-    runScript(detectPackageManager(), root),
-    (line) => p.log.step(line),
-    url && envs[0] ? { [envs[0]]: url } : {},
-  );
+  const pm = detectPackageManager();
+  const recorded = firstDeploy(root, envs, runScript(pm, root), (line) => p.log.step(line), urls);
+  const changed = Object.keys(recorded).length > 0;
+  if (changed) setGithubUrls(root, recorded);
   p.log.info("Where things stand:");
   printTable(readiness(root, wrangler));
-  p.outro("Run setup again any time; it only adds what is missing.");
+  printNext(root, [], pm);
+  p.outro(
+    changed
+      ? `${WRANGLER_FILE} now holds each new APP_URL. Commit it and merge it into staging before the next promotion: CI deploys what staging holds.`
+      : "Run setup again any time; it only adds what is missing.",
+  );
+};
+
+/**
+ * Each environment's URL for this run: the one `--var APP_URL` gave, else, at a terminal, one
+ * asked for while the environment has none or is on workers.dev.
+ */
+const setupUrls = async (
+  root: string,
+  envs: ReadonlyArray<EnvName>,
+  given: string | undefined,
+  canAsk: boolean,
+) => {
+  const urls: Partial<Record<EnvName, string>> = given && envs[0] ? { [envs[0]]: given } : {};
+  if (!canAsk) return urls;
+  for (const env of envs) {
+    const recorded = appUrl(root, env);
+    if (urls[env] || (recorded && !onWorkersDev(recorded))) continue;
+    const asked = await askUrl(env);
+    if (asked) urls[env] = asked;
+  }
+  return urls;
+};
+
+/** Gives GitHub the URLs setup just recorded, when the project has a repository there. */
+const setGithubUrls = (root: string, urls: Partial<Record<EnvName, string>>) => {
+  if (!capture("git", root)(["remote", "get-url", "origin"]).ok) return;
+  const gh = capture("gh", root);
+  try {
+    requireGh(gh);
+    setUrlVariables(gh, urls, (line) => p.log.step(line));
+  } catch (error) {
+    p.log.warn(`${(error as Error).message}\nRun \`${GITHUB}\` to update GitHub's URL variables.`);
+  }
 };
 
 /** How to supply each setting deploy.yml needs, for the ones `github` could not work out. */

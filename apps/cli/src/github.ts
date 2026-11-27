@@ -125,6 +125,19 @@ export const setDeploySettings = (
   return missing;
 };
 
+/** Points STAGING_URL and PRODUCTION_URL at the URLs setup just recorded, so GitHub's links follow. */
+export const setUrlVariables = (
+  gh: Cli,
+  urls: Readonly<Partial<Record<"staging" | "production", string>>>,
+  log: (line: string) => void,
+) => {
+  for (const [env, url] of Object.entries(urls)) {
+    const name = `${env.toUpperCase()}_URL`;
+    must(gh(["variable", "set", name, "--body", url]), `Variable ${name}`);
+    log(`variable ${name}: ${url}`);
+  }
+};
+
 /**
  * Puts the project on GitHub with its branch model: `staging` is the default branch, `production`
  * starts as a copy of it, each gets the ruleset in `.github/rulesets/`, and a squash commit takes
