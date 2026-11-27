@@ -31,6 +31,7 @@ import {
   packageManagers,
   runCommand,
 } from "./pm.ts";
+import { createProject } from "./posthog.ts";
 import { capture, gitIdentity, hasWrangler, projectWrangler, run } from "./run.ts";
 import {
   type BlankSetting,
@@ -162,7 +163,7 @@ const askPlan = async (args: CreateArgs): Promise<CreatePlan> => {
     ? {}
     : {
         ...(await askBlankSettings(blankSettings(templateDir(), features))),
-        ...(await askPosthog()),
+        ...(await askPosthog(name)),
       };
   return {
     name,
@@ -218,39 +219,67 @@ const askBlankSettings = async (blanks: ReadonlyArray<BlankSetting>) => {
   return values;
 };
 
-const askPosthogKey = async (message: string) =>
+const PROJECT_KEY = /^phc_\S+$/;
+const PROJECT_OR_PERSONAL_KEY = /^ph[cx]_\S+$/;
+
+const askPosthogKey = async (message: string, accepts = PROJECT_KEY) =>
   cancelled(
     await p.text({
       message,
       defaultValue: "",
       validate: (v) =>
-        !v || /^phc_\S+$/.test(v.trim())
+        !v || accepts.test(v.trim())
           ? undefined
           : "A project API key starts with phc_ (PostHog → Project settings)",
     }),
   ).trim();
 
-const askPosthog = async (): Promise<Record<string, string>> => {
-  const staging = await askPosthogKey(
-    "PostHog project API key for staging, which dev reports to as well (phc_…; leave empty to skip)",
+/** Creates `<name>-staging` and `<name>`, stopping at the first PostHog refuses. */
+const createPosthogProjects = async (host: string, personalKey: string, name: string) => {
+  const keys: Array<string> = [];
+  for (const project of [`${name}-staging`, name]) {
+    try {
+      keys.push(await createProject(fetch, host, personalKey, project));
+      p.log.step(`PostHog project ${project}: created`);
+    } catch (error) {
+      p.log.warn((error as Error).message);
+      break;
+    }
+  }
+  return keys;
+};
+
+const askPosthog = async (name: string): Promise<Record<string, string>> => {
+  const first = await askPosthogKey(
+    "PostHog for staging, which dev reports to as well: its project key (phc_…), or a personal API key (phx_…, scope project:write) to create both projects (leave empty to skip)",
+    PROJECT_OR_PERSONAL_KEY,
   );
-  if (!staging) return {};
-  const production = await askPosthogKey(
-    "PostHog project API key for production, from a project of its own (leave empty to use staging's)",
-  );
-  if (!production)
-    p.log.warn(
-      "Production shares staging's PostHog project, so staging's traffic counts in its numbers.",
-    );
+  if (!first) return {};
   const host = cancelled(
     await p.select({
-      message: "Which PostHog cloud is the project in?",
+      message: "Which PostHog cloud?",
       options: [
         { value: "https://us.i.posthog.com", label: "US" },
         { value: "https://eu.i.posthog.com", label: "EU" },
       ],
     }),
   );
+  const [made, madeProduction] = first.startsWith("phx_")
+    ? await createPosthogProjects(host, first, name)
+    : [first];
+  const staging =
+    made ??
+    (await askPosthogKey("PostHog project API key for staging (phc_…; leave empty to skip)"));
+  if (!staging) return {};
+  const production =
+    madeProduction ??
+    (await askPosthogKey(
+      "PostHog project API key for production, from a project of its own (leave empty to use staging's)",
+    ));
+  if (!production)
+    p.log.warn(
+      "Production shares staging's PostHog project, so staging's traffic counts in its numbers.",
+    );
   return {
     POSTHOG_KEY: staging,
     [PRODUCTION_POSTHOG_KEY]: production || staging,
