@@ -1,5 +1,10 @@
+import { Schema } from "effect";
 import type { ErrorInfo } from "#/app/errors.ts";
-import type { EmailError } from "./api/email.ts";
+
+export class EmailError extends Schema.TaggedError<EmailError>()("EmailError", {
+  code: Schema.String,
+  cause: Schema.Defect(),
+}) {}
 
 export type Errors = EmailError;
 

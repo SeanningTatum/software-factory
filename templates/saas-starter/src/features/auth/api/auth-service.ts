@@ -10,19 +10,13 @@ import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins, featureAuthTables } from "#/gen/auth-plugins.ts";
-import { SIGN_IN, SIGN_OUT, SIGN_UP } from "../constants.ts";
+import { CODE_PATHS, SIGN_IN, SIGN_OUT, SIGN_UP } from "../constants.ts";
 import { AuthServiceError } from "../errors.ts";
 import { authEvents } from "../lib/auth-events.ts";
 import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
 import { captchaPlugin, signInCaptcha, turnstileKeys } from "./captcha.ts";
-import {
-  AuthRateLimiter,
-  accountKey,
-  CODE_PATHS,
-  LIMITED_PATHS,
-  limitKey,
-} from "./rate-limit.ts";
+import { AuthRateLimiter, accountKey, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
 
 const IDENTIFIES = new Set(["sign_up_completed", "sign_in_succeeded"]);
 const WEBHOOK = "/api/auth/stripe/webhook";

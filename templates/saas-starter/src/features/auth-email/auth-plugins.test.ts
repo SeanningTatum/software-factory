@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { AppEnv } from "#/app/env.ts";
-import { CODE_PATHS } from "#/features/auth/api/rate-limit.ts";
 import { env, handled, post } from "#/features/auth/api/test-auth.ts";
+import { CODE_PATHS } from "#/features/auth/constants.ts";
 import { authSchema } from "#/features/auth/schema.ts";
 import type { Db } from "#/features/core/db/api/database.ts";
 import { makeTestDb } from "#/features/core/db/api/test-database.ts";

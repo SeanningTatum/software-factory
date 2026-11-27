@@ -1,8 +1,9 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { type AppEnv, CloudflareEnv, setting } from "#/app/env.ts";
 import { NotConfigured } from "#/app/errors.ts";
 import { binding } from "#/features/core/lib/binding.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
+import { EmailError } from "../errors.ts";
 
 export interface EmailSender {
   send(message: {
@@ -20,11 +21,6 @@ export interface Mail {
   readonly text: string;
   readonly html: string;
 }
-
-export class EmailError extends Schema.TaggedError<EmailError>()("EmailError", {
-  code: Schema.String,
-  cause: Schema.Defect(),
-}) {}
 
 const codeOf = (cause: unknown) =>
   typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "unknown";

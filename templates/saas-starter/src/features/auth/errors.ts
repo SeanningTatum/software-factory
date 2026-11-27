@@ -9,6 +9,13 @@ export class AuthServiceError extends Schema.TaggedError<AuthServiceError>()("Au
 /** The server wants a Turnstile token with this sign-in; the form shows the check from then on. */
 export class ChallengeRequired extends Error {}
 
+/** With auth-email on: sign-in was refused until this address enters the code just mailed to it. */
+export class Unverified extends Error {
+  constructor(readonly email: string) {
+    super("Verify your email first.");
+  }
+}
+
 export type Errors = AuthServiceError;
 
 export const errorStatus = {

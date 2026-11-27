@@ -3,7 +3,7 @@ import { navFor } from "#/app/nav.ts";
 import { getSiteKey } from "#/features/auth/api/guard.ts";
 import type { Credentials } from "#/features/auth/components/credentials.machine.ts";
 import { CredentialsForm } from "#/features/auth/components/credentials-form.tsx";
-import { ChallengeRequired } from "#/features/auth/errors.ts";
+import { ChallengeRequired, Unverified } from "#/features/auth/errors.ts";
 import { authClient } from "#/features/auth/lib/auth-client.ts";
 import { afterSignIn, RedirectSearch, verifyHref } from "#/features/auth/lib/redirect.ts";
 import {
@@ -25,12 +25,6 @@ const NO_CAPTCHA = "MISSING_RESPONSE";
 
 /** With auth-email on: the address isn't verified yet, and the server has just mailed it a code. */
 const UNVERIFIED = "EMAIL_NOT_VERIFIED";
-
-class Unverified extends Error {
-  constructor(readonly email: string) {
-    super("Verify your email first.");
-  }
-}
 
 const signIn = async ({ email, password, captcha }: Credentials) => {
   const { error } = await authClient.signIn.email(
