@@ -11,6 +11,9 @@ Every workflow has a folder named after it:
 | `golden/<case>.json`    | A real output for each case. It must pass the checks.                                                         |
 | `bad/<case>-<why>.json` | A real output that went wrong. The checks must refuse it, which proves they can fail.                         |
 
+A workflow's folder may also hold `sessions/<date>-<product>/`: the inputs, outputs and cost of a
+real session with a founder, and what it showed. It is a record to learn from; no test reads it.
+
 `apps/cli/src/workflow-blocks.test.ts` holds every workflow to this, so `bun run check` fails one
 with no cases, a case with no saved output, or a saved output that breaks a check.
 
