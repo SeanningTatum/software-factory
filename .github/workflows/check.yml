@@ -33,6 +33,7 @@ jobs:
       # --ignore-scripts keeps dependencies' install scripts out of CI. The template's own
       # postinstall writes the types the typecheck reads.
       - run: bun run --cwd templates/saas-starter postinstall
+      - run: bun run --cwd apps/docs-website postinstall
       - run: bun run check
       - name: The template stays under its size budgets
         run: bun run --cwd templates/saas-starter size --markdown="$RUNNER_TEMP/template.md"

@@ -27,6 +27,7 @@ jobs:
       - run: bun install --frozen-lockfile --ignore-scripts
       # As in check.yml: no dependency install scripts, then the template's own postinstall.
       - run: bun run --cwd templates/saas-starter postinstall
+      - run: bun run --cwd apps/docs-website postinstall
       - run: bun run check
       - name: No keys in the code
         env:
