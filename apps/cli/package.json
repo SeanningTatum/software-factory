@@ -1,6 +1,6 @@
 {
   "name": "create-tanstack-cf-saas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Create a TanStack Start SaaS on Cloudflare Workers from features: database, auth, billing, KV, Workflows, uploads.",
   "license": "MIT",
   "type": "module",
