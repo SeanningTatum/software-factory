@@ -13,6 +13,8 @@ import {
 export const Route = createFileRoute("/verify-email")({
   // Set by auth's sign-up and sign-in pages; absent after a reload, and the form then asks.
   loader: ({ location }) => location.state.unverifiedEmail ?? null,
+  // No cache: a second sign-up would open on the first one's address.
+  gcTime: 0,
   component: VerifyEmail,
 });
 
