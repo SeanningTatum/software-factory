@@ -20,10 +20,6 @@ export const buttonVariants = cva(
   },
 );
 
-/**
- * Every button here needs JavaScript, so it stays disabled until React hydrates. A click before then
- * would do nothing, or submit its form natively with the fields in the URL.
- */
 export function Button({
   className,
   variant,

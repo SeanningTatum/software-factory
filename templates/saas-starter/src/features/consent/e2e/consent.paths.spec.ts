@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import { getShortestPaths } from "xstate/graph";
 import { consentMachine } from "../components/consent.machine.ts";
 
-/** Each path the machine allows from a first visit, replayed in the browser. */
 const paths = getShortestPaths(consentMachine, {
   input: { stored: undefined, optedOut: false },
   events: [{ type: "ACCEPT" }, { type: "DECLINE" }, { type: "REOPEN" }],

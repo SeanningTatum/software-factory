@@ -22,7 +22,7 @@ export class StorageError extends Schema.TaggedError<StorageError>()("StorageErr
 }) {}
 
 export interface StoredFile {
-  /** The file's id within its owner's files: what /api/uploads/$id takes. */
+  /** What /api/uploads/$id takes. */
   readonly id: string;
   readonly name: string;
   readonly contentType: string;
@@ -35,7 +35,6 @@ export interface FilePage {
   readonly cursor: string | undefined;
 }
 
-/** The parts of the R2 and rate-limit bindings the service uses. */
 export interface Bucket {
   put(
     key: string,
@@ -87,7 +86,6 @@ export class Uploads extends Context.Service<
       StoredFile,
       UploadRejected | FileLimitReached | StorageError | RateLimited | NotConfigured
     >;
-    /** One page of files, with the cursor for the next page when there is one. */
     readonly list: (
       userId: string,
       cursor?: string,

@@ -5,7 +5,6 @@ import { bodyTooLarge, readBody, readForm } from "./body.ts";
 const post = (body: BodyInit, headers: Record<string, string> = {}) =>
   new Request("https://x.dev/", { method: "POST", body, headers });
 
-/** A body with no content-length, as a chunked upload sends it; counts how much was pulled. */
 const chunked = (chunks: number, chunkBytes: number) => {
   const state = { pulled: 0 };
   const stream = new ReadableStream<Uint8Array>({

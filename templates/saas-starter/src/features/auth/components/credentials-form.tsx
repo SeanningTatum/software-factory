@@ -11,7 +11,6 @@ interface Props {
   readonly mode: "sign-in" | "sign-up";
   readonly submit: (credentials: Credentials) => Promise<void>;
   readonly onDone: () => void;
-  /** Turnstile site key: when set, the form shows the check and sends its token with the submit. */
   readonly siteKey?: string;
 }
 

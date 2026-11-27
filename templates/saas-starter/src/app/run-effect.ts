@@ -4,7 +4,6 @@ import { type AppError, type ErrorInfo, errorInfo, INTERNAL, RateLimited } from 
 import { parentSpanFor, type RequestInfo } from "./request.ts";
 import type { AppRuntime, AppServices } from "./runtime.ts";
 
-/** What request middleware puts on every server function's and server route's context. */
 export interface EdgeContext {
   readonly runtime: AppRuntime;
   readonly request: RequestInfo;
@@ -16,7 +15,6 @@ export interface FailureBody {
   readonly requestId: string;
 }
 
-/** The error a server function throws to the browser: a safe message, a status and the request id. */
 export class PublicError extends Error {
   constructor(
     readonly status: number,
@@ -27,7 +25,6 @@ export class PublicError extends Error {
   }
 }
 
-/** Turns a failed Exit into a status and a body that is safe to send. Defects become a plain 500. */
 export const describeFailure = (
   cause: Cause.Cause<unknown>,
   requestId: string,
@@ -46,7 +43,6 @@ export const describeFailure = (
 
 const SERVER_ERROR = 500;
 
-/** Runs an effect on the request's runtime. Logs and reports anything that ends in a 5xx. */
 export const runExit = <A, E extends AppError>(
   context: EdgeContext,
   effect: Effect.Effect<A, E, AppServices>,
@@ -67,7 +63,6 @@ export const runExit = <A, E extends AppError>(
     ),
   );
 
-/** The edge for server functions: returns the value, or sets the status and throws a PublicError. */
 export const runEffect = async <A, E extends AppError>(
   context: EdgeContext,
   effect: Effect.Effect<A, E, AppServices>,
@@ -80,7 +75,6 @@ export const runEffect = async <A, E extends AppError>(
   throw new PublicError(info.status, body);
 };
 
-/** The edge for server routes: a Response either way. */
 export const runResponse = async <E extends AppError>(
   context: EdgeContext,
   effect: Effect.Effect<Response, E, AppServices>,

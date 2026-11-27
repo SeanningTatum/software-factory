@@ -1,7 +1,4 @@
-/**
- * Removes secrets and personal data from anything about to be logged or reported.
- * Emails become a short stable hash so the same user can still be followed across lines.
- */
+/** Emails become a short stable hash, so the same user can still be followed across lines. */
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const BEARER = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi;
 const JWT = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;

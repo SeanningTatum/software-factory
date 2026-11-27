@@ -1,12 +1,11 @@
 import { Context, Effect, Layer, Tracer } from "effect";
 
-/** What every log line, span and error report knows about the request it came from. */
 export interface RequestInfo {
   readonly id: string;
   readonly method: string;
   readonly path: string;
   readonly trace: Traceparent | undefined;
-  /** The incoming headers, for services that read cookies or the client's address. Never logged. */
+  /** Never logged: they carry cookies. */
   readonly headers: Headers;
   /** Filled in once a session is resolved. */
   userId: string | undefined;
@@ -23,7 +22,6 @@ const ZERO = /^0+$/;
 const CF_RAY = /^[0-9a-f]{16}(-[A-Z]{3})?$/;
 const SAMPLED = 1;
 
-/** Parses a W3C traceparent header; rejects version ff and all-zero ids. */
 export const parseTraceparent = (header: string | null): Traceparent | undefined => {
   const match = header ? TRACEPARENT.exec(header.trim().toLowerCase()) : null;
   if (!match) return undefined;
@@ -40,7 +38,6 @@ export const parseTraceparent = (header: string | null): Traceparent | undefined
 
 const randomId = () => crypto.randomUUID().replaceAll("-", "");
 
-/** The request id: the incoming trace id, else Cloudflare's ray id, else a random one. */
 export const requestIdFrom = (
   headers: Headers,
   trace = parseTraceparent(headers.get("traceparent")),
@@ -66,10 +63,7 @@ export const requestInfoFrom = (request: Request): RequestInfo => {
 const HEX32 = /^[0-9a-f]{32}$/;
 const SPAN_ID_LENGTH = 16;
 
-/**
- * The span every request's work hangs under: the caller's span when a traceparent came in,
- * otherwise a new root whose trace id is the request id, so logs and traces share one id.
- */
+// A new root takes the request id as its trace id, so logs and traces share one id.
 export const parentSpanFor = (info: RequestInfo) =>
   Tracer.externalSpan(
     info.trace ?? {

@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "#/features/core/ui/components/card.tsx";
 
-/** The public Turnstile site key, or undefined when sign-up is not guarded. */
 const getSiteKey = createServerFn({ method: "GET" }).handler(({ context }) =>
   runEffect(
     context,

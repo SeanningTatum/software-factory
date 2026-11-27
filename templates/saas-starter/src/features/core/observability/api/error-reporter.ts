@@ -14,7 +14,6 @@ type Send = (report: Report) => void;
 
 const DSN = /^https:\/\/([^@]+)@([^/]+)\/(\d+)$/;
 
-/** Builds a Sentry envelope request from a DSN; undefined when the DSN is malformed. */
 export const sentryRequest = (
   dsn: string,
   report: Report,
@@ -95,8 +94,8 @@ const ALERT_QUIET_MS = 5 * 60 * 1000;
 const ALERT_MAX_CHARS = 1500;
 
 /**
- * A Slack- or Discord-style webhook post: `text` for Slack, `content` for Discord. Capped under
- * Discord's 2000 characters, with mentions off, since the path comes from the caller.
+ * `text` for Slack, `content` for Discord. Capped under Discord's 2000 characters, with mentions
+ * off, since the path comes from the caller.
  */
 export const alertRequest = (url: string, { error, request }: Report) => {
   const text =
@@ -137,7 +136,7 @@ export const makeAlerter = (now: () => number = Date.now) => {
 };
 const alert = makeAlerter();
 
-/** Picks where errors go from ERROR_REPORTER. A missing or bad setting falls back to the console. */
+/** A missing or bad setting falls back to the console. */
 const reportTo = (env: AppEnv, waitUntil: (p: Promise<unknown>) => void): Send => {
   const kind = setting(env, "ERROR_REPORTER") ?? "console";
   const dsn = setting(env, "SENTRY_DSN");
@@ -146,7 +145,6 @@ const reportTo = (env: AppEnv, waitUntil: (p: Promise<unknown>) => void): Send =
   return toConsole;
 };
 
-/** Where errors go, plus an alert when ALERT_WEBHOOK_URL is set. */
 export const selectSender = (
   env: AppEnv,
   waitUntil: (p: Promise<unknown>) => void,
@@ -161,7 +159,6 @@ export const selectSender = (
   };
 };
 
-/** Installs Effect's ErrorReporter so `ErrorReporter.report` sends failures where ERROR_REPORTER says. */
 export const ErrorReporterLayer = (
   env: AppEnv,
   request: RequestInfo,

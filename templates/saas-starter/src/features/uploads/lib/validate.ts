@@ -1,4 +1,4 @@
-/** What uploads may contain, recognised by their first bytes rather than by what the browser claims. */
+/** Recognised by their first bytes, not by what the browser claims. */
 const ALLOWED = {
   "image/png": [0x89, 0x50, 0x4e, 0x47],
   "image/jpeg": [0xff, 0xd8, 0xff],
@@ -17,7 +17,6 @@ export type Rejection = "empty" | "too_large" | "unsupported_type" | "type_misma
 const startsWith = (bytes: Uint8Array, signature: ReadonlyArray<number>, offset = 0) =>
   signature.every((byte, i) => bytes[offset + i] === byte);
 
-/** The real type of a file from its first bytes, or undefined when it is not one we accept. */
 export const sniff = (head: Uint8Array): AllowedType | undefined =>
   (Object.keys(ALLOWED) as Array<AllowedType>).find(
     (type) =>

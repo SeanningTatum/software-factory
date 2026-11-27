@@ -3,12 +3,11 @@ import type { BrowserEvent } from "../events.ts";
 
 export const EVENTS_ENDPOINT = "/api/events";
 
-/** A random id for a signed-out visitor who allowed analytics; set only after consent. */
+/** Set only after consent. */
 export const ANON_ID_COOKIE = "aid";
 const ANON_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-/** The visitor's anonymous id from a Cookie header (or document.cookie), if it is a valid one. */
 export const readAnonId = (cookies: string | null | undefined): string | undefined => {
   const value = cookies
     ?.split(/;\s*/)
@@ -21,10 +20,7 @@ export const anonIdCookie = (id: string) =>
   `${ANON_ID_COOKIE}=${id}; Path=/; Max-Age=${ONE_YEAR}; SameSite=Lax; Secure`;
 export const clearAnonIdCookie = `${ANON_ID_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
 
-/**
- * Who a browser event belongs to: the signed-in user, else the consented anonymous id, else this
- * request alone. Ids only; never an email or name.
- */
+/** Ids only; never an email or name. */
 export const browserDistinctId = (
   userId: string | undefined,
   cookies: string | null,
@@ -52,7 +48,6 @@ export const vitalEvent = (metric: Metric, path: string): BrowserEvent => ({
   path,
 });
 
-/** Each metric is sent once it is final. */
 export const reportWebVitals = async (path: () => string) => {
   const { onCLS, onFCP, onINP, onLCP, onTTFB } = await import("web-vitals");
   const send = (metric: Metric) => sendBrowserEvents([vitalEvent(metric, path())]);

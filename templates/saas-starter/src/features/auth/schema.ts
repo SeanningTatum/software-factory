@@ -6,8 +6,8 @@ const timestamps = {
 };
 
 /**
- * Better Auth's core tables. Column names follow its defaults, so no field mapping is needed. The
- * indexes are the ones Better Auth's own schema asks for, plus the Stripe customer lookup.
+ * Column names follow Better Auth's defaults, so no field mapping is needed. The indexes are the
+ * ones its own schema asks for, plus the Stripe customer lookup.
  */
 export const user = sqliteTable(
   "user",

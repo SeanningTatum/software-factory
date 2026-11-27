@@ -38,5 +38,4 @@ export const LIMITED_PATHS = [
 
 export const limitKey = (headers: Headers, path: string) => `${clientAddress(headers)}:${path}`;
 
-/** The per-account key for sign-in guesses, so rotating addresses does not get more tries. */
 export const accountKey = (email: string) => `acct:${email.toLowerCase()}`;

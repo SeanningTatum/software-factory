@@ -8,7 +8,6 @@ import { type ConsentInput, consentMachine } from "./consent.machine.ts";
 type ConsentState = { readonly granted: boolean; readonly reopen: () => void };
 const ConsentContext = createContext<ConsentState>({ granted: false, reopen: () => undefined });
 
-/** Whether the browser may send analytics, and a way to change the answer. */
 export const useConsent = () => useContext(ConsentContext);
 
 export function ConsentProvider({ input, children }: { input: ConsentInput; children: ReactNode }) {

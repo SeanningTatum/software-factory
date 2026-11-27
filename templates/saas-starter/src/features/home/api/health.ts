@@ -5,25 +5,22 @@ import { outsideCall } from "#/features/core/lib/call.ts";
 import { type WorkerVersion, workerVersion } from "#/features/core/lib/version.ts";
 import { requiredSettings } from "#/gen/env.ts";
 
-/** The part of a D1 binding the check uses. */
 interface Pingable {
   prepare(query: string): { first(): Promise<unknown> };
 }
 
 export interface Readiness {
   readonly ok: boolean;
-  /** Required settings that are missing, or APP_URL when it isn't the origin being served. */
+  /** Also APP_URL when it isn't the origin being served. */
   readonly missing: ReadonlyArray<string>;
-  /** "up" or "down" when the project has a D1 binding; absent when it has none. */
   readonly database?: "up" | "down";
-  /** The Worker version that answered. The deploy checks it reached the version it uploaded. */
+  /** The deploy checks it reached the version it uploaded. */
   readonly version?: WorkerVersion;
 }
 
 /**
- * Whether this deploy can serve users: every required setting is set, APP_URL is the origin the
- * request came to (Better Auth refuses any other), and D1 answers when there is one. It names
- * settings and the Worker version; no setting's value leaves the Worker.
+ * APP_URL must be the origin the request came to: Better Auth refuses any other. No setting's value
+ * leaves the Worker.
  */
 export const readiness = Effect.fn("Health.readiness")(function* (requestUrl: string) {
   const env = yield* CloudflareEnv;

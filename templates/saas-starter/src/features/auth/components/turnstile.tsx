@@ -22,7 +22,7 @@ declare global {
 const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 let loading: Promise<TurnstileApi> | undefined;
 
-/** Loads Cloudflare's script once. It is added from our own script, which the CSP's nonce allows. */
+/** Added from our own script, which the CSP's nonce allows. */
 const load = () => {
   loading ??= new Promise<TurnstileApi>((resolve, reject) => {
     const script = document.createElement("script");
@@ -41,11 +41,10 @@ const load = () => {
 
 interface Props {
   readonly siteKey: string;
-  /** The token once the visitor passes, or undefined when it expires or fails. */
   readonly onToken: (token: string | undefined) => void;
 }
 
-/** Cloudflare Turnstile. Mount it with a new `key` to get a fresh token: each one works once. */
+/** Mount it with a new `key` to get a fresh token: each one works once. */
 export function Turnstile({ siteKey, onToken }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const report = useRef(onToken);

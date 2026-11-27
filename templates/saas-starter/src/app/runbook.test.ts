@@ -1,9 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-/** The runbook promises logs, an export and two alerts. This fails when the config behind them is gone. */
 const read = (path: string) => readFileSync(path, "utf8");
-/** A project made with --no-github has no workflows or rulesets to hold to these. */
 const noGithub = !existsSync(".github");
 
 describe("runbook config", () => {
@@ -18,10 +16,9 @@ describe("runbook config", () => {
     expect(feature.secrets).toHaveProperty("ALERT_WEBHOOK_URL");
   });
 
-  it.skipIf(noGithub)("posts to the webhook when the production smoke test fails", () => {
+  it.skipIf(noGithub)("alerts when the production smoke test fails, before it rolls back", () => {
     const deploy = read(".github/workflows/deploy.yml");
     expect(deploy).toMatch(/ALERT_WEBHOOK_URL: \$\{\{ secrets\.ALERT_WEBHOOK_URL \}\}/);
-    // The alert goes before the rollback, so a failed rollback still alerts.
     expect(deploy).toMatch(/"\$ALERT_WEBHOOK_URL"[\s\S]*wrangler rollback/);
   });
 
@@ -34,14 +31,12 @@ describe("runbook config", () => {
 });
 
 describe("migrations", () => {
-  it("can't be generated without a name", () => {
-    // drizzle-kit stops on a `--name` with no value, so its random names never reach drizzle/.
+  it("ends db:generate with --name, which drizzle-kit refuses without a value", () => {
     const { scripts } = JSON.parse(read("package.json"));
     if (scripts["db:generate"]) expect(scripts["db:generate"]).toMatch(/ --name$/);
   });
 });
 
-/** The rulesets name workflow jobs as required checks; a renamed job would block every merge. */
 describe.skipIf(noGithub)("branch rules", () => {
   const workflow = (name: string) => read(`.github/workflows/${name}.yml`);
   const job = (name: string) => new RegExp(`^  ${name}:$`, "m");
@@ -58,20 +53,18 @@ describe.skipIf(noGithub)("branch rules", () => {
     }
   });
 
-  it("lets staging move only by a squash whose title was checked", () => {
+  it("lets staging move only by a squash whose title was checked, again on each edit", () => {
     const { parameters } = JSON.parse(read(".github/rulesets/staging.json")).rules.find(
       (r: { type: string }) => r.type === "pull_request",
     );
     expect(parameters.allowed_merge_methods).toEqual(["squash"]);
     expect(required("staging")).toContain("title");
-    // A fixed title must clear the check without a push.
     expect(workflow("title")).toMatch(/types: \[.*\bedited\b.*\]/);
   });
 
   it("moves production by fast-forward only, and deploys it only at a tagged commit of staging", () => {
     const { rules } = JSON.parse(read(".github/rulesets/production.json"));
     const types = rules.map((r: { type: string }) => r.type);
-    // A merged pull request would give production a commit staging lacks.
     expect(types).not.toContain("pull_request");
     expect(types).toEqual(expect.arrayContaining(["deletion", "non_fast_forward"]));
     expect(workflow("ci")).toMatch(/pull_request:\n\s+branches: \[staging\]/);
@@ -101,7 +94,6 @@ describe.skipIf(noGithub)("branch rules", () => {
   });
 });
 
-/** A gradual rollout leaves two versions live. These hold the order that keeps visitors off a bad one. */
 describe("gradual rollout", () => {
   const workflow = (name: string) => read(`.github/workflows/${name}.yml`);
 
@@ -111,11 +103,10 @@ describe("gradual rollout", () => {
     ).toHaveLength(2);
   });
 
-  it.skipIf(noGithub)("passes the button's choice from promote to the deploy", () => {
+  it.skipIf(noGithub)("checks the percent, then passes the button's choice to the deploy", () => {
     expect(workflow("promote")).toMatch(
       /gh workflow run deploy\.yml --ref production -f rollout="\$ROLLOUT" -f percent="\$PERCENT"/,
     );
-    // A bad percent stops the button before it tags or moves anything.
     expect(workflow("promote")).toMatch(/case \$PERCENT in[\s\S]*exit 1[\s\S]*git push --atomic/);
     expect(workflow("deploy")).toMatch(
       /workflow_dispatch:\n\s+inputs:\n\s+rollout:[\s\S]*options: \[full, gradual\]/,
@@ -145,7 +136,6 @@ describe("gradual rollout", () => {
     expect(workflow("deploy")).toMatch(/^concurrency: deploy-\$\{\{ github\.ref_name \}\}$/m);
     expect(rollout).toMatch(/^concurrency: deploy-production$/m);
     expect(rollout).toMatch(/^ {4}environment: production$/m);
-    // Backing out names the old version alone, so the new one leaves the deployment.
     expect(rollout).toMatch(/"back out"\) bunx wrangler versions deploy "\$old@100"/);
     // It reads both versions before it picks one: with one missing, the new one would pass for the old.
     expect(rollout).toMatch(/jq 'length' <<<"\$pair"\)" != 2 \][\s\S]*case \$TO in/);

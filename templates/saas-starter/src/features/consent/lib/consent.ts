@@ -9,7 +9,6 @@ export const readConsent = (cookieHeader: string | null | undefined): ConsentCho
   return value === "granted" || value === "denied" ? value : undefined;
 };
 
-/** Do Not Track or Global Privacy Control, from request headers. */
 export const optedOutFrom = (headers: Headers) =>
   headers.get("sec-gpc") === "1" || headers.get("dnt") === "1";
 
