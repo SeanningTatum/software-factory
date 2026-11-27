@@ -288,6 +288,18 @@ describe("settings typed during create", () => {
   test("never go to production: they are test data", () => {
     expect(typedSettings(blanks, typed, "production")).toEqual({ secrets: {}, vars: {} });
   });
+
+  test("except the PostHog key, which both environments get", () => {
+    const withPosthog = { ...typed, POSTHOG_KEY: "phc_test" };
+    expect(typedSettings(blanks, withPosthog, "production")).toEqual({
+      secrets: { POSTHOG_KEY: "phc_test" },
+      vars: {},
+    });
+    expect(typedSettings(blanks, withPosthog, "staging").secrets).toEqual({
+      STRIPE_SECRET_KEY: "typed-test-key",
+      POSTHOG_KEY: "phc_test",
+    });
+  });
 });
 
 describe("migrate", () => {

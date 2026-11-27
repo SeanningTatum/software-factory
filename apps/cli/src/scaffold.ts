@@ -203,7 +203,8 @@ const writeDevVars = (dir: string, values: Readonly<Record<string, string>>) => 
   };
   writeFileSync(
     join(dir, ".dev.vars"),
-    readFileSync(example, "utf8").replace(/^([A-Z0-9_]+)=$/gm, (line, key: string) => {
+    // A given value replaces the example's default too, such as an EU POSTHOG_HOST.
+    readFileSync(example, "utf8").replace(/^([A-Z0-9_]+)=[^\r\n]*$/gm, (line, key: string) => {
       const value = filled[key];
       // One line per value: a newline would start a new variable.
       return value && !/[\r\n]/.test(value) ? `${key}=${value}` : line;

@@ -192,6 +192,7 @@ describe("scaffold", () => {
       });
     const devVars = readFileSync(join(dir, ".dev.vars"), "utf8");
     expect(devVars).toMatch(/^POSTHOG_KEY=phc_test$/m);
+    expect(devVars).toMatch(/^POSTHOG_HOST=https:\/\/eu\.i\.posthog\.com$/m);
     expect(devVars).toMatch(/^ANALYTICS_PROVIDER=console$/m);
 
     const without = target();

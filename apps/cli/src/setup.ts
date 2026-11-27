@@ -440,7 +440,8 @@ export const setupEnvs = (
 
 /**
  * What the settings typed during `create` give one environment. They were typed for local use, so
- * they are test data: staging gets them, production never does.
+ * they are test data: staging gets them, production never does. The PostHog key is the exception:
+ * a project key (phc_…) is public and no test value, so both environments get it.
  */
 export const typedSettings = (
   blanks: ReadonlyArray<{ readonly key: string; readonly secret: boolean }>,
@@ -454,7 +455,9 @@ export const typedSettings = (
         return value ? [[b.key, value]] : [];
       }),
     );
-  return { vars: pick(false), secrets: pick(true) };
+  const secrets = pick(true);
+  if (typed?.POSTHOG_KEY) secrets.POSTHOG_KEY = typed.POSTHOG_KEY;
+  return { vars: pick(false), secrets };
 };
 
 /** The deployed URL of `env`, once APP_URL holds one; undefined while it is blank or local. */

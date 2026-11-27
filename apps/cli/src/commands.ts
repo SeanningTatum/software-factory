@@ -459,9 +459,7 @@ const offerCloudflare = async (
       await provision(plan.targetDir, wrangler, {
         envs: [env],
         vars: typed.vars,
-        // The PostHog key is a real one, not test data, so it goes to both environments.
-        secretValue: async (key) =>
-          typed.secrets[key] ?? (key === "POSTHOG_KEY" ? plan.devVars?.POSTHOG_KEY : undefined),
+        secretValue: async (key) => typed.secrets[key],
         log: (line) => p.log.step(line),
       });
     }
