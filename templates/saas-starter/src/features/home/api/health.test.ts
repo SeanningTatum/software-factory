@@ -51,6 +51,24 @@ describe("readiness", () => {
     expect(ready.version).toEqual({ id: "abc", tag: "v1.2.0" });
   });
 
+  it("warns, but stays ready, when analytics fell back to none", async () => {
+    const ready = await check({ ...complete, APP_URL: APP, ANALYTICS_PROVIDER: "posthog" });
+    expect(ready.ok).toBe(true);
+    expect(ready.warnings).toEqual([
+      "ANALYTICS_PROVIDER is posthog, but its key or binding is missing: analytics is off",
+    ]);
+    const keyed = {
+      ...complete,
+      APP_URL: APP,
+      ANALYTICS_PROVIDER: "posthog",
+      POSTHOG_KEY: "phc_x",
+    };
+    expect((await check(keyed)).warnings).toBeUndefined();
+    expect(
+      (await check({ ...complete, APP_URL: APP, ANALYTICS_PROVIDER: "none" })).warnings,
+    ).toBeUndefined();
+  });
+
   it("skips the database check in a project without one", async () => {
     expect(await check({ ...complete, APP_URL: APP })).toEqual({ ok: true, missing: [] });
   });
