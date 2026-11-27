@@ -18,6 +18,13 @@ describe("authEvents", () => {
     ]);
   });
 
+  it("records a sign-in asked for a Turnstile token as challenged", () => {
+    const body = { code: "MISSING_RESPONSE", message: "Missing CAPTCHA response" };
+    expect(authEvents("POST", "/api/auth/sign-in/email", 400, body)).toEqual([
+      { event: { _tag: "sign_in_failed", reason: "challenged" } },
+    ]);
+  });
+
   it("records sign-out", () => {
     expect(authEvents("POST", "/api/auth/sign-out", 200, null)[0]?.event._tag).toBe("signed_out");
   });

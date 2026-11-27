@@ -11,12 +11,20 @@ const CREDENTIAL_FAILURES = new Set([401, 403]);
 
 const isOk = (status: number) => status >= 200 && status < 400;
 
-const failureReason = (status: number) => {
+/** Better Auth's captcha plugin, when a request it guards came without a token. */
+const NO_CAPTCHA = "MISSING_RESPONSE";
+
+const failureReason = (status: number, code: string | undefined) => {
   if (status === TOO_MANY) return "rate_limited" as const;
+  if (code === NO_CAPTCHA) return "challenged" as const;
   return CREDENTIAL_FAILURES.has(status) ? ("invalid_credentials" as const) : ("other" as const);
 };
 
-type Rule = (status: number, userId: string | undefined) => ReadonlyArray<Captured>;
+type Rule = (
+  status: number,
+  userId: string | undefined,
+  code: string | undefined,
+) => ReadonlyArray<Captured>;
 
 const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   {
@@ -30,10 +38,10 @@ const rules: ReadonlyArray<{ method: string; path: string; rule: Rule }> = [
   {
     method: "POST",
     path: "/api/auth/sign-in/email",
-    rule: (status, userId) =>
+    rule: (status, userId, code) =>
       isOk(status)
         ? [{ event: { _tag: "sign_in_succeeded", method: "email" }, distinctId: userId }]
-        : [{ event: { _tag: "sign_in_failed", reason: failureReason(status) } }],
+        : [{ event: { _tag: "sign_in_failed", reason: failureReason(status, code) } }],
   },
   {
     method: "POST",
@@ -49,6 +57,7 @@ export const authEvents = (
   body: unknown,
 ): ReadonlyArray<Captured> => {
   const match = rules.find((r) => r.method === method && r.path === path);
-  const userId = (body as { user?: { id?: string } } | null)?.user?.id;
-  return match ? match.rule(status, userId) : [];
+  const parsed = body as { user?: { id?: string }; code?: unknown } | null;
+  const code = typeof parsed?.code === "string" ? parsed.code : undefined;
+  return match ? match.rule(status, parsed?.user?.id, code) : [];
 };
