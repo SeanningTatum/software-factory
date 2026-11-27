@@ -175,7 +175,7 @@ Rules for a good item:
 - [ ] `setup.test.ts`, `github.test.ts` and `create.machine.test.ts` hold the question, the variable, the closing line and the reminder.
 - [ ] `docs/branches.md` has a short "Move to your own domain" section that names the one command.
 
-**Where:** `apps/cli/src/commands.ts` (the URL question in the `create` wizard, the `setup` command, `deployInputs`), `apps/cli/src/setup.ts` (`firstDeploy`), `apps/cli/src/github.ts` (`setDeploySettings`), `templates/saas-starter/docs/branches.md`. Tracked as https://github.com/SeanningTatum/tanstack-cf-saas-starter/issues/47.
+**Where:** `apps/cli/src/commands.ts` (the URL question in the `create` wizard, the `setup` command, `deployInputs`), `apps/cli/src/setup.ts` (`firstDeploy`), `apps/cli/src/github.ts` (`setDeploySettings`), `templates/saas-starter/docs/branches.md`. Tracked as https://github.com/SeanningTatum/software-factory/issues/47.
 
 ### B-25 · The kernel's body cap knows no feature's path
 
