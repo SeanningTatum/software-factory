@@ -1,6 +1,6 @@
 {
   "name": "@seanningtatum/software-factory-lint",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "House lint rules for software-factory projects: Effect rules, the test map and the state machine gate",
   "license": "MIT",
   "type": "module",
