@@ -10,7 +10,7 @@
  *   bun run teardown ../my-app --yes      ask nothing
  */
 import { existsSync, readFileSync, realpathSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import {
   type Binding,
@@ -27,6 +27,7 @@ import {
 import { parse } from "jsonc-parser";
 import type { Cli } from "../src/github.ts";
 import { capture, projectWrangler } from "../src/run.ts";
+import { envFlag } from "../src/setup.ts";
 import { repo } from "./pack.ts";
 
 export interface Step {
@@ -49,8 +50,6 @@ export const ownRepository = (root: string, git: Cli): string | undefined => {
 };
 
 /** Wrangler's flag for an environment: production is the top level, so it has none. */
-const envFlag = (env: EnvName) => (env === "production" ? [] : ["--env", env]);
-
 const wrangler = (label: string, ...args: Array<string>): Step => ({
   label,
   tool: "wrangler",
@@ -178,6 +177,10 @@ const main = async () => {
   );
   if (!existsSync(join(root, "cf-saas.json")))
     throw new Error(`${root} is not a project made by the CLI (no cf-saas.json).`);
+  // The template and the docs site have cf-saas.json too, and the docs site is live.
+  const inRepo = relative(realpathSync(repo), realpathSync(root));
+  if (!inRepo.startsWith("..") && !isAbsolute(inRepo))
+    throw new Error(`${root} is part of this repository, not a project to tear down.`);
   const keep = argv.includes("--keep");
   const steps = teardownPlan(root, ownRepository(root, capture("git", root)));
 
