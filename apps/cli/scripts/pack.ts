@@ -23,10 +23,14 @@ export const packAll = (into: string, as = into): Record<string, string> => {
   mkdirSync(into, { recursive: true });
   return Object.fromEntries(
     Object.entries(localPackages).map(([name, rel]) => {
-      const result = spawnSync("bun", ["pm", "pack", "--destination", into, "--quiet"], {
-        cwd: join(repo, rel),
-        encoding: "utf8",
-      });
+      const result = spawnSync(
+        process.execPath,
+        ["pm", "pack", `--destination=${into}`, "--quiet"],
+        {
+          cwd: join(repo, rel),
+          encoding: "utf8",
+        },
+      );
       if (result.status !== 0) throw new Error(`packing ${name} failed:\n${result.stderr}`);
       const tarball = result.stdout.trim().split("\n").pop() ?? "";
       return [name, `file:${as}/${basename(tarball)}`];

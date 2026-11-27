@@ -7,7 +7,7 @@ set -eu
 tag=$1
 percent=$2
 # On its own line, so a failed read stops here: no empty table, no event for a split nobody saw.
-live=$(bunx wrangler deployments status --json)
+live=$(bun run wrangler deployments status --json)
 {
   echo "### Production: $tag serves $percent% of traffic"
   echo

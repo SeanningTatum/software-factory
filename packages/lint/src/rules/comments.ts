@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "@typescript/typescript6";
+import { byCodeUnit } from "../files.ts";
 import { matchesAny } from "../glob.ts";
 import type { ProjectRule, Rule } from "./types.ts";
 
@@ -55,7 +56,7 @@ const MARKER = /\b(TODO|FIXME|XXX|HACK)\b/;
 const DIVIDER = /([-=*#~_])\1{3,}/;
 /** Prose that parses as code: it quotes code in backticks, or opens with `note:` or `e.g.`. */
 const PROSE = /`|^\s*(e\.g\.|i\.e\.|[A-Za-z]+:\s)/;
-const CODE_HINT = /[;{}=]|\)\s*$|^\s*(import|export|const|let|return|await|if|for)\b/m;
+const CODE_HINT = /[;{}=]|\)[ \t]*$|^[ \t]*(import|export|const|let|return|await|if|for)\b/m;
 
 const parses = (code: string) =>
   ts.transpileModule(code, {
@@ -102,7 +103,7 @@ export const noDuplicateComment: ProjectRule = {
     const first = new Map<string, string>();
     const files = [...allFiles]
       .filter((f) => matchesAny(f, config.include) && !matchesAny(f, config.exclude))
-      .sort();
+      .sort(byCodeUnit);
     return files.flatMap((file) => {
       const text = readFileSync(join(root, file), "utf8");
       const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);

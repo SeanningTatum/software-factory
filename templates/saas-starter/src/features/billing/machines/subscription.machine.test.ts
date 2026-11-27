@@ -23,8 +23,10 @@ describe("subscription lifecycle", () => {
 
   it("reaches canceled from every status", () => {
     const paths = getShortestPaths(subscriptionMachine);
-    expect(paths.map((p) => p.state.value).sort()).toEqual(
-      ["active", "canceled", "incomplete", "none", "past_due", "trialing", "unpaid"].sort(),
+    expect(paths.map((p) => String(p.state.value)).sort((a, b) => a.localeCompare(b))).toEqual(
+      ["active", "canceled", "incomplete", "none", "past_due", "trialing", "unpaid"].sort((a, b) =>
+        a.localeCompare(b),
+      ),
     );
   });
 

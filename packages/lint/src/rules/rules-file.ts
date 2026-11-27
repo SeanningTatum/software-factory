@@ -14,7 +14,7 @@ const SCRIPT = /^bun run ([\w:-]+)$/;
 const RULE = /rules? $/;
 
 /** A route (`/api/health`) or a relative path (`../x`) is not a project path. */
-const PATH = /^[^\s<*{/.][^\s<*{]*\/[^\s<*{]*$/;
+const PATH = /^[^\s<*{/.][^\s<*{/]*\/[^\s<*{]*$/;
 
 /** What is untrue about one backticked token, or nothing. `before` is the text just ahead of it. */
 const untrue = (

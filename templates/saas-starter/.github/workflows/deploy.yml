@@ -51,7 +51,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
+      # --ignore-scripts keeps dependencies' install scripts out of CI. Our own postinstall
+      # writes the types the typecheck reads.
+      - run: bun run postinstall
       - run: bun run check
       - name: Migrate and deploy
         env:
@@ -103,7 +106,7 @@ jobs:
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
       # Before the migrations, so a refused rollout changes nothing.
       - name: Check a gradual rollout can start
         id: live

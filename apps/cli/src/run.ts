@@ -74,7 +74,7 @@ export const capture =
 /** `-c` flags with a stand-in author when git has no user.name or user.email (as in CI). */
 export const gitIdentity = (cwd: string): Array<string> => {
   const has = (key: string) =>
-    spawnSync("git", ["config", key], { cwd, encoding: "utf8" }).stdout.trim() !== "";
+    spawnSync("git", ["config", key], { cwd, encoding: "utf8" }).stdout.trim() !== ""; // NOSONAR: the user's own git, from their PATH like any CLI.
   return has("user.name") && has("user.email")
     ? []
     : ["-c", "user.name=create-tanstack-cf-saas", "-c", "user.email=noreply@example.com"];

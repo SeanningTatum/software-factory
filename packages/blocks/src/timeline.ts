@@ -4,6 +4,7 @@ import { join, posix } from "node:path";
 import { GENERATED_END, GENERATED_START, TIMELINE_FILE } from "@tanstack-cf-saas/lint";
 import { contributions, GEN_DIR, ROUTES_DIR } from "./generate.ts";
 import { type BlockManifest, type Feature, type Features, isCoreModule } from "./manifest.ts";
+import { byCodeUnit } from "./order.ts";
 import type { FeatureScan } from "./scan.ts";
 
 /** Where a feature's TIMELINE.md is, from the project root. */
@@ -63,7 +64,7 @@ const usedBy = (manifests: Features, name: string) =>
   [...manifests.values()]
     .filter((m) => m.requires.includes(name))
     .map((m) => m.name)
-    .sort();
+    .sort(byCodeUnit);
 
 /** The generated block of a feature's TIMELINE.md, markers included. */
 export const timelineSection = (
@@ -81,12 +82,12 @@ export const timelineSection = (
     : "none";
   const lines = [
     `- Kind: ${kind}`,
-    `- Depends on: ${links(manifests, manifest, [...manifest.requires].sort())}`,
+    `- Depends on: ${links(manifests, manifest, [...manifest.requires].sort(byCodeUnit))}`,
     `- Used by: ${links(manifests, manifest, usedBy(manifests, manifest.name))}`,
     `- Bindings: ${noted((manifest.bindings ?? []).map((b) => [b.binding, b.type] as const))}`,
     `- Vars: ${settings(manifest.vars)}`,
     `- Secrets: ${settings(manifest.secrets)}`,
-    `- Also owns: ${code([...(manifest.files ?? [])].sort())}`,
+    `- Also owns: ${code([...(manifest.files ?? [])].sort(byCodeUnit))}`,
     `- Feeds: ${code(feeds(root, manifest))}`,
     `- Routes: ${code(scan.routes)}`,
     `- Services: ${code(scan.services)}`,

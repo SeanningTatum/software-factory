@@ -27,3 +27,6 @@ export const importSpecifiers = (text: string): ReadonlyArray<string> => {
   ts ??= createRequire(import.meta.url)("@typescript/typescript6") as typeof TS;
   return ts.preProcessFile(text, true, true).importedFiles.map((f) => f.fileName);
 };
+
+/** Sorts strings by code unit, as `sort()` does, so output does not change with the machine's locale. */
+export const byCodeUnit = (a: string, b: string) => Number(a > b) - Number(a < b);

@@ -43,7 +43,9 @@ export const ownRepository = (root: string, git: Cli): string | undefined => {
   const top = git(["rev-parse", "--show-toplevel"]);
   if (!top.ok || realpathSync(top.stdout.trim()) !== realpathSync(root)) return undefined;
   const url = git(["remote", "get-url", "origin"]);
-  return url.ok ? /github\.com[:/](.+?)(?:\.git)?\s*$/.exec(url.stdout)?.[1] : undefined;
+  return url.ok
+    ? /github\.com[:/](\S+)$/.exec(url.stdout.trim())?.[1]?.replace(/\.git$/, "")
+    : undefined;
 };
 
 /** Wrangler's flag for an environment: production is the top level, so it has none. */

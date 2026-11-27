@@ -1,4 +1,5 @@
 import { defaultFeatureLayout } from "./config.ts";
+import { byCodeUnit } from "./files.ts";
 import { placeOf } from "./place.ts";
 import { handWritten, TIMELINE_FILE } from "./timeline-doc.ts";
 
@@ -35,7 +36,7 @@ export const touchedFeatures = (
     dir: featuresDir,
     core: { ...defaultFeatureLayout.core, dir: coreDir },
   };
-  for (const path of [...new Set(changed)].sort()) {
+  for (const path of [...new Set(changed)].sort(byCodeUnit)) {
     const place = placeOf(layout, path);
     if (!place || place.kind === "loose" || place.kind === "lib") continue;
     if (place.inner === TIMELINE_FILE) continue;
