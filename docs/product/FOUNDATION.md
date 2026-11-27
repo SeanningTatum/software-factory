@@ -6,7 +6,7 @@ A software factory starter built on Cloudflare, for solo developers who want a s
 
 ## Problem
 
-People vibe code, or cannot build their own software factory because the effort is ginormous. That holds for developers, not only vibe coders. After multiple enterprise projects the founder sees the same problem with business people and developers: once things are established, everyone looks for workflows, not skills, and a workflow needs to live inside a harness or a software factory. Today they invoke skills and plugins by hand and build their own environment. They use Matt Pocock's skills one by one, or similar tools one by one, including Garry Tan's gstack. At a new idea they start blank, use create-t3-app, start from a template, or copy a set of skills. They have nothing to build on top of, so each person becomes the bottleneck instead of a factory. The factory is proven and eval'd to give high quality, predictable designs and code.
+People vibe code, or cannot build their own software factory because the effort is ginormous. That holds for developers, not only vibe coders. After multiple enterprise projects the founder sees the same problem with business people and developers: once things are established, everyone looks for workflows, not skills, and a workflow needs to live inside a harness or a software factory. Today they invoke skills and plugins by hand and build their own environment. They use Matt Pocock's skills one by one, or similar tools one by one, including Garry Tan's gstack. At a new idea they start blank, use create-t3-app, start from a template, or copy a set of skills. They have nothing to build on top of, so each person becomes the bottleneck instead of a factory.
 
 ## Persona
 
@@ -47,6 +47,7 @@ Earns by: free and open source; the return is faster client work for us, meaning
 
 - People want a whole factory, not single skills. Not proven.
 - Others share the problem. The evidence is the founder's own repeated pain, and multiple enterprise projects where business people and developers hit it too.
+- A factory that is proven and eval'd gives high quality, predictable designs and code. Not proven: one workflow has saved test outputs so far, and nothing tests designs.
 
 ## Open
 

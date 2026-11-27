@@ -8,12 +8,12 @@
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](apps/cli/package.json)
 
-A software factory starter built on Cloudflare, for solo developers who want a sensible factory
-from the start instead of treating each project as bespoke work.
+A software factory starter built on Cloudflare: set it up once and start every new idea from it,
+instead of treating each project as bespoke work.
 
-It is for a solo developer with a new idea, building their own SaaS or client work, who wants to
-set up once and reuse it for every idea. [The product foundation](docs/product/FOUNDATION.md) says
-who it serves, what it aims for and what it will not build.
+It is for a solo developer building their own SaaS or client work.
+[The product foundation](docs/product/FOUNDATION.md) says who it serves, what it aims for and what
+it will not build.
 
 Today it makes one kind of product: a SaaS on [TanStack Start](https://tanstack.com/start).
 

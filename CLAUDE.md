@@ -18,8 +18,10 @@ that builds projects from it.
 
 ## Rules
 
-- **Read `docs/product/FOUNDATION.md` before any product, UI or UX work.** Stop if the work
-  conflicts with an anti-goal, and ask before deciding anything its Open section leaves unsettled.
+- **Read `docs/product/FOUNDATION.md` before any product, UI or UX work on the factory itself:** the
+  README, the docs site and what the CLI prints. Stop if the work conflicts with an anti-goal, and
+  ask before deciding anything its Open section leaves unsettled. It does not describe the
+  template's placeholder SaaS.
 - **Core holds shared modules of one kind: components only, or services and helpers only. A module
   with both, or with a page, is a feature.** Core modules live in `src/features/core/<name>/` (`db`,
   `kv`, `email`, `email-templates`, `observability`, `analytics`, `ui`), shared pure helpers in `src/features/core/lib/`, and
