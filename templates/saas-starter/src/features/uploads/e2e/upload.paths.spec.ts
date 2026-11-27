@@ -1,20 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { asVisitor } from "#/app/testing/e2e.ts";
+import { signUp } from "#/app/testing/e2e.ts";
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]);
-const uniqueEmail = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
-
-test.beforeEach(({ page }) => asVisitor(page));
-
 test.beforeEach(async ({ page }) => {
-  await page.goto("/signup");
-  await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
-  await page.getByLabel("Name").fill("E2E Uploads");
-  await page.getByLabel("Email").fill(uniqueEmail());
-  await page.getByLabel("Password").fill("correct horse battery");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByText("Welcome, E2E Uploads")).toBeVisible();
+  await signUp(page, "E2E Uploads");
   await page.goto("/uploads");
   await expect(page.getByLabel("Upload a file")).toBeEnabled();
 });

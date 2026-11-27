@@ -24,16 +24,55 @@ export const asVisitor = (page: Page) =>
     (route) => route.continue({ headers: { ...route.request().headers(), ...visitor() } }),
   );
 
+const SENT_MAIL = "/cdn-cgi/local/explorer/api/local/email/sending";
+
+/**
+ * The newest 6-digit code mailed to `email` under `subject`, read from the dev server's simulated
+ * mailbox. The subject matters: one address gets a verification mail, then a reset or sign-in one.
+ */
+export const mailedCode = async (page: Page, email: string, subject: string) => {
+  let code: string | undefined;
+  await expect(async () => {
+    const list = await page.request.get(`${SENT_MAIL}?per_page=100`);
+    const { result } = (await list.json()) as {
+      result: Array<{ to: Array<string>; subject: string; messageId: string; sentAt: string }>;
+    };
+    const newest = result
+      .filter((mail) => mail.to.includes(email) && mail.subject === subject)
+      .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
+    expect(newest).toBeDefined();
+    const one = await page.request.get(
+      `${SENT_MAIL}?email_id=${encodeURIComponent(newest?.messageId ?? "")}`,
+    );
+    const { result: mail } = (await one.json()) as { result: { text: string } };
+    code = /\b\d{6}\b/.exec(mail.text)?.[0];
+    expect(code).toBeDefined();
+  }).toPass();
+  return code ?? "";
+};
+
+/** After a sign-up: with the email feature on, the new account must enter its mailed code first. */
+export const passVerification = async (page: Page, email: string) => {
+  await expect(page).toHaveURL(/\/(dashboard|verify-email)/);
+  if (!page.url().includes("/verify-email")) return;
+  await page.getByLabel("Code").fill(await mailedCode(page, email, "Confirm your email address"));
+  await page.getByRole("button", { name: "Verify" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+};
+
+export const uniqueEmail = () =>
+  `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+
 export const signUp = async (page: Page, name = "E2E User") => {
   await asVisitor(page);
+  const email = uniqueEmail();
   await page.goto("/signup");
   await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
   await page.getByLabel("Name").fill(name);
-  await page
-    .getByLabel("Email")
-    .fill(`e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`);
+  await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("correct horse battery");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await passVerification(page, email);
   await expect(page.getByText(`Welcome, ${name}`)).toBeVisible();
+  return email;
 };
