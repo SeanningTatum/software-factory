@@ -20,8 +20,54 @@ export interface GithubOptions {
     readonly variables: Readonly<Record<string, string | undefined>>;
     readonly token: string | undefined;
   };
+  /** Setup no command can do or check; each becomes an issue, opened once. */
+  readonly issues?: ReadonlyArray<SetupIssue>;
   readonly log: (line: string) => void;
 }
+
+export interface SetupIssue {
+  readonly title: string;
+  readonly body: string;
+}
+
+export const SETUP_LABEL = "setup";
+
+/**
+ * Opens an issue for each step that has none yet, open or closed, matched by title: a step you
+ * closed stays closed when this runs again. Never fails the command; the project is on GitHub
+ * either way.
+ */
+export const openSetupIssues = (
+  gh: Cli,
+  issues: ReadonlyArray<SetupIssue>,
+  log: (line: string) => void,
+) => {
+  if (!issues.length) return;
+  gh(["label", "create", SETUP_LABEL, "--description", "Setup still to do by hand", "--force"]);
+  const listed = gh([
+    "issue",
+    "list",
+    "--label",
+    SETUP_LABEL,
+    "--state",
+    "all",
+    "--limit",
+    "500",
+    "--json",
+    "title",
+  ]);
+  if (!listed.ok) return log(`issues: skipped (${listed.stderr.trim() || "gh issue list failed"})`);
+  const have = new Set(
+    (JSON.parse(listed.stdout || "[]") as Array<{ title: string }>).map((i) => i.title),
+  );
+  for (const issue of issues.filter((i) => !have.has(i.title))) {
+    const made = gh(
+      ["issue", "create", "--title", issue.title, "--label", SETUP_LABEL, "--body-file", "-"],
+      issue.body,
+    );
+    log(`issue ${issue.title}: ${made.ok ? "opened" : `not opened (${made.stderr.trim()})`}`);
+  }
+};
 
 const must = (result: ReturnType<Cli>, what: string) => {
   if (!result.ok)
@@ -211,5 +257,6 @@ export const setupGithub = (root: string, gh: Cli, git: Cli, options: GithubOpti
   options.log("default branch: staging");
   options.log("squash commits: titled by their pull request");
   applyRulesets(rulesets, gh, options.log);
+  openSetupIssues(gh, options.issues ?? [], options.log);
   return missing;
 };

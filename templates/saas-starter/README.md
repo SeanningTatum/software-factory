@@ -29,7 +29,7 @@ so after `bun install` these run that copy and fetch nothing:
 ```bash
 bun run setup                        # D1, KV and R2, migrations, secrets and a first deploy, for production and staging
 bun run setup --check                # what is still missing, and the command that fixes each
-bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, and what CI deploys with
+bunx create-tanstack-cf-saas github  # the GitHub repository, its branches and rules, what CI deploys with, and an issue per manual setup step
 bun run deploy:staging               # by hand
 bun run deploy
 ```

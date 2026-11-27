@@ -199,7 +199,7 @@ bunx create-tanstack-cf-saas add billing      # add a feature and what it needs
 bunx create-tanstack-cf-saas remove uploads   # remove a feature and everything it owns
 bun run setup                                 # create the Cloudflare side and deploy
 bun run setup --check                         # list what is still missing
-bunx create-tanstack-cf-saas github           # the repository, branch rules and deploy settings
+bunx create-tanstack-cf-saas github           # the repository, branch rules, deploy settings, setup issues
 ```
 
 The project's own `README.md` covers the rest: migrations, deploys and the two-branch release flow.

@@ -428,9 +428,21 @@ export const create = async (args: CreateArgs) => {
 const printSetupSteps = (root: string, cloudflare: ReadonlyArray<Item> | undefined) => {
   // The Cloudflare table already lists these steps.
   if (cloudflare) return;
-  for (const step of [...loadManifests(root).values()].flatMap((m) => m.setup ?? []))
+  const steps = [...loadManifests(root).values()].flatMap((m) => m.setup ?? []);
+  if (steps.length)
+    p.log.warn(`Still to do by hand before you go live (\`${GITHUB}\` opens an issue for each):`);
+  for (const step of steps)
     p.log.info(`${step.description}${step.help ? pc.dim(` (${step.help})`) : ""}`);
 };
+
+/** One issue per manual setup step; the title is its identity, so keep it stable. */
+const setupIssues = (root: string) =>
+  [...loadManifests(root).values()].flatMap((m) =>
+    (m.setup ?? []).map((step) => ({
+      title: `${m.title} setup: ${step.id}`,
+      body: `${step.description}\n${step.help ? `\n${step.help}\n` : ""}\nNo command can do or check this step. Close this issue when it is done.`,
+    })),
+  );
 
 /** The last line of create: what setup is still for, or that nothing is left. */
 const closingLine = (cloudflare: ReadonlyArray<Item> | undefined, pm: PackageManager) => {
@@ -580,6 +592,7 @@ const offerGithub = async (plan: CreatePlan) => {
       name: () => plan.name,
       visibility,
       deploy: await deployInputs(plan.targetDir, gh, false),
+      issues: setupIssues(plan.targetDir),
       log: (line) => p.log.step(line),
     });
     printMissing(missing);
@@ -832,6 +845,8 @@ export const github = async (isPublic: boolean) => {
     name: () => readProject(root).name,
     visibility: isPublic ? "public" : "private",
     deploy: await deployInputs(root, gh, git(["remote", "get-url", "origin"]).ok),
+    // Not made from the template: no feature manifests, so no steps.
+    issues: existsSync(join(root, WRANGLER_FILE)) ? setupIssues(root) : [],
     log: console.log,
   });
   printMissing(missing);
