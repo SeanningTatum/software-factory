@@ -1,5 +1,31 @@
 # @tanstack-cf-saas/lint
 
+## 0.2.0
+
+### Minor Changes
+
+- eb3d778: Add `derived-machine-types`: in a file that imports xstate or a `*.machine.ts`, an event type written
+  by hand (`{ type: "START"; ... }`) fails; derive it with `EventFrom` or `ActorRefFrom<...>["send"]`.
+- 1048754: Three new rules. `no-inline-handler`: a JSX prop takes a named function (`onClick={signOut}`), not an inline one; tests are exempt. `no-useless-comment`: no commented-out code, `TODO`/`FIXME` markers, divider lines or empty comments. `no-duplicate-comment`: the same comment of five words or more may appear only once across the linted files.
+- eb3d778: Add three lint rules. `server-fn-placement`: a feature's `createServerFn` calls live in its `api/`,
+  and pages import them. `no-repeated-api-path`: an `/api/` path is written in one file only, apart
+  from the route's own `createFileRoute` call and tests. The template moves its page server functions
+  into each feature's `api/loaders.ts` and its auth paths into `auth/constants.ts`.
+  
+  `no-restating-test`: a test whose every `expect` checks an imported constant against a literal
+  fails, since it repeats the source. Projects list such declaration-only files in `testExempt`; the
+  template now exempts `constants.ts`.
+- eb3d778: Add three lint rules: `one-component-per-file` (a `.tsx` file declares one component),
+  `class-placement` (no classes in React files or `components/`, none inside a function) and
+  `error-placement` (error classes live in their feature's `errors.ts`, or `src/app/errors.ts` for the
+  kernel). The template moves its error classes into each feature's `errors.ts` and splits `plan-card.tsx`.
+
+### Patch Changes
+
+- 9dbd52b: Seven regexes no longer backtrack on long input. The template's log redaction took seconds on a 200 kB line with no email in it; it now takes milliseconds. `create` collapses runs of dashes in a name taken from the folder. The template's `CardTitle` and `Label` pass their content and `htmlFor` through by name, so screen-reader checks can see them.
+- 03f7e2c: Three gates no longer pass by mistake. `no-run-effect` sees Effect 4's `run…With` runners and a runner passed as a value (`xs.map(Effect.runSync)`), not only a call. `cf-saas-lint timeline --base <ref>` fails when git can't find `<ref>`, and `cf-saas-lint` fails when no file matches `include`; both used to pass on nothing. `file-size` no longer counts the final newline, so a file of exactly `maxLines` lines passes.
+- 9dbd52b: Biome's `useArraySortCompare` is on: every `sort()` names its order. `blocks` and `lint` sort by code unit, as before, so generated files do not change.
+
 ## 0.1.0
 
 ### Minor Changes

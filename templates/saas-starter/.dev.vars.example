@@ -30,6 +30,10 @@ BETTER_AUTH_SECRET=
 # Turnstile secret key; the example is Cloudflare's always-pass test secret, never use it in production (optional).
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
+# --- Email ---
+# Sender address on a domain onboarded to Cloudflare Email Service, e.g. hello@example.com (required). See https://developers.cloudflare.com/email-service/get-started/send-emails/
+EMAIL_FROM=hello@example.com
+
 # --- Billing ---
 # Stripe price id for the Pro plan (price_...) (required). See https://dashboard.stripe.com/products
 STRIPE_PRICE_PRO=

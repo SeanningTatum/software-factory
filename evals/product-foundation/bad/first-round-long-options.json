@@ -1,0 +1,112 @@
+{
+  "markdown": "# Product foundation\n\n## Product\nChaser sends polite payment reminders for freelance designers, so they stop chasing late invoices by hand.\n\n## Problem\nLate invoices hurt, and designers hate asking for money. Today they keep a spreadsheet and write awkward emails weeks after the due date, or let it slide. This costs a few hours a month.\n\n## Persona\nA freelance brand or web designer who works alone, with 3 to 10 active clients. They invoice from a tool like Wave or from a PDF. They want to get paid on time without asking for money themselves. What stops them: they hate the ask, so they put it off or skip it.\n\n## Not for\nAgencies with a finance person.\n\nOpen: other sign-ups we should turn away (non-designers, freelancers outside design, designers with more than 10 clients).\n\n## Goals\n1. 50 paying users by the end of March 2027.\n2. Grow fast after that. Open: no number or date after March 2027.\n\n## Anti-goals\n1. We will not build invoicing itself. Open: why (not stated).\n2. No mobile app. Open: why (not stated).\n\n## Assumptions\n1. Designers will let a tool email their clients in their name. Not yet proven.\n\nOpen: price, since \"paying users\" has no price or plan.\nOpen: how reminders reach clients beyond email, if at all.\nOpen: how Chaser learns of an invoice (import from Wave, PDF upload, or manual entry).\n",
+  "gaps": [
+    "Not for: other sign-ups we should turn away (non-designers, freelancers outside design, designers with more than 10 clients).",
+    "Goals: no number or date for \"grow fast after that\".",
+    "Anti-goals: no reason given for \"no invoicing\".",
+    "Anti-goals: no reason given for \"no mobile app\".",
+    "Assumptions: price or plan for \"paying users\" is not stated.",
+    "Assumptions: how reminders reach clients beyond email, if at all, is not stated.",
+    "Assumptions: how Chaser learns of an invoice (import from Wave, PDF upload, or manual entry) is not stated."
+  ],
+  "questions": [
+    {
+      "section": "Not for",
+      "question": "Should a designer with more than 10 clients, or a small studio of two or three people, be turned away or welcomed?",
+      "why": "The Persona says 3 to 10 clients and works alone, but Not for names only agencies with a finance person, so two readers will disagree on who a 15-client solo or a two-person studio is.",
+      "options": [
+        "Turn away both; Persona is a hard line",
+        "Welcome more than 10 clients, turn away studios",
+        "Welcome both; 3 to 10 only describes the typical user",
+        "Welcome up to 3 people, any client count"
+      ]
+    },
+    {
+      "section": "Not for",
+      "question": "Do we turn away freelancers outside design (developers, writers, consultants) who sign up, or take their money and not market to them?",
+      "why": "With a goal of 50 paying users by March 2027, refusing paying sign-ups has a cost, and the answer decides whether Not for is a gate or only a marketing focus.",
+      "options": [
+        "Turn them away at sign-up",
+        "Accept them, but do not market to them",
+        "Accept them and name them as a later persona",
+        "Undecided until we see who signs up"
+      ]
+    },
+    {
+      "section": "Persona",
+      "question": "Is a Wave or PDF invoicer the only designer we serve, or do designers who invoice from other tools (Stripe, QuickBooks, FreshBooks, Notion) count too?",
+      "why": "The Persona names only Wave and PDF, and the answer sets whether Chaser can learn of invoices at all for the people we say it is for.",
+      "options": [
+        "Wave and PDF only",
+        "Add Stripe and QuickBooks",
+        "Any tool; Chaser takes manual entry too",
+        "Wave only at launch, others later"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "Goal 2 (\"Grow fast after that\") has no number or date, so what should it say?",
+      "why": "As written it cannot be checked on any date, and it may pull toward the agencies and heavy-client designers the Not for section turns away.",
+      "options": [
+        "200 paying users by end of September 2027",
+        "$5,000 monthly revenue by end of December 2027",
+        "Drop it until goal 1 is met",
+        "Keep it, but name the number and date later"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "What counts as a \"paying user\" in goal 1?",
+      "why": "With no price or plan, a $1 plan and a $50 plan both hit 50, so the goal can be met without a business behind it.",
+      "options": [
+        "Any user on a paid plan, any price",
+        "A user paying at least a stated monthly price (name it)",
+        "A paying user who had a reminder sent in the last 30 days",
+        "Count monthly revenue instead of users"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "Should a goal measure whether Chaser fixes the problem, such as late invoices getting paid?",
+      "why": "Both goals count customers, not outcomes, so 50 people could pay and the product could still not stop designers chasing invoices by hand.",
+      "options": [
+        "Yes: most reminded invoices paid within 7 days of the first reminder",
+        "Yes: users report saving 2 or more hours a month",
+        "No: paying users is enough for now"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Will Chaser ever take the payment itself (a pay-now button, card or bank collection), or only prompt the client to pay through the designer's own invoice link?",
+      "why": "A team that chases late invoices will be tempted to add a pay button, and that turns a reminder tool into a payments product with its own regulation, fees and support load.",
+      "options": [
+        "Never take payment; link to the designer's own invoice only",
+        "Allow a pay link to the designer's existing processor, no money through Chaser",
+        "Collect payment later, not in the first release",
+        "Collect payment from the start"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "If a client ignores every polite reminder, does Chaser stop, or may it escalate to firm notices, late fees or a collections hand-off?",
+      "why": "Escalation is the obvious next feature for a tool that fails to get anyone paid, and it contradicts the polite, no-awkwardness promise in Product and Persona.",
+      "options": [
+        "Never escalate; the tone stays polite and it stops after a set number of reminders",
+        "Escalate to one firm final notice, still sent in the designer's name",
+        "Add late fees and collections hand-off later",
+        "Escalate fully from the start"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Will Chaser build two-way sync with accounting and invoicing tools (Wave, QuickBooks, FreshBooks), or only read invoices in?",
+      "why": "Sync is the tempting route to 'learning of an invoice', but writing back to those tools drifts into the invoicing anti-goal and is a large maintenance cost for a one-person team.",
+      "options": [
+        "Read-only import from Wave; no write-back, no other tools",
+        "Manual entry and PDF upload only, no integrations",
+        "Full two-way sync with several tools",
+        "Decide after the first 50 users"
+      ]
+    }
+  ]
+}

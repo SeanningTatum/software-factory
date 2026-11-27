@@ -1,0 +1,111 @@
+{
+  "markdown": "# Product foundation\n\n## Product\nChaser sends polite payment reminders and collects payment for freelance designers, so they stop chasing late invoices by hand.\n\n## Problem\nLate invoices hurt, and designers hate asking for money. Today they keep a spreadsheet and write awkward emails weeks after the due date, or let it slide. This costs a few hours a month.\n\n## Persona\nA freelance brand or web designer who works alone, with 3 to 10 active clients. They invoice from a tool like Wave or from a PDF. They want to get paid on time without asking for money themselves. What stops them: they hate the ask, so they put it off or skip it.\n\n## Not for\n1. Agencies with a finance person.\n2. Freelancers outside design (developers, writers, consultants). We turn them away at sign-up.\n\nOpen: whether to turn away designers with more than 10 clients.\n\n## Goals\n1. 50 paying users by the end of March 2027. A paying user is any user on a paid plan, at any price.\n2. $5,000 monthly revenue by the end of December 2027.\n\n## Anti-goals\n1. We will not build invoicing itself. Open: why (not stated).\n2. No mobile app. Open: why (not stated).\n\n## Assumptions\n1. Designers will let a tool email their clients in their name. Not yet proven.\n2. Designers will let Chaser collect payment from their clients. Not yet proven.\n\nOpen: price. Goals count paying users and revenue, but no price or plan exists.\nOpen: how reminders reach clients beyond email, if at all.\nOpen: how Chaser learns of an invoice (import from Wave, PDF upload, or manual entry).",
+  "gaps": [
+    "Open: whether to turn away designers with more than 10 clients (Not for).",
+    "Open: why we will not build invoicing itself (Anti-goals).",
+    "Open: why no mobile app (Anti-goals).",
+    "Open: price. Goals count paying users and revenue, but no price or plan exists.",
+    "Open: how reminders reach clients beyond email, if at all.",
+    "Open: how Chaser learns of an invoice (import from Wave, PDF upload, or manual entry)."
+  ],
+  "questions": [
+    {
+      "section": "Not for",
+      "question": "Should sign-up turn away freelancers outside design, or only leave them out of our marketing?",
+      "why": "Sign-up cannot check who is a designer, and turning away developers or writers who would pay works against the goal of 50 paying users.",
+      "options": [
+        "Turn them away at sign-up",
+        "Accept them, don't market",
+        "Accept them, put on waitlist",
+        "Accept them, same as designers"
+      ]
+    },
+    {
+      "section": "Persona",
+      "question": "Which designers count: brand and web only, or also graphic, UI/UX, illustrators and motion designers?",
+      "why": "The product line says freelance designers but the Persona says brand or web, so two readers picture different people and Not for has no line for the rest.",
+      "options": [
+        "Brand and web only",
+        "All visual designers",
+        "Brand, web and UI/UX",
+        "Anyone who says designer"
+      ]
+    },
+    {
+      "section": "Not for",
+      "question": "Do designers with more than 10 clients belong in Persona or in Not for?",
+      "why": "They have the most late invoices and the most to gain, so turning them away may lose the best payers, and the open line leaves the 3 to 10 range as either a target or a limit.",
+      "options": [
+        "In: no upper limit",
+        "In: higher price",
+        "Out: turn away at sign-up",
+        "In: cap at 25"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Would you ever have Chaser create or send invoices, and if not, why?",
+      "why": "Invoicing is the most tempting add-on for this product, and the reason decides whether it is a never or a not-yet.",
+      "options": [
+        "Never: stay tool-neutral",
+        "Not yet: too costly now",
+        "Wave and others cover it",
+        "Maybe: simple invoices later"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Will Chaser ever escalate past polite reminders, such as late fees, firm notices, or handing debts to collectors?",
+      "why": "Escalation is the obvious next step when polite reminders fail, and it conflicts with the promise that designers never have to ask harshly.",
+      "options": [
+        "Never: polite reminders only",
+        "Late fees only, optional",
+        "Firm notices, no collectors",
+        "Decide after first users"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Why no mobile app, and does a phone-friendly web page count as one?",
+      "why": "Without a reason, the team cannot tell whether responsive web, push alerts, or a client-facing pay page are allowed.",
+      "options": [
+        "Web works on phones",
+        "Too costly for solo team",
+        "Clients pay via link only",
+        "Drop this anti-goal"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "What monthly price do you expect a typical paying designer to pay?",
+      "why": "50 users reach $5,000 a month only at $100 each, so price decides whether Goal 2 needs far more users than Goal 1 sets.",
+      "options": [
+        "Under $20",
+        "$20 to $50",
+        "$50 to $100",
+        "Over $100"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "Does Goal 2's revenue mean only subscription fees, or also a cut of collected payments?",
+      "why": "A fee on collected invoices could reach $5,000 with few users, which changes the target and the user count Goal 1 needs.",
+      "options": [
+        "Subscriptions only",
+        "Subscriptions plus payment fee",
+        "Payment fee only"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "Should Goal 1's paying user have a minimum monthly price?",
+      "why": "As written, 50 users on a $1 plan meets Goal 1 while missing Goal 2 by a wide margin.",
+      "options": [
+        "Any price counts",
+        "At least $15",
+        "At least $30",
+        "At least $50"
+      ]
+    }
+  ]
+}

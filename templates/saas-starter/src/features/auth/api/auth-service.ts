@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { and, eq, notExists, sql } from "drizzle-orm";
 import { Cause, Context, DateTime, Effect, ErrorReporter, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
@@ -10,17 +11,23 @@ import type { AnalyticsEvent } from "#/features/core/analytics/lib/catalog.ts";
 import { Database } from "#/features/core/db/api/database.ts";
 import { outsideCall } from "#/features/core/lib/call.ts";
 import { featureAuthPlugins, featureAuthTables } from "#/gen/auth-plugins.ts";
-import { SIGN_IN, SIGN_OUT, SIGN_UP } from "../constants.ts";
+import { CODE_PATHS, SIGN_IN, SIGN_OUT, SIGN_UP } from "../constants.ts";
 import { AuthServiceError } from "../errors.ts";
 import { authEvents } from "../lib/auth-events.ts";
 import { account, auditLog, user } from "../schema.ts";
 import { type AuthLog, type AuthPluginFactory, authConfig, makeAuth } from "./auth.ts";
 import { captchaPlugin, signInCaptcha, turnstileKeys } from "./captcha.ts";
-import { AuthRateLimiter, accountKey, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
+import { AuthRateLimiter, accountKey, codeKey, LIMITED_PATHS, limitKey } from "./rate-limit.ts";
 
 const IDENTIFIES = new Set(["sign_up_completed", "sign_in_succeeded"]);
 const WEBHOOK = "/api/auth/stripe/webhook";
 const SERVER_ERROR = 500;
+const CODE = new Set(CODE_PATHS);
+const LIMITED = new Set([...LIMITED_PATHS, ...CODE_PATHS]);
+const perAccount = (path: string) => {
+  if (path === SIGN_IN) return accountKey;
+  return CODE.has(path) ? codeKey : undefined;
+};
 const RESETS_ANON_ID = new Set([...IDENTIFIES, "signed_out"]);
 
 export interface SessionUser {
@@ -243,18 +250,24 @@ export class Auth extends Context.Service<
          * A refusal, "challenge" to serve the request only with a Turnstile token, or undefined.
          * Anyone can spend an account's sign-in limit with wrong passwords, so past it the owner is
          * asked to prove they're a person rather than refused, whenever Turnstile is set up.
+         * The code routes count per account too, and refuse: an attacker who changes address
+         * with every request would otherwise guess codes, or fill an inbox, without end.
          */
         const admit = Effect.fn("Auth.admit")(function* (incoming: Request, path: string) {
           const byAddress = yield* Effect.result(limiter.check(limitKey(incoming.headers, path)));
           if (byAddress._tag === "Failure")
             return yield* tooMany(path, byAddress.failure.retryAfterSeconds);
-          const email = path === SIGN_IN ? yield* emailOf(incoming) : undefined;
+          const keyFor = perAccount(path);
+          if (!keyFor) return undefined;
+          const email = yield* emailOf(incoming);
           if (!email) return undefined;
-          const byAccount = yield* Effect.result(limiter.check(accountKey(email)));
+          const byAccount = yield* Effect.result(limiter.check(keyFor(email)));
           if (byAccount._tag === "Success") return undefined;
-          if (turnstileKeys(env)) return "challenge" as const;
+          if (canChallenge(path)) return "challenge" as const;
           return yield* tooMany(path, byAccount.failure.retryAfterSeconds);
         });
+
+        const canChallenge = (path: string) => path === SIGN_IN && Boolean(turnstileKeys(env));
 
         const challenging = () =>
           makeAuth(config, db, [...plugins, ...signInCaptcha(env)], log, tables);
@@ -277,7 +290,7 @@ export class Auth extends Context.Service<
         const handle = Effect.fn("Auth.handle")(function* (incoming: Request) {
           const path = new URL(incoming.url).pathname;
           const admission =
-            incoming.method === "POST" && LIMITED_PATHS.includes(path)
+            incoming.method === "POST" && LIMITED.has(path)
               ? yield* admit(incoming, path)
               : undefined;
           if (admission instanceof Response) return admission;

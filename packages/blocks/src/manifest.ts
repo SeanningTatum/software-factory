@@ -48,6 +48,11 @@ const AnalyticsEngineBinding = Schema.Struct({
   dataset: Schema.String,
 });
 
+const SendEmailBinding = Schema.Struct({
+  type: Schema.Literal("send_email"),
+  binding: Schema.String,
+});
+
 export const Binding = Schema.Union([
   D1Binding,
   KvBinding,
@@ -55,6 +60,7 @@ export const Binding = Schema.Union([
   WorkflowBinding,
   RateLimitBinding,
   AnalyticsEngineBinding,
+  SendEmailBinding,
 ]);
 export type Binding = typeof Binding.Type;
 
@@ -74,6 +80,8 @@ export const BlockManifest = Schema.Struct({
   /** A required feature or module ships in every project and can't be removed. */
   required: Schema.optionalKey(Schema.Boolean),
   requires: Schema.Array(Schema.String),
+  /** An auto feature is never chosen: it is on exactly when everything it requires is on. */
+  auto: Schema.optionalKey(Schema.Boolean),
   files: Schema.optionalKey(Schema.Array(Schema.String)),
   bindings: Schema.optionalKey(Schema.Array(Binding)),
   vars: Schema.optionalKey(Schema.Record(Schema.String, VarSpec)),

@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { useMachine } from "@xstate/react";
 import { type FormEvent, useId, useState } from "react";
 import { fromPromise } from "xstate";
@@ -23,7 +24,6 @@ export function CredentialsForm({ mode, submit, onDone, siteKey }: Props) {
   const [attempt, setAttempt] = useState(0);
   if (snapshot.status === "done") queueMicrotask(onDone);
   const busy = snapshot.matches("submitting") || snapshot.status === "done";
-  // Sign-up always asks; sign-in only once the server has asked for a token.
   const checkKey = mode === "sign-up" || snapshot.context.challenged ? siteKey : undefined;
 
   const edit = () => snapshot.matches("failed") && send({ type: "EDIT" });

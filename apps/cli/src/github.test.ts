@@ -2,7 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Cli, setDeploySettings, setUrlVariables, setupGithub } from "./github.ts";
+import {
+  type Cli,
+  keepPlaceholders,
+  openSetupIssues,
+  setDeploySettings,
+  setUrlVariables,
+  setupGithub,
+} from "./github.ts";
 
 const TEMPLATE = join(import.meta.dirname, "../../../templates/saas-starter");
 const ok = (stdout = "") => ({ ok: true, stdout, stderr: "" });
@@ -37,6 +44,51 @@ const fakeGithub = () => {
 };
 
 const options = { name: () => "my-app", visibility: "private" as const, log: () => {} };
+
+describe("keepPlaceholders", () => {
+  test("escapes a bare placeholder and leaves one inside backticks alone", () => {
+    expect(keepPlaceholders("at <APP_URL>/hook, then `enable <domain>` for <you>")).toBe(
+      "at &lt;APP_URL>/hook, then `enable <domain>` for &lt;you>",
+    );
+  });
+});
+
+describe("openSetupIssues", () => {
+  const issues = [
+    { title: "Email setup: email-domain", body: "Onboard the domain." },
+    { title: "Billing setup: stripe-webhook", body: "Add the webhook." },
+  ];
+  const fake = (listed: ReturnType<Cli>) => {
+    const created: Array<{ title: string | undefined; body: string | undefined }> = [];
+    const gh: Cli = (args, input) => {
+      if (args[1] === "list") return listed;
+      if (args[0] === "issue") created.push({ title: args[3], body: input });
+      return ok();
+    };
+    return { gh, created };
+  };
+
+  test("opens one issue per step, and none for a step that has one, open or closed", () => {
+    const first = fake(ok("[]"));
+    openSetupIssues(first.gh, issues, () => {});
+    expect(first.created).toEqual([
+      { title: "Email setup: email-domain", body: "Onboard the domain." },
+      { title: "Billing setup: stripe-webhook", body: "Add the webhook." },
+    ]);
+
+    const again = fake(ok(JSON.stringify([{ title: "Email setup: email-domain" }])));
+    openSetupIssues(again.gh, issues, () => {});
+    expect(again.created.map((i) => i.title)).toEqual(["Billing setup: stripe-webhook"]);
+  });
+
+  test("says why and opens nothing when the repository's issues can't be read", () => {
+    const off = fake(fail("issues are disabled"));
+    const lines: Array<string> = [];
+    openSetupIssues(off.gh, issues, (line) => lines.push(line));
+    expect(off.created).toEqual([]);
+    expect(lines).toEqual(["issues: skipped (issues are disabled)"]);
+  });
+});
 
 describe("setupGithub", () => {
   test("creates the repository, both branches and both rulesets, then only updates", () => {

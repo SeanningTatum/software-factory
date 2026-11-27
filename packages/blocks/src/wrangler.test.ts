@@ -46,6 +46,27 @@ describe("rate limits", () => {
   });
 });
 
+describe("send_email", () => {
+  test("is written by name in both environments, and sync is then stable", () => {
+    const email: BlockManifest = {
+      name: "email",
+      title: "Email",
+      description: "email",
+      requires: [],
+      bindings: [{ type: "send_email", binding: "EMAIL" }],
+    };
+    const patch = {
+      project: "acme",
+      manifests: new Map([["email", email]]),
+      previouslyManaged: none,
+    };
+    const first = patchWrangler("{}", patch).text;
+    expect(parse(first).send_email).toEqual([{ name: "EMAIL" }]);
+    expect(parse(first).env.staging.send_email).toEqual([{ name: "EMAIL" }]);
+    expect(patchWrangler(first, patch).text).toBe(first);
+  });
+});
+
 describe("patchWrangler", () => {
   test("adds bindings for production and staging and keeps hand-made ones", () => {
     const { text, managed } = patchWrangler(base, {

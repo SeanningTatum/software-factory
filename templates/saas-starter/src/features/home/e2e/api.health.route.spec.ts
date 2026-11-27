@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { expect, test } from "@playwright/test";
 
 const health = async (request: import("@playwright/test").APIRequestContext) => {

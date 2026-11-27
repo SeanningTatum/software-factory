@@ -1,0 +1,143 @@
+{
+  "markdown": "# Product foundation\n\n## Product\nChaser sends polite payment reminders for freelance designers so they stop chasing late invoices by hand. Chaser is a working name, not fixed.\n\n## Problem\nFreelance designers hate asking for money. Today they keep a spreadsheet and write awkward emails weeks after the due date, or let it slide. They lose a few hours a month on it.\n\n## Persona\nA freelance brand or web designer working alone, with 3 to 10 active clients. They invoice from a tool like Wave or from a PDF. They want the money without asking for it. Hating the ask stops them.\n\n## Core scenario\nOn a Monday morning at their desk, on a laptop, a designer sees an invoice two weeks overdue. They want to hand it to Chaser in under a minute and not think about it again until the money lands. It happens a few times a month.\n\n## Also affected\nThe designer's clients, who get the reminders. They should feel nudged, not accused.\n\n## Not for\nAgencies with a finance person.\n\n## Feel\nCalm, friendly, a bit dry.\nNever pushy, corporate or cute.\n\n## Goals\n1. 50 paying users by the end of March 2027.\n\nEarns by: See Open.\n\n## Anti-goals\n1. We will not build invoicing itself.\n2. No mobile app.\n\n## Assumptions\nDesigners will let a tool email their clients in their name.\n\n## Open\n- Goals: \"Grow fast after that\" has no number and no date.\n- Goals: \"Paying users\" has no price or plan.\n- Goals: Earns by is empty. Nothing says how Chaser makes money.\n- Anti-goals: Neither anti-goal says why.\n- Core scenario: How an invoice reaches Chaser (Wave, PDF, other) is not said.\n- Assumptions: Nothing says how or when we will test the one assumption.\n",
+  "gaps": [
+    "Goals: \"Grow fast after that\" has no number and no date.",
+    "Goals: \"Paying users\" has no price or plan.",
+    "Goals: Earns by is empty. Nothing says how Chaser makes money.",
+    "Anti-goals: Neither anti-goal says why.",
+    "Core scenario: How an invoice reaches Chaser (Wave, PDF, other) is not said.",
+    "Assumptions: Nothing says how or when we will test the one assumption."
+  ],
+  "questions": [
+    {
+      "section": "Goals",
+      "question": "How does Chaser charge the designer: flat fee, per invoice, or a share of money recovered?",
+      "why": "Earns by is empty, and the way it earns decides what counts as a paying user and whether the goal fits a designer with only a few late invoices a month.",
+      "options": [
+        "Flat monthly fee",
+        "Per invoice chased",
+        "Share of money recovered",
+        "Free tier, paid upgrade"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "What price per month would a paying user pay, so we can turn 50 users into revenue?",
+      "why": "Without a price, 50 paying users could mean 50 dollars or 5,000 dollars a month, and nobody can say whether the goal is worth it.",
+      "options": [
+        "Under $10 a month",
+        "$10 to $20 a month",
+        "$20 to $40 a month",
+        "Over $40 a month"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "What comes after March 2027: a second goal with a number and date, or none for now?",
+      "why": "The note about growing fast afterward has no number or date, so it can't be checked and belongs in Goals only if it gets both.",
+      "options": [
+        "200 paying by March 2028",
+        "$5k monthly revenue by 2028",
+        "No second goal yet",
+        "Drop the growth note"
+      ]
+    },
+    {
+      "section": "Problem",
+      "question": "What evidence do you have that designers lose real money or hours to late invoices, beyond your own sense of it?",
+      "why": "The Problem rests on a claim of a few hours a month with no source, and a small loss may not justify paying for a tool.",
+      "options": [
+        "I have lived it myself",
+        "Talked to designers (count)",
+        "Survey or forum posts (link)",
+        "No evidence yet"
+      ]
+    },
+    {
+      "section": "Problem",
+      "question": "Wave and similar invoicing tools already send automatic reminders, so why would a designer who uses one switch to Chaser?",
+      "why": "The persona invoices from Wave or a PDF, so the main alternative is a built-in feature at no extra cost, and the document names no reason to leave it.",
+      "options": [
+        "Wave reminders feel too pushy",
+        "Designers use PDFs, not Wave",
+        "Chaser works across tools",
+        "I have not checked Wave"
+      ]
+    },
+    {
+      "section": "Assumptions",
+      "question": "How and when will you test that designers will let a tool email their clients in their name?",
+      "why": "If this is false the product has no use, yet the document names no test, date or pass mark.",
+      "options": [
+        "Interview 10 designers first",
+        "Landing page with sign-up test",
+        "Send reminders by hand first",
+        "Not planned yet"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Should Chaser ever escalate when a client stays silent, with a firmer tone, late fees or a collections referral?",
+      "why": "Escalation is the obvious next feature for a reminder tool, and it would break the Feel (never pushy) and the promise that clients feel nudged, not accused.",
+      "options": [
+        "Never escalate, stay polite",
+        "Only if the designer opts in",
+        "Hand off to collections"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Will Chaser ever take the payment itself, such as a pay button or payment link inside a reminder?",
+      "why": "Collecting money is a tempting step beyond reminding, and it brings regulation and blurs the invoicing anti-goal, so the document needs a clear line.",
+      "options": [
+        "No, we never touch money",
+        "Link to the designer's page",
+        "Yes, built-in payments later"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Why do we refuse to build invoicing, and does that rule out importing or syncing invoices from Wave?",
+      "why": "Without a reason, a team cannot tell if a Wave import or a payment-details page counts as invoicing, and the open item on how invoices reach Chaser depends on it.",
+      "options": [
+        "Wave and PDFs stay the source",
+        "Too big for a small team",
+        "Different buyer and product",
+        "Import fine, creating is not"
+      ]
+    },
+    {
+      "section": "Core scenario",
+      "question": "In that under-a-minute Monday moment, how does the overdue invoice get to Chaser?",
+      "why": "Wave, PDF and a forwarded email are three different products, and the persona names both Wave and PDF, so two readers would picture different moments.",
+      "options": [
+        "Connect Wave, pull invoices in",
+        "Upload the PDF",
+        "Forward the invoice by email",
+        "Both Wave and PDF at launch"
+      ]
+    },
+    {
+      "section": "Not for",
+      "question": "Should Chaser turn away other freelancers (developers, writers) and two or three person studios, or take them?",
+      "why": "Not for names only agencies with a finance person, yet Persona says designers working alone, so a freelance writer or small studio could sign up and the document does not say if they are welcome.",
+      "options": [
+        "Designers only",
+        "Any solo freelancer",
+        "Designers and tiny studios",
+        "Take them, build for designers"
+      ]
+    },
+    {
+      "section": "Feel",
+      "question": "Do the reminder emails sound like Chaser, or like the designer who sends them?",
+      "why": "Feel must suit the clients who read the emails as well as the designer who uses the app, and a dry Chaser voice sent in the designer's name could clash with how they write.",
+      "options": [
+        "The designer's own voice",
+        "Chaser: calm, a bit dry",
+        "Designer picks a tone",
+        "Plain and neutral"
+      ]
+    }
+  ]
+}

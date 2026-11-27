@@ -19,7 +19,8 @@
       "!templates",
       "!apps/docs-website",
       "!apps/cli/template",
-      "!apps/cli/harness"
+      "!apps/cli/harness",
+      "!evals/**/*.json"
     ]
   }
 }

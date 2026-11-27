@@ -1,5 +1,13 @@
 # tanstack-cf-saas-starter
 
+[![check](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml/badge.svg?branch=staging)](https://github.com/SeanningTatum/tanstack-cf-saas-starter/actions/workflows/check.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=SeanningTatum_tanstack-cf-saas-starter&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=SeanningTatum_tanstack-cf-saas-starter)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](apps/cli/package.json)
+
 Build a SaaS on Cloudflare from building blocks. One command asks what your product needs (a
 database, sign-in, billing, file uploads, background jobs) and hands you a working
 [TanStack Start](https://tanstack.com/start) app with those parts wired together, tested, and ready
@@ -94,6 +102,7 @@ way down.
 │  ◻ KV
 │  ◼ Auth (needs db)
 │  ◻ Billing
+│  ◻ Email (Transactional email through Cloudflare Email Service…)
 │  ◻ R2 uploads
 │  ◻ Workflows
 │  ↑/↓ to navigate • Space: select • Enter: confirm
@@ -180,10 +189,14 @@ analytics, and logging with error reports. You choose the rest:
 | `auth`      | Email and password sign-in with Better Auth, sessions, and rate limits.    | `db`   |
 | `billing`   | Stripe subscriptions: checkout, the customer portal and webhooks.          | `auth` |
 | `uploads`   | Per-user file uploads to R2, checked for size and type, with a rate limit. | `auth` |
+| `email`     | Transactional email through Cloudflare Email Service, with no API key.     |        |
 | `kv`        | A Workers KV store behind a typed service, with a read-through cache.      |        |
 | `workflows` | A durable onboarding flow on Cloudflare Workflows.                         |        |
 
-Ask for `billing` and you get `auth` and `db` with it.
+Ask for `billing` and you get `auth` and `db` with it. Choose `auth` and `email` together and auth
+also verifies each new address with a mailed code, resets passwords by code and offers sign-in by
+code (the `auth-email` feature, which you never pick: it is on whenever both are). With `auth`
+alone there is no password reset; the wizard says so, and `add email` brings it later.
 
 ## After the project exists
 
@@ -194,7 +207,7 @@ bunx create-tanstack-cf-saas add billing      # add a feature and what it needs
 bunx create-tanstack-cf-saas remove uploads   # remove a feature and everything it owns
 bun run setup                                 # create the Cloudflare side and deploy
 bun run setup --check                         # list what is still missing
-bunx create-tanstack-cf-saas github           # the repository, branch rules and deploy settings
+bunx create-tanstack-cf-saas github           # the repository, branch rules, deploy settings, setup issues
 ```
 
 The project's own `README.md` covers the rest: migrations, deploys and the two-branch release flow.

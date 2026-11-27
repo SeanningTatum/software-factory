@@ -20,14 +20,16 @@ that builds projects from it.
 
 - **Core holds shared modules of one kind: components only, or services and helpers only. A module
   with both, or with a page, is a feature.** Core modules live in `src/features/core/<name>/` (`db`,
-  `kv`, `observability`, `analytics`, `ui`), shared pure helpers in `src/features/core/lib/`, and
+  `kv`, `email`, `email-templates`, `observability`, `analytics`, `ui`), shared pure helpers in `src/features/core/lib/`, and
   features in `src/features/<name>/` (`consent`, `home`, `auth`, `billing`, `uploads`,
   `workflows`, and the user's own).
 - **A feature or module owns one folder and nothing else**, plus the paths its `feature.json` lists
   in `files`. Names are unique across both levels; tools find the folder from the name. The kernel
   is `src/app/`. Shared wiring is generated into `src/gen/` by `cf-saas-blocks sync`; never
   hand-edit it. Required ones (`"required": true`: `observability`, `analytics`, `ui`, `consent`,
-  `home`) can't be removed; `db`, `kv`, `auth`, `billing`, `workflows` and `uploads` can.
+  `home`) can't be removed; `db`, `kv`, `email`, `auth`, `billing`, `workflows` and `uploads` can.
+  An `"auto": true` one (`auth-email`, `email-templates`) is never chosen: it is on exactly when everything it
+  requires is, and leaves with any of them.
 - **Read `FEATURES.md` and the feature's `TIMELINE.md` first, and add no lines to it.** The template
   is boilerplate: only a project made from it keeps a timeline, and the CLI starts each one's
   History afresh. Here History stays empty, and a Decisions line that a change makes untrue is
@@ -84,6 +86,14 @@ asks for them, so a change to a hook is a change to what `create` hands out.
 `claude/` holds the files the CLI ships. Its bundle copies them into each new project's `.claude/`
 and records a hash per file in `harness.lock.json`; `create-tanstack-cf-saas harness check|sync`
 compares and refreshes it. They are plain files in this repo, not a submodule.
+
+Its workflows are blocks, like features: a script in `claude/workflows/` does the agent work and a
+command in `claude/commands/` owns every stop for the human. `claude/README.md` has the rules for
+adding one. `/foundation` is the first; the others build on the file it writes.
+
+**A workflow ships only with a golden test.** `evals/<name>/` holds its cases, checks and saved real
+outputs; `bun run check` fails a script in `claude/workflows/` without them. After a change to a
+prompt, run the cases again and replace the saved outputs (`evals/README.md`).
 
 The skills and agents for work on this repo live in the Home Repo, `claude-config`, which points
 here. Start sessions there.

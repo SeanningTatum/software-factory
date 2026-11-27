@@ -1,0 +1,140 @@
+{
+  "markdown": "# Product foundation\n\n## Product\nChaser, a working name and not fixed, sends polite payment reminders and collects the payment for freelance designers, so they stop chasing late invoices by hand.\n\n## Problem\nFreelance designers hate asking for money. Today they keep a spreadsheet and write awkward emails weeks after the due date, or let it slide. They lose a few hours a month on it.\n\n## Persona\nA freelance brand or web designer working alone, with 3 to 10 active clients. They invoice from a tool like Wave or from a PDF. They want the money without asking for it. Hating the ask stops them.\n\n## Core scenario\nOn a Monday morning at their desk, on a laptop, a designer sees an invoice two weeks overdue. They want to hand it to Chaser in under a minute and not think about it again until the money lands. It happens a few times a month.\n\n## Also affected\nThe designer's clients, who get the reminders. They should feel nudged, not accused.\n\n## Not for\n- Agencies with a finance person.\n- Freelancers outside design (developers, writers, consultants). We turn them away at sign-up.\n\n## Feel\nCalm, friendly, a bit dry.\nNever pushy, corporate or cute.\n\n## Goals\n1. 50 paying users by the end of March 2027. A paying user is any user on a paid plan, at any price.\n2. $5,000 monthly revenue by the end of December 2027.\n\nEarns by: See Open.\n\n## Anti-goals\n1. We will not build invoicing itself.\n2. No mobile app.\n\n## Assumptions\nDesigners will let a tool email their clients in their name.\n\n## Open\n- Goals: Earns by is empty. Nothing says how Chaser makes money, or what the paid plan is or costs.\n- Goals: Goal 2 does not say if \"revenue\" is Chaser's own income or the payments it collects for designers.\n- Anti-goals: Neither anti-goal says why.\n- Anti-goals: Collecting payment from the start may pull against \"We will not build invoicing itself\". Nothing says where the line falls.\n- Core scenario: How an invoice reaches Chaser (Wave, PDF, other) is not said.\n- Not for: How sign-up tells a designer from another freelancer is not said.\n- Assumptions: Nothing says how or when we will test the one assumption.\n",
+  "gaps": [
+    "Goals: Earns by is empty. Nothing says how Chaser makes money, or what the paid plan is or costs.",
+    "Goals: Goal 2 does not say if \"revenue\" is Chaser's own income or the payments it collects for designers.",
+    "Anti-goals: Neither anti-goal says why.",
+    "Anti-goals: Collecting payment from the start may pull against \"We will not build invoicing itself\". Nothing says where the line falls.",
+    "Core scenario: How an invoice reaches Chaser (Wave, PDF, other) is not said.",
+    "Not for: How sign-up tells a designer from another freelancer is not said.",
+    "Assumptions: Nothing says how or when we will test the one assumption."
+  ],
+  "questions": [
+    {
+      "section": "Problem",
+      "question": "What evidence do you have that designers lose real money or time to late invoices, and that they would pay to stop it?",
+      "why": "The Problem is an unsupported claim (\"a few hours a month\"), and if the pain is small, 50 paying users and $5,000 a month are out of reach.",
+      "options": [
+        "I have talked to designers",
+        "I lost money this way myself",
+        "Only a guess so far",
+        "Designers ready to pay"
+      ]
+    },
+    {
+      "section": "Assumptions",
+      "question": "If designers refuse to let a tool email their clients in their name, what is the fallback?",
+      "why": "This one assumption carries the whole product, and the document names no test for it and no alternative if it fails.",
+      "options": [
+        "Send from Chaser's own address",
+        "Designer approves each email",
+        "Draft it, designer sends",
+        "No fallback; product ends"
+      ]
+    },
+    {
+      "section": "Problem",
+      "question": "What do designers use today to chase payment, and why would they switch to Chaser?",
+      "why": "Wave and similar invoicing tools already send automatic reminders, so the document must say what Chaser does that they and a spreadsheet do not.",
+      "options": [
+        "Wave's own reminders",
+        "Spreadsheet and manual email",
+        "They let it slide",
+        "Chasing is not what they buy"
+      ]
+    },
+    {
+      "section": "Core scenario",
+      "question": "When does a designer hand an invoice to Chaser: only once it is overdue, or when they send it, before any due date?",
+      "why": "The scenario shows an invoice two weeks late, but the Problem and the product (reminders and collecting payment) could begin at sending, and each pictures a different moment and a different first reminder.",
+      "options": [
+        "Only once it is overdue",
+        "When they send the invoice",
+        "Either, designer's choice"
+      ]
+    },
+    {
+      "section": "Not for",
+      "question": "Which designers count as design: only brand and web designers, or also UI, product, graphic and illustrators?",
+      "why": "Sign-up turns away non-designers, so the line decides who is refused, and the Persona names only brand and web designers.",
+      "options": [
+        "Brand and web only",
+        "Any visual design work",
+        "Brand, web, UI and product"
+      ]
+    },
+    {
+      "section": "Feel",
+      "question": "Do reminders reach the client in the designer's voice or in Chaser's, and does the client pay on a page branded as the designer's or Chaser's?",
+      "why": "The clients are the people most affected, and 'a bit dry' reads very differently from the designer than from an unknown tool.",
+      "options": [
+        "Designer's voice and brand",
+        "Chaser's voice, plain page",
+        "Designer's voice, Chaser page"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Where is the line between \"no invoicing\" and collecting payment: may Chaser make a pay page, a receipt, or a payment-plan split for an invoice made elsewhere?",
+      "why": "Collecting payment was decided, so without a line any payment-side feature (pay page, receipts, part payments) could be argued to be invoicing or not.",
+      "options": [
+        "Pay page only, no documents",
+        "Pay page plus receipts",
+        "Also part payments and plans",
+        "Never issue any document"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Will Chaser ever go beyond polite nudges to firm notices, late fees or a collections handoff?",
+      "why": "This is the most tempting growth path for a late-payment product and it would break the \"nudged, not accused\" feel, so it needs a stated reason either way.",
+      "options": [
+        "No, always polite",
+        "One firm final notice only",
+        "Designer can add late fees",
+        "Hand off to collections"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Will Chaser ever advance the designer the money before the client pays (factoring or a loan)?",
+      "why": "A product that already holds the payment flow will be tempted to sell advances, which changes the risk, the licensing and what revenue means in Goal 2.",
+      "options": [
+        "No, never",
+        "Not before 2028",
+        "Yes, as a paid add-on"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "How does Chaser earn: what do designers pay, and when?",
+      "why": "\"Earns by\" is empty, and \"paying user on a paid plan\" in goal 1 only makes sense once the plan and price are fixed; $5,000 a month from 50 users also needs about $100 each.",
+      "options": [
+        "Flat monthly subscription",
+        "Percent of payments collected",
+        "Subscription plus a small fee",
+        "Fee per reminded invoice"
+      ]
+    },
+    {
+      "section": "Goals",
+      "question": "In goal 2, does \"revenue\" mean Chaser's own income or the payments it collects for designers?",
+      "why": "The two can differ by ten times or more, and the goal is not checkable on a date until the number counts one of them.",
+      "options": [
+        "Chaser's own income only",
+        "Total payments collected",
+        "Own income, report both"
+      ]
+    },
+    {
+      "section": "Anti-goals",
+      "question": "Where does collecting payment stop and invoicing begin?",
+      "why": "The founder chose to collect payment from the start, which may break \"We will not build invoicing itself\", so the line has to be drawn in the document.",
+      "options": [
+        "Pay link on existing invoice",
+        "Chaser pay page per invoice",
+        "Pay page, no invoice creation"
+      ]
+    }
+  ]
+}

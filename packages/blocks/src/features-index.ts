@@ -6,7 +6,7 @@ import { timelinePath } from "./timeline.ts";
 export const FEATURES_INDEX = "FEATURES.md";
 
 const line = (m: Feature) => {
-  const kind = m.required ? "required" : "optional";
+  const kind = m.required ? "required" : m.auto ? "auto" : "optional";
   const requires = m.requires.length ? [...m.requires].sort(byCodeUnit).join(", ") : "nothing";
   return `- **${m.name}** (${kind}): ${m.description} Requires: ${requires}. [TIMELINE.md](${timelinePath(m)})`;
 };

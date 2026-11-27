@@ -1,0 +1,41 @@
+import { expect, test } from "@playwright/test";
+import { asVisitor, expectAccessible, signUp, uniqueEmail } from "#/app/testing/e2e.ts";
+
+test("@golden /verify-email lets a new account in once it enters its mailed code", async ({
+  page,
+}) => {
+  await signUp(page, "E2E Verify");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/verify-email$/);
+});
+
+test("@error /verify-email refuses a wrong code and has no serious a11y violation", async ({
+  page,
+}) => {
+  await asVisitor(page);
+  await page.goto("/verify-email");
+  await page.getByLabel("Email").fill("nobody@example.com");
+  await page.getByRole("button", { name: "Email me a code" }).click();
+  await page.getByLabel("Code").fill("00000000");
+  await page.getByRole("button", { name: "Verify" }).click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expectAccessible(page);
+});
+
+test("@error /verify-email shows the second address after a mistyped first sign-up", async ({
+  page,
+}) => {
+  await asVisitor(page);
+  await page.goto("/signup");
+  for (const email of [uniqueEmail(), uniqueEmail()]) {
+    await expect(page.getByRole("button", { name: "Create account" })).toBeEnabled();
+    await page.getByLabel("Name").fill("E2E Typo");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("correct horse battery");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(/\/verify-email$/);
+    await expect(page.getByText(email)).toBeVisible();
+    await page.goBack();
+  }
+});

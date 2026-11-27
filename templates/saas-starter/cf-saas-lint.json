@@ -9,11 +9,16 @@
       "src/app/run-effect.ts",
       "src/app/middleware.ts",
       "src/features/*/workflows.ts",
+      "src/features/auth-email/auth-plugins.ts",
       "src/features/core/*/workflows.ts"
     ],
     "no-try-catch": [],
     "no-repeated-api-path": ["src/app/body.ts"],
-    "one-component-per-file": ["src/features/core/ui/components/**", "src/routes/__root.tsx"],
+    "one-component-per-file": [
+      "src/features/core/ui/components/**",
+      "src/features/core/email-templates/components/**",
+      "src/routes/__root.tsx"
+    ],
     "no-process-env": ["src/features/*/e2e/**", "src/app/machines.test.ts"]
   },
   "testExempt": [

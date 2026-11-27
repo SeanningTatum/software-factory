@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

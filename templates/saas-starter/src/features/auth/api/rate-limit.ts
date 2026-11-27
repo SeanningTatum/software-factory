@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { Context, Effect, Layer } from "effect";
 import { CloudflareEnv } from "#/app/env.ts";
 import type { RateLimited } from "#/app/errors.ts";
@@ -21,7 +22,6 @@ export class AuthRateLimiter extends Context.Service<
   );
 }
 
-/** Add `/api/auth/request-password-reset` here once a reset sender is wired. */
 export const LIMITED_PATHS = [
   SIGN_IN,
   SIGN_UP,
@@ -34,3 +34,6 @@ export const LIMITED_PATHS = [
 export const limitKey = (headers: Headers, path: string) => `${clientAddress(headers)}:${path}`;
 
 export const accountKey = (email: string) => `acct:${email.toLowerCase()}`;
+
+/** Its own count, so requests for codes can't spend the account's password sign-in limit. */
+export const codeKey = (email: string) => `code:${email.toLowerCase()}`;

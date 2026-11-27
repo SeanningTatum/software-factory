@@ -76,7 +76,9 @@ export const timelineSection = (
   const where = isCoreModule(manifest) ? "core module" : "feature";
   const kind = manifest.required
     ? `${where}, required; it can't be removed`
-    : `${where}, optional; \`cf-saas-blocks remove ${manifest.name}\` takes it out`;
+    : manifest.auto
+      ? `${where}, auto; on whenever ${manifest.requires.join(" and ")} are, and removed with either`
+      : `${where}, optional; \`cf-saas-blocks remove ${manifest.name}\` takes it out`;
   const machines = scan.machines.length
     ? `${code(scan.machines)}. Diagrams under Machines, from \`bun run machines:print\`.`
     : "none";

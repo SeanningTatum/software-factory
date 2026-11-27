@@ -129,7 +129,7 @@ const main = defineCommand({
     github: defineCommand({
       meta: {
         description:
-          "Put the project on GitHub: staging as the default branch, production protected, the rulesets in .github/rulesets/, and the Cloudflare settings CI deploys with",
+          "Put the project on GitHub: staging as the default branch, production protected, the rulesets in .github/rulesets/, the Cloudflare settings CI deploys with, and an issue for each setup step left to do by hand",
       },
       args: {
         public: {

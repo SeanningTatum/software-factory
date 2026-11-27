@@ -1,3 +1,4 @@
+// cf-saas-lint allow comments
 import { env, waitUntil } from "cloudflare:workers";
 import { createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 import { Effect } from "effect";

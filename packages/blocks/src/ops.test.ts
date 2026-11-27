@@ -31,6 +31,10 @@ const project = () => {
     "src/features/core/db/layer.ts": "export const layer = 1;\n",
     "src/features/auth/feature.json": manifest("auth", { requires: ["db"] }),
     "src/features/core/kv/feature.json": manifest("kv"),
+    "src/features/auth-kv/feature.json": manifest("auth-kv", {
+      requires: ["auth", "kv"],
+      auto: true,
+    }),
     "src/features/core/kv/layer.ts": "export const layer = 1;\n",
   };
   for (const [path, text] of Object.entries(files)) {
@@ -59,6 +63,14 @@ describe("removeBlock", () => {
     expect(existsSync(join(root, "drizzle.config.ts"))).toBe(false);
     expect(existsSync(join(root, "src/features/home"))).toBe(true);
     expect(existsSync(join(root, "src/features/core/lib/call.ts"))).toBe(true);
+  });
+});
+
+describe("removeBlock on an auto feature", () => {
+  test("refuses, and names what to remove instead", () => {
+    expect(() => removeBlock(project(), "auth-kv", { force: true })).toThrow(
+      /"auth-kv" is on because .* are; remove one of those instead/,
+    );
   });
 });
 
@@ -157,10 +169,17 @@ describe("addBlock", () => {
     expect(addBlock(root, template, "auth")).toEqual(["db", "auth"]);
     expect(existsSync(join(root, "src/features/core/db/layer.ts"))).toBe(true);
     expect(existsSync(join(root, "src/features/db"))).toBe(false);
-    expect(addBlock(root, template, "kv")).toEqual(["kv"]);
+    expect(addBlock(root, template, "kv")).toEqual(["kv", "auth-kv"]);
     expect(readFileSync(join(root, "src/gen/layers.ts"), "utf8")).toContain(
       'import { layer as kv } from "../features/core/kv/layer.ts";',
     );
+  });
+
+  test("an auto feature leaves with either feature it needs, and blocks neither", () => {
+    const root = project();
+    removeBlock(root, "kv", { force: true });
+    expect(existsSync(join(root, "src/features/auth-kv"))).toBe(false);
+    expect(existsSync(join(root, "src/features/auth"))).toBe(true);
   });
 });
 

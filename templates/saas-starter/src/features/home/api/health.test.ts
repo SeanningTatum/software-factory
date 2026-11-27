@@ -34,8 +34,10 @@ describe("readiness", () => {
 
   it("names the required settings that are missing", async () => {
     const ready = await check({ APP_URL: APP });
-    expect(ready.ok).toBe(requiredSettings.length <= 1);
-    expect(ready.missing).toEqual(requiredSettings.filter((key) => key !== "APP_URL"));
+    const required: ReadonlyArray<string> = requiredSettings;
+    const missing = required.filter((key) => key !== "APP_URL");
+    expect(ready.ok).toBe(missing.length === 0);
+    expect(ready.missing).toEqual(missing);
   });
 
   it("is not ready when the database doesn't answer", async () => {

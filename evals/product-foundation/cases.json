@@ -1,0 +1,96 @@
+[
+  {
+    "name": "first-round",
+    "args": {
+      "answers": {
+        "product": "Chaser (a working name): it sends polite payment reminders for freelance designers so they stop chasing late invoices by hand. Today they keep a spreadsheet and write awkward emails weeks after the due date, or just let it slide.",
+        "persona": "A freelance brand or web designer working alone, 3 to 10 active clients, invoices from a tool like Wave or a PDF. Hates asking for money and loses a few hours a month on it. Not for agencies with a finance person.",
+        "scenario": "On a Monday morning at their desk, a designer sees an invoice is two weeks overdue. They want to hand it to Chaser in under a minute, on a laptop, and not think about it again until the money lands. It happens a few times a month.",
+        "alsoAffected": "The designer's clients, who get the reminders. They should feel nudged, not accused.",
+        "feel": "Calm, friendly, a bit dry. Never pushy, corporate or cute.",
+        "goals": "50 paying users by the end of March 2027. Grow fast after that.",
+        "earns": "",
+        "antiGoals": "We will not build invoicing itself. No mobile app.",
+        "assumptions": "Designers will let a tool email their clients in their name."
+      }
+    },
+    "mustCatch": [
+      {
+        "flaw": "Goal 2, \"grow fast\", has no number or date",
+        "pattern": "grow fast|goal 2"
+      },
+      {
+        "flaw": "Nothing says how the product earns or what it costs",
+        "pattern": "earn|price"
+      },
+      {
+        "flaw": "The anti-goals give no reason",
+        "pattern": "anti-goals?\\b.*\\b(why|reason)|\\b(why|reason)\\b.*(invoicing|mobile app)"
+      }
+    ],
+    "mustNotAsk": []
+  },
+  {
+    "name": "second-round",
+    "args": {
+      "answers": {
+        "product": "Chaser (a working name): it sends polite payment reminders for freelance designers so they stop chasing late invoices by hand. Today they keep a spreadsheet and write awkward emails weeks after the due date, or just let it slide.",
+        "persona": "A freelance brand or web designer working alone, 3 to 10 active clients, invoices from a tool like Wave or a PDF. Hates asking for money and loses a few hours a month on it. Not for agencies with a finance person.",
+        "scenario": "On a Monday morning at their desk, a designer sees an invoice is two weeks overdue. They want to hand it to Chaser in under a minute, on a laptop, and not think about it again until the money lands. It happens a few times a month.",
+        "alsoAffected": "The designer's clients, who get the reminders. They should feel nudged, not accused.",
+        "feel": "Calm, friendly, a bit dry. Never pushy, corporate or cute.",
+        "goals": "50 paying users by the end of March 2027. Grow fast after that.",
+        "earns": "",
+        "antiGoals": "We will not build invoicing itself. No mobile app.",
+        "assumptions": "Designers will let a tool email their clients in their name."
+      },
+      "previous": "# Product foundation\n\n## Product\nChaser sends polite payment reminders for freelance designers so they stop chasing late invoices by hand. Chaser is a working name, not fixed.\n\n## Problem\nFreelance designers hate asking for money. Today they keep a spreadsheet and write awkward emails weeks after the due date, or let it slide. They lose a few hours a month on it.\n\n## Persona\nA freelance brand or web designer working alone, with 3 to 10 active clients. They invoice from a tool like Wave or from a PDF. They want the money without asking for it. Hating the ask stops them.\n\n## Core scenario\nOn a Monday morning at their desk, on a laptop, a designer sees an invoice two weeks overdue. They want to hand it to Chaser in under a minute and not think about it again until the money lands. It happens a few times a month.\n\n## Also affected\nThe designer's clients, who get the reminders. They should feel nudged, not accused.\n\n## Not for\nAgencies with a finance person.\n\n## Feel\nCalm, friendly, a bit dry.\nNever pushy, corporate or cute.\n\n## Goals\n1. 50 paying users by the end of March 2027.\n\nEarns by: See Open.\n\n## Anti-goals\n1. We will not build invoicing itself.\n2. No mobile app.\n\n## Assumptions\nDesigners will let a tool email their clients in their name.\n\n## Open\n- Goals: \"Grow fast after that\" has no number and no date.\n- Goals: \"Paying users\" has no price or plan.\n- Goals: Earns by is empty. Nothing says how Chaser makes money.\n- Anti-goals: Neither anti-goal says why.\n- Core scenario: How an invoice reaches Chaser (Wave, PDF, other) is not said.\n- Assumptions: Nothing says how or when we will test the one assumption.\n",
+      "feedback": [
+        {
+          "question": "Goal 2 (\"Grow fast after that\") has no number or date, so what should it say?",
+          "answer": "$5,000 monthly revenue by end of December 2027"
+        },
+        {
+          "question": "What counts as a \"paying user\" in goal 1?",
+          "answer": "Any user on a paid plan, any price"
+        },
+        {
+          "question": "Will Chaser ever take the payment itself, or only prompt the client to pay through the designer's own invoice link?",
+          "answer": "Collect payment from the start"
+        },
+        {
+          "question": "Do we turn away freelancers outside design (developers, writers, consultants) who sign up, or take their money and not market to them?",
+          "answer": "Turn them away at sign-up"
+        }
+      ]
+    },
+    "mustCatch": [
+      {
+        "flaw": "Collecting payment pulls against the no-invoicing anti-goal",
+        "pattern": "invoic[^.]*(collect|pay page)|(collect|pay page)[^.]*invoic"
+      },
+      {
+        "flaw": "$5,000 a month from 50 users needs a price nobody has named",
+        "pattern": "earn|price"
+      }
+    ],
+    "mustNotAsk": [
+      {
+        "settled": "Freelancers outside design are turned away at sign-up",
+        "pattern": "freelancers outside design"
+      },
+      {
+        "settled": "A paying user is anyone on a paid plan, at any price",
+        "pattern": "paying user.*(minimum|count)"
+      },
+      {
+        "settled": "Chaser collects payment from the start",
+        "pattern": "take (the )?payment itself|ever (take|collect) payment"
+      },
+      {
+        "settled": "Goal 2 is $5,000 monthly revenue by December 2027",
+        "pattern": "goal 2.*(number|date)"
+      }
+    ]
+  }
+]

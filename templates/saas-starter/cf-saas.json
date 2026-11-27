@@ -6,6 +6,7 @@
       "AUTH_LIMITER",
       "BUCKET",
       "DB",
+      "EMAIL",
       "EVENTS_LIMITER",
       "KV",
       "ONBOARDING_WORKFLOW",
@@ -15,6 +16,7 @@
     "vars": [
       "ANALYTICS_PROVIDER",
       "APP_URL",
+      "EMAIL_FROM",
       "ERROR_REPORTER",
       "LOG_LEVEL",
       "POSTHOG_HOST",

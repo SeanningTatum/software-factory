@@ -9,6 +9,7 @@ import { add, remove } from "./commands.ts";
 import {
   blankSettings,
   hasTables,
+  missedAuto,
   namespaceIds,
   parseFeatures,
   scaffold,
@@ -49,7 +50,7 @@ describe("scaffold", () => {
     expect(wrangler).toContain('"name": "acme-app"');
     expect(wrangler).toContain("acme-app-db-staging");
     expect(wrangler).not.toContain("UPLOAD_LIMITER");
-    expect(readFileSync(join(dir, "src/routes/__root.tsx"), "utf8")).toContain(
+    expect(readFileSync(join(dir, "src/app/constants.ts"), "utf8")).toContain(
       'APP_NAME = "Acme App"',
     );
     expect(readFileSync(join(dir, ".dev.vars"), "utf8")).toMatch(/^BETTER_AUTH_SECRET=\S{32,}$/m);
@@ -446,5 +447,30 @@ describe("names", () => {
     expect(validateName("my-app")).toBeUndefined();
     expect(validateName("-x")).toBeDefined();
     expect(titleCase("my-cool-app")).toBe("My Cool App");
+  });
+});
+
+describe("missedAuto", () => {
+  const block = (name: string, extra: object = {}) =>
+    [name, { name, title: name, description: `${name}.`, requires: [], ...extra }] as const;
+  const manifests = new Map([
+    block("auth"),
+    block("email"),
+    block("email-templates", { requires: ["email"], auto: true }),
+    block("auth-email", {
+      title: "Auth emails",
+      requires: ["auth", "email", "email-templates"],
+      auto: true,
+    }),
+  ]);
+
+  test("says what auth without email leaves out, and how to get it", () => {
+    expect(missedAuto(manifests, ["auth"])).toEqual([
+      'auth without email leaves out "Auth emails": auth-email. Choose email too, or run `add email` later.',
+    ]);
+  });
+  test("is quiet when the auto feature is on, or when nothing it needs is", () => {
+    expect(missedAuto(manifests, ["auth", "email", "email-templates", "auth-email"])).toEqual([]);
+    expect(missedAuto(manifests, [])).toEqual([]);
   });
 });

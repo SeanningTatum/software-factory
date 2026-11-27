@@ -5,7 +5,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
-import { afterSignIn, RedirectSearch } from "./redirect.ts";
+import { afterSignIn, RedirectSearch, toVerify } from "./redirect.ts";
 
 const root = createRootRoute();
 const page = (path: string) => createRoute({ getParentRoute: () => root, path });
@@ -34,4 +34,11 @@ describe("RedirectSearch", () => {
   it.each(["//evil.com", "/\\evil.com", "https://evil.com"])("refuses %s", (value) =>
     expect(validate(value).issues).toBeDefined(),
   );
+});
+
+describe("toVerify", () => {
+  it("carries the email in history state and keeps it out of the URL", () => {
+    const target = toVerify("/verify-email", "a+b@c.dev");
+    expect(target).toEqual({ href: "/verify-email", state: { unverifiedEmail: "a+b@c.dev" } });
+  });
 });

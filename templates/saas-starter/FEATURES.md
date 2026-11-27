@@ -14,6 +14,8 @@ only. Shared pure helpers sit in `src/features/core/lib/`.
 - **observability** (required): JSON logs stamped with the request id and user, redaction, error reports to the console or Sentry, an optional alert webhook, and /api/browser-report. Requires: nothing. [TIMELINE.md](src/features/core/observability/TIMELINE.md)
 - **ui** (required): shadcn/ui components, the cn helper, useHydrated, and the site header and footer. Requires: nothing. [TIMELINE.md](src/features/core/ui/TIMELINE.md)
 - **db** (optional): Cloudflare D1 (SQLite) through Drizzle, as an Effect Database service, with real-SQL tests. Requires: nothing. [TIMELINE.md](src/features/core/db/TIMELINE.md)
+- **email** (optional): Transactional email through Cloudflare Email Service, as an Effect Email service over the send_email binding. With auth, adds password reset, email verification and sign-in by code. Requires: nothing. [TIMELINE.md](src/features/core/email/TIMELINE.md)
+- **email-templates** (auto): The one look every mail shares, as React Email components (layout, text, button, code), and renderMail, which turns a mail into the HTML and plain text Email.send takes. Requires: email. [TIMELINE.md](src/features/core/email-templates/TIMELINE.md)
 - **kv** (optional): A Workers KV namespace behind a typed, Schema-checked KeyValue service with a read-through cache helper. Requires: nothing. [TIMELINE.md](src/features/core/kv/TIMELINE.md)
 
 ## Features
@@ -24,6 +26,7 @@ own features go here too.
 - **consent** (required): The cookie consent banner and its state machine, the cookie settings button, and the analytics tracker that waits for consent. Honours Do Not Track and Global Privacy Control. Requires: nothing. [TIMELINE.md](src/features/consent/TIMELINE.md)
 - **home** (required): The home page and the /api/health check. Requires: nothing. [TIMELINE.md](src/features/home/TIMELINE.md)
 - **auth** (optional): Better Auth with email and password, sessions in D1, rate-limited sign-in and sign-up. Requires: db. [TIMELINE.md](src/features/auth/TIMELINE.md)
+- **auth-email** (auto): What auth does with email, through Better Auth's emailOTP plugin: a code to verify the address at sign-up, to reset a password, and to sign in without one. Requires: auth, email, email-templates. [TIMELINE.md](src/features/auth-email/TIMELINE.md)
 - **billing** (optional): Stripe subscriptions through Better Auth's Stripe plugin: checkout, customer portal and webhooks. Requires: auth. [TIMELINE.md](src/features/billing/TIMELINE.md)
 - **uploads** (optional): Per-user file uploads to R2 with size, type and magic-byte checks, a rate limit and an upload state machine. Requires: auth. [TIMELINE.md](src/features/uploads/TIMELINE.md)
 - **workflows** (optional): A durable onboarding Cloudflare Workflow whose steps are Effects, in the order a state machine sets. Requires: nothing. [TIMELINE.md](src/features/workflows/TIMELINE.md)
