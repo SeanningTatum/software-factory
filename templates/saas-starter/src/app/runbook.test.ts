@@ -2,7 +2,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { unstable_readConfig } from "wrangler";
 
 const read = (path: string) => readFileSync(path, "utf8");
 const noGithub = !existsSync(".github");
@@ -10,10 +11,29 @@ const noGithub = !existsSync(".github");
 const noJq = spawnSync("sh", ["-c", "command -v jq"]).status !== 0;
 
 describe("runbook config", () => {
-  it("keeps Workers Logs on and marks the Worker for Logpush", () => {
-    const wrangler = read("wrangler.jsonc");
-    expect(wrangler).toMatch(/^\s*"observability":\s*\{\s*"enabled":\s*true/m);
-    expect(wrangler).toMatch(/^\s*"logpush":\s*true/m);
+  it("marks the Worker for Logpush", () => {
+    expect(read("wrangler.jsonc")).toMatch(/^\s*"logpush":\s*true/m);
+  });
+
+  it("keeps every log line and whole traces: one in ten in production, all in staging", () => {
+    // Without an env name wrangler reads CLOUDFLARE_ENV, which would make "production" staging.
+    vi.stubEnv("CLOUDFLARE_ENV", undefined);
+    const observability = (env?: string) =>
+      unstable_readConfig({ config: "wrangler.jsonc", env }).observability;
+    const production = observability();
+    const staging = observability("staging");
+    for (const config of [production, staging]) {
+      expect(config).toMatchObject({
+        enabled: true,
+        redact_query_string: true,
+        traces: { enabled: true },
+        issues: { enabled: true },
+      });
+      expect(config?.head_sampling_rate ?? 1).toBe(1);
+      expect(config?.logs?.head_sampling_rate ?? 1).toBe(1);
+    }
+    expect(production?.traces?.head_sampling_rate).toBe(0.1);
+    expect(staging?.traces?.head_sampling_rate).toBe(1);
   });
 
   it("declares the alert webhook secret", () => {
