@@ -182,7 +182,8 @@ describe.skipIf(noGithub)("branch rules", () => {
     const checked = (env: string, url: string) =>
       spawnSync("sh", [script, env, url], { cwd: dir, encoding: "utf8" });
     expect(checked("production", "https://example.com/").status).toBe(0);
-    expect(checked("staging", "https://s.example.workers.dev").status).toBe(0);
+    expect(checked("staging", "https://S.example.workers.dev").status).toBe(0);
+    expect(checked("staging", "").status).toBe(1);
     const wrong = checked("production", "https://app.example.com");
     expect(wrong.status).toBe(1);
     expect(wrong.stdout).toContain("PRODUCTION_URL is https://app.example.com");

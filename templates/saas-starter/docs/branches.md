@@ -75,8 +75,9 @@ deploys first, so without that line it takes the domain. Then run one command:
 bunx create-tanstack-cf-saas setup --env production --var APP_URL=https://example.com
 ```
 
-It writes the URL as production's `APP_URL`, deploys under it, and sets `PRODUCTION_URL` on
-GitHub. Run plain `setup` at a terminal and it asks for each environment's URL instead. Merge
+It writes the URL as production's `APP_URL` and sets `PRODUCTION_URL` on GitHub. When your
+checkout is `staging`'s tip, changed only in `wrangler.jsonc`, it also deploys under the new URL;
+otherwise the next promotion does. Run plain `setup` at a terminal and it asks for each environment's URL instead. Merge
 the changed `wrangler.jsonc` into `staging` before the next promotion: `promote.yml` and
 `deploy.yml` refuse to start while `PRODUCTION_URL` and production's `APP_URL` there differ,
 because `/api/health` answers 503 under any URL but `APP_URL`, and the smoke test would roll the

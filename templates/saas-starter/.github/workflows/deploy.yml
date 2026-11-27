@@ -75,6 +75,7 @@ jobs:
             esac
             exit 1
           fi
+          echo "$body"
           # A CSP with a nonce is sent only by a production build, so only a deploy can see it break.
           csp() {
             curl -sS --max-time 15 -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" "$1/" || return 1
