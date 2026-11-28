@@ -41,7 +41,7 @@ function RootComponent() {
   // The theme script is inline: without the nonce the production CSP blocks it.
   const nonce = useRouter().options.ssr?.nonce;
   return (
-    <RootProvider theme={{ nonce }}>
+    <RootProvider theme={{ nonce, defaultTheme: "dark" }}>
       <ConsentProvider input={consent}>
         <div className="flex min-h-dvh flex-col">
           <div className="flex-1">

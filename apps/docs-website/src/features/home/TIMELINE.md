@@ -17,13 +17,37 @@ The home page and the /api/health check.
 - Services: none
 - Errors: none
 - Events: none
-- Machines: none
+- Machines: `components/blocks.machine.ts`. Diagrams under Machines, from `bun run machines:print`.
 <!-- generated:end -->
+
+<!-- machines:start -->
+
+## Machines
+
+Written by `bun run machines:print`. `bun run test` fails when a diagram is out of date.
+
+### blocks
+
+Source: `src/features/home/components/blocks.machine.ts`
+
+```mermaid
+stateDiagram-v2
+  [*] --> idle
+  idle --> copying : COPY
+  copying --> copied : done: 0.blocks.copying
+  copying --> refused : error: 0.blocks.copying
+  copied --> idle : after
+  refused --> idle : after
+```
+
+<!-- machines:end -->
 
 ## Decisions
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <decision>. Why: <reason>. (<commit sha or PR URL>) -->
 
+- 2026-11-28 — The picker's rules (what a block needs, the CLI's feature order) are copied into `lib/blocks.ts`, not read from the template. Why: the docs site imports nothing from `templates/`; when a block's `requires` changes there, change it here.
+- 2026-11-28 — The film is one file in `public/home/`, turned dark by a CSS filter (invert, then turn the hue half way) instead of a second dark file. Why: the paper goes dark, the crate stays orange, and visitors download one 2 MB film, not two.
 - 2026-11-27 — The home page's size budget rises from 180 kB to 240 kB for Fumadocs' `HomeLayout`. Why: it is the same nav, search and theme code `/docs` loads, so a visitor fetches it once (https://github.com/SeanningTatum/software-factory/pull/72).
 - 2026-11-24 — The production CSP adds `frame-src https://challenges.cloudflare.com` for the Turnstile widget (see auth). Why: `default-src 'self'` would block its frame; its script needs no source because `'strict-dynamic'` trusts scripts our nonced code adds.
 - 2026-11-24 — Server functions refuse cross-site calls: `src/start.ts` adds Start's `csrf` middleware (`src/app/middleware.ts`), filtered to server functions. Why: Start warned in dev that they had no CSRF check; API routes (`/api/auth/*`, `/api/events`, Stripe webhooks) are not server functions and stay open.
@@ -34,6 +58,10 @@ The home page and the /api/health check.
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-28 — On wide screens the film runs past the text column, up to a 100rem hero, so it is not cramped; the text still lines up with the nav.
+- 2026-11-28 — A new cut of the film, without the guard booth and the revolving door at the gate.
+- 2026-11-28 — The film stays inside the page width and fades on every edge, and the page text lines up with the nav, so the home page balances on wide screens.
+- 2026-11-28 — The home page is the brand's first page: a film of a crate crossing a factory, a block picker that writes the create command, the picked blocks drawn as a stack of plates, the gates and the CLI's other commands.
 - 2026-11-27 — The heading reads "Software Factory for Cloudflare Workers" and the intro names the CLI and the Claude Code harness, after the project was renamed.
 - 2026-11-27 — The home page sits in Fumadocs' `HomeLayout`, whose nav links to the docs.
 - 2026-11-27 — The home page introduces the docs and links to /docs.

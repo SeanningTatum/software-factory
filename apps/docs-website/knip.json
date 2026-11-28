@@ -11,5 +11,9 @@
     "src/features/*/e2e/*.spec.ts"
   ],
   "project": ["src/**/*.{ts,tsx}"],
-  "ignoreDependencies": ["tailwindcss"]
+  "ignoreDependencies": [
+    "tailwindcss",
+    "@fontsource-variable/schibsted-grotesk",
+    "@fontsource/commit-mono"
+  ]
 }
