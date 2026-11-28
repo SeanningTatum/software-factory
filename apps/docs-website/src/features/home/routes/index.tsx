@@ -61,7 +61,7 @@ function Home() {
         .filter((item) => item.to !== "/")
         .map((item) => ({ text: item.label, url: item.to }))}
     >
-      <div className="relative mx-auto w-full max-w-[76rem] overflow-hidden">
+      <div className="relative mx-auto w-full max-w-[100rem] overflow-hidden">
         <div
           className={`${WRAP} relative z-10 pt-[clamp(3rem,9vh,6.5rem)] pb-6 lg:min-h-[min(88vh,50rem)] lg:pb-24`}
         >
@@ -78,7 +78,7 @@ function Home() {
           </div>
           {links}
         </div>
-        <div className="film-stage aspect-video w-full lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[64%]">
+        <div className="film-stage aspect-video w-full lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[62%]">
           <video
             className="film size-full object-cover motion-reduce:hidden"
             src="/home/factory.mp4"

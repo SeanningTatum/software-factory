@@ -58,6 +58,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-28 — On wide screens the film runs past the text column, up to a 100rem hero, so it is not cramped; the text still lines up with the nav.
 - 2026-11-28 — A new cut of the film, without the guard booth and the revolving door at the gate.
 - 2026-11-28 — The film stays inside the page width and fades on every edge, and the page text lines up with the nav, so the home page balances on wide screens.
 - 2026-11-28 — The home page is the brand's first page: a film of a crate crossing a factory, a block picker that writes the create command, the picked blocks drawn as a stack of plates, the gates and the CLI's other commands.
