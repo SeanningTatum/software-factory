@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
 });
 
 const REPO = "https://github.com/SeanningTatum/software-factory";
-const WRAP = "mx-auto w-full max-w-[76rem] px-4 sm:px-10";
+const WRAP = "mx-auto w-full max-w-[76rem] px-4";
 const H2 =
   "max-w-[18ch] text-[clamp(2rem,3.8vw,3.25rem)] leading-[1.02] font-medium tracking-[-0.035em] text-balance";
 const LEDE = "mt-5 max-w-[62ch] text-muted-foreground";
@@ -61,7 +61,7 @@ function Home() {
         .filter((item) => item.to !== "/")
         .map((item) => ({ text: item.label, url: item.to }))}
     >
-      <div className="relative overflow-hidden">
+      <div className="relative mx-auto w-full max-w-[76rem] overflow-hidden">
         <div
           className={`${WRAP} relative z-10 pt-[clamp(3rem,9vh,6.5rem)] pb-6 lg:min-h-[min(88vh,50rem)] lg:pb-24`}
         >
@@ -78,7 +78,7 @@ function Home() {
           </div>
           {links}
         </div>
-        <div className="film-stage aspect-video w-full lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[68%]">
+        <div className="film-stage aspect-video w-full lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[64%]">
           <video
             className="film size-full object-cover motion-reduce:hidden"
             src="/home/factory.mp4"

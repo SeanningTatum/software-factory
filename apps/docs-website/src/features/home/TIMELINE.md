@@ -58,6 +58,7 @@ stateDiagram-v2
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-28 — The film stays inside the page width and fades on every edge, and the page text lines up with the nav, so the home page balances on wide screens.
 - 2026-11-28 — The home page is the brand's first page: a film of a crate crossing a factory, a block picker that writes the create command, the picked blocks drawn as a stack of plates, the gates and the CLI's other commands.
 - 2026-11-27 — The heading reads "Software Factory for Cloudflare Workers" and the intro names the CLI and the Claude Code harness, after the project was renamed.
 - 2026-11-27 — The home page sits in Fumadocs' `HomeLayout`, whose nav links to the docs.
