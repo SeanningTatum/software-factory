@@ -31,6 +31,7 @@ The documentation pages: MDX from content/docs, rendered with Fumadocs, with a s
 
 <!-- Newest first, one line each: - YYYY-MM-DD — <what changed>. (<commit sha or PR URL>) -->
 
+- 2026-11-28 — The docs nav shows the Software Factory wordmark in place of "Docs".
 - 2026-11-27 — Getting started opens with what Software Factory is, to match the README after the rename.
 - 2026-11-27 — Two docs e2e tests: the theme button stays inside the window, and `/docs` passes the accessibility check in dark mode.
 - 2026-11-27 — The search limiter got random namespace ids like the other limiters, and the search test now checks the hits.

@@ -1,53 +1,85 @@
 @import "tailwindcss";
-@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/shadcn.css";
 @import "fumadocs-ui/css/preset.css";
+@import "@fontsource-variable/schibsted-grotesk/wght.css";
+@import "@fontsource/commit-mono/400.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/* Paper, graphite and crate orange, sampled from the home page film. */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --radius: 0.25rem;
+  --background: #e9dbc5;
+  --foreground: #1b1814;
+  --card: #f2e7d4;
+  --card-foreground: #1b1814;
+  --popover: #f2e7d4;
+  --popover-foreground: #1b1814;
+  --primary: #1b1814;
+  --primary-foreground: #e9dbc5;
+  --secondary: #dfd0b8;
+  --secondary-foreground: #1b1814;
+  --muted: #dfd0b8;
+  --muted-foreground: #5c5346;
+  --accent: #dccbb0;
+  --accent-foreground: #1b1814;
+  --destructive: #a3322e;
+  --border: #bdae95;
+  --input: #bdae95;
+  --ring: #96430f;
+  --sidebar: #e9dbc5;
+  --sidebar-foreground: #1b1814;
+  --sidebar-border: #bdae95;
+  --sidebar-accent: #dccbb0;
+  --sidebar-accent-foreground: #1b1814;
+  --sidebar-primary-foreground: #e9dbc5;
+  --sidebar-ring: #96430f;
+  --crate: #e57c35;
+  --crate-shade: #ae602f;
+  --crate-ink: #96430f;
+  --on-crate: #1b1814;
+  --boom: #b9403c;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #14120f;
+  --foreground: #ede2cf;
+  --card: #1c1915;
+  --card-foreground: #ede2cf;
+  --popover: #1c1915;
+  --popover-foreground: #ede2cf;
+  --primary: #ede2cf;
+  --primary-foreground: #14120f;
+  --secondary: #24201b;
+  --secondary-foreground: #ede2cf;
+  --muted: #24201b;
+  --muted-foreground: #a89f8f;
+  --accent: #2c2721;
+  --accent-foreground: #ede2cf;
+  --destructive: #e0685f;
+  --border: #3b362e;
+  --input: #3b362e;
+  --ring: #f0904c;
+  --sidebar: #14120f;
+  --sidebar-foreground: #ede2cf;
+  --sidebar-border: #3b362e;
+  --sidebar-accent: #2c2721;
+  --sidebar-accent-foreground: #ede2cf;
+  --sidebar-primary-foreground: #14120f;
+  --sidebar-ring: #f0904c;
+  --crate-ink: #f0904c;
+  --on-crate: #14120f;
+  --boom: #c9524c;
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Schibsted Grotesk Variable", system-ui, sans-serif;
+  --font-mono: "Commit Mono", ui-monospace, Menlo, monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -64,13 +96,93 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-crate: var(--crate);
+  --color-crate-shade: var(--crate-shade);
+  --color-crate-ink: var(--crate-ink);
+  --color-on-crate: var(--on-crate);
+  --color-boom: var(--boom);
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    scrollbar-color: var(--border) var(--background);
+  }
   body {
     @apply bg-background text-foreground antialiased;
+    caret-color: var(--crate);
+  }
+  ::selection {
+    background: var(--crate);
+    color: var(--on-crate);
+  }
+}
+
+@layer components {
+  /* The film dissolves into the page on its left, top and bottom edges. */
+  .film-stage {
+    mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  }
+  @media (width >= 64rem) {
+    .film-stage {
+      mask-image:
+        linear-gradient(to right, transparent 14%, #000 52%),
+        linear-gradient(to bottom, transparent, #000 16%, #000 72%, transparent);
+      mask-composite: intersect;
+    }
+  }
+  .film {
+    mix-blend-mode: multiply;
+  }
+  /* Inverting and turning the hue half way makes the paper dark and keeps the crate orange. */
+  .dark .film {
+    filter: invert(1) hue-rotate(180deg) contrast(0.92);
+    mix-blend-mode: screen;
+  }
+
+  .plate {
+    transition:
+      transform 0.6s var(--ease-out-expo),
+      opacity 0.6s var(--ease-out-expo);
+  }
+  .plate path {
+    stroke: var(--foreground);
+    stroke-width: 1.25;
+    transition: fill 0.4s var(--ease-out-expo);
+  }
+  .plate .plate-top {
+    fill: var(--background);
+  }
+  .plate .plate-side {
+    fill: url(#hatch);
+  }
+  .plate .plate-lead {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .plate[data-state="in"] .plate-top {
+    fill: var(--crate);
+  }
+  .plate[data-state="in"] .plate-side {
+    fill: var(--crate-shade);
+  }
+  .plate[data-state="base"] .plate-top {
+    fill: var(--card);
+  }
+  .plate[data-state="out"] {
+    transform: translateX(44px);
+    opacity: 0.38;
+  }
+  .plate[data-state="out"] :is(.plate-top, .plate-side) {
+    fill: none;
+    stroke-dasharray: 4 4;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .plate,
+    .plate path {
+      transition: none;
+    }
   }
 }
